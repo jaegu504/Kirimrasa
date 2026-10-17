@@ -4,6 +4,8 @@ import com.wabulk.sender.data.local.db.AppDatabase
 import com.wabulk.sender.data.local.db.CampaignDao
 import com.wabulk.sender.data.local.db.CampaignEntity
 import com.wabulk.sender.data.local.db.CampaignItemEntity
+import com.wabulk.sender.data.local.db.CampaignItemStatus
+import com.wabulk.sender.data.local.db.CampaignStatus
 import com.wabulk.sender.data.local.db.CampaignWithItems
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -108,9 +110,23 @@ class CampaignDatabaseTest {
         assertEquals(0, campaign.sentCount)
         assertEquals(0, campaign.failedCount)
         assertEquals("COMPLETED", campaign.status)
+        assertEquals(CampaignStatus.COMPLETED, campaign.campaignStatus)
         assertEquals("WA Personal", campaign.nodeUsed)
         assertEquals(0L, campaign.durationSeconds)
         assertTrue(campaign.createdAt > 0L)
+    }
+
+    @Test
+    fun `campaign status enum resolution and helper getter`() {
+        val running = CampaignEntity(title = "T1", totalRecipients = 1, status = CampaignStatus.RUNNING.name)
+        val paused = CampaignEntity(title = "T2", totalRecipients = 1, status = CampaignStatus.PAUSED.name)
+        val cancelled = CampaignEntity(title = "T3", totalRecipients = 1, status = CampaignStatus.CANCELLED.name)
+        val unknown = CampaignEntity(title = "T4", totalRecipients = 1, status = "UNKNOWN_STATUS")
+
+        assertEquals(CampaignStatus.RUNNING, running.campaignStatus)
+        assertEquals(CampaignStatus.PAUSED, paused.campaignStatus)
+        assertEquals(CampaignStatus.CANCELLED, cancelled.campaignStatus)
+        assertEquals(CampaignStatus.COMPLETED, unknown.campaignStatus)
     }
 
     @Test
@@ -120,7 +136,7 @@ class CampaignDatabaseTest {
             recipientPhone = "+628123456789",
             recipientName = "Ahmad Dani",
             messageText = "Halo Ahmad, cek promo Ramadhan!",
-            status = "PENDING"
+            status = CampaignItemStatus.PENDING.name
         )
 
         assertEquals(1L, item.campaignId)
@@ -128,8 +144,22 @@ class CampaignDatabaseTest {
         assertEquals("Ahmad Dani", item.recipientName)
         assertEquals("Halo Ahmad, cek promo Ramadhan!", item.messageText)
         assertEquals("PENDING", item.status)
+        assertEquals(CampaignItemStatus.PENDING, item.itemStatus)
         assertNull(item.errorMessage)
         assertTrue(item.sentAt > 0L)
+    }
+
+    @Test
+    fun `campaign item status enum resolution and helper getter`() {
+        val sending = CampaignItemEntity(campaignId = 1L, recipientPhone = "1", recipientName = "A", messageText = "M", status = CampaignItemStatus.SENDING.name)
+        val sent = CampaignItemEntity(campaignId = 1L, recipientPhone = "2", recipientName = "B", messageText = "M", status = CampaignItemStatus.SENT.name)
+        val failed = CampaignItemEntity(campaignId = 1L, recipientPhone = "3", recipientName = "C", messageText = "M", status = CampaignItemStatus.FAILED.name)
+        val unknown = CampaignItemEntity(campaignId = 1L, recipientPhone = "4", recipientName = "D", messageText = "M", status = "CUSTOM_VAL")
+
+        assertEquals(CampaignItemStatus.SENDING, sending.itemStatus)
+        assertEquals(CampaignItemStatus.SENT, sent.itemStatus)
+        assertEquals(CampaignItemStatus.FAILED, failed.itemStatus)
+        assertEquals(CampaignItemStatus.PENDING, unknown.itemStatus)
     }
 
     @Test
@@ -137,7 +167,7 @@ class CampaignDatabaseTest {
         val campaign = CampaignEntity(
             title = "Flash Sale Weekend",
             totalRecipients = 2,
-            status = "RUNNING"
+            status = CampaignStatus.RUNNING.name
         )
 
         val campaignId = campaignDao.insertCampaign(campaign)
@@ -149,14 +179,14 @@ class CampaignDatabaseTest {
                 recipientPhone = "+6281111111",
                 recipientName = "Budi",
                 messageText = "Halo Budi!",
-                status = "SENT"
+                status = CampaignItemStatus.SENT.name
             ),
             CampaignItemEntity(
                 campaignId = campaignId,
                 recipientPhone = "+6282222222",
                 recipientName = "Citra",
                 messageText = "Halo Citra!",
-                status = "FAILED",
+                status = CampaignItemStatus.FAILED.name,
                 errorMessage = "Number not registered on WhatsApp"
             )
         )
@@ -167,11 +197,14 @@ class CampaignDatabaseTest {
         val fetchedCampaign = campaignDao.getCampaignById(campaignId)
         assertNotNull(fetchedCampaign)
         assertEquals("Flash Sale Weekend", fetchedCampaign?.title)
+        assertEquals(CampaignStatus.RUNNING, fetchedCampaign?.campaignStatus)
 
         val fetchedItems = campaignDao.getItemsForCampaign(campaignId)
         assertEquals(2, fetchedItems.size)
         assertEquals("SENT", fetchedItems[0].status)
+        assertEquals(CampaignItemStatus.SENT, fetchedItems[0].itemStatus)
         assertEquals("FAILED", fetchedItems[1].status)
+        assertEquals(CampaignItemStatus.FAILED, fetchedItems[1].itemStatus)
         assertEquals("Number not registered on WhatsApp", fetchedItems[1].errorMessage)
     }
 
@@ -187,7 +220,7 @@ class CampaignDatabaseTest {
                     recipientPhone = "+6289999999",
                     recipientName = "Dewi",
                     messageText = "Exclusive Promo",
-                    status = "SENT"
+                    status = CampaignItemStatus.SENT.name
                 )
             )
         )
@@ -211,7 +244,7 @@ class CampaignDatabaseTest {
                     recipientPhone = "123",
                     recipientName = "Test",
                     messageText = "Msg",
-                    status = "SENT"
+                    status = CampaignItemStatus.SENT.name
                 )
             )
         )
@@ -229,7 +262,7 @@ class CampaignDatabaseTest {
             CampaignEntity(
                 title = "Newsletter Q4",
                 totalRecipients = 50,
-                status = "RUNNING"
+                status = CampaignStatus.RUNNING.name
             )
         )
 
@@ -237,7 +270,7 @@ class CampaignDatabaseTest {
         val updated = initial.copy(
             sentCount = 48,
             failedCount = 2,
-            status = "COMPLETED",
+            status = CampaignStatus.COMPLETED.name,
             durationSeconds = 125L
         )
 
@@ -247,6 +280,7 @@ class CampaignDatabaseTest {
         assertEquals(48, retrieved.sentCount)
         assertEquals(2, retrieved.failedCount)
         assertEquals("COMPLETED", retrieved.status)
+        assertEquals(CampaignStatus.COMPLETED, retrieved.campaignStatus)
         assertEquals(125L, retrieved.durationSeconds)
     }
 

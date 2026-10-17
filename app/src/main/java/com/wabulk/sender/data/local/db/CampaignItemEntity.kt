@@ -6,6 +6,13 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
+enum class CampaignItemStatus {
+    PENDING,
+    SENDING,
+    SENT,
+    FAILED
+}
+
 @Entity(
     tableName = "campaign_items",
     foreignKeys = [
@@ -37,11 +44,18 @@ data class CampaignItemEntity(
     val messageText: String,
 
     @ColumnInfo(name = "status")
-    val status: String,
+    val status: String = CampaignItemStatus.PENDING.name,
 
     @ColumnInfo(name = "error_message")
     val errorMessage: String? = null,
 
     @ColumnInfo(name = "sent_at")
     val sentAt: Long = System.currentTimeMillis()
-)
+) {
+    val itemStatus: CampaignItemStatus
+        get() = try {
+            CampaignItemStatus.valueOf(status)
+        } catch (_: IllegalArgumentException) {
+            CampaignItemStatus.PENDING
+        }
+}

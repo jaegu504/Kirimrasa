@@ -4,6 +4,13 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+enum class CampaignStatus {
+    RUNNING,
+    PAUSED,
+    COMPLETED,
+    CANCELLED
+}
+
 @Entity(tableName = "campaigns")
 data class CampaignEntity(
     @PrimaryKey(autoGenerate = true)
@@ -25,11 +32,18 @@ data class CampaignEntity(
     val failedCount: Int = 0,
 
     @ColumnInfo(name = "status")
-    val status: String = "COMPLETED",
+    val status: String = CampaignStatus.COMPLETED.name,
 
     @ColumnInfo(name = "node_used")
     val nodeUsed: String = "WA Personal",
 
     @ColumnInfo(name = "duration_seconds")
     val durationSeconds: Long = 0
-)
+) {
+    val campaignStatus: CampaignStatus
+        get() = try {
+            CampaignStatus.valueOf(status)
+        } catch (_: IllegalArgumentException) {
+            CampaignStatus.COMPLETED
+        }
+}
