@@ -211,11 +211,14 @@ class BaileysBridgeTest {
             httpClient = testHttpClient
         )
 
-        client.sendTypingPresence("+628111222333", 2500L)
+        val start = System.currentTimeMillis()
+        client.sendTypingPresence("+628111222333", 50L)
+        val elapsed = System.currentTimeMillis() - start
 
         assertEquals("http://10.0.2.2:3000/api/nodes/node-personal-01/presence", recordedRequest?.url.toString())
         assertTrue(recordedBody?.contains("+628111222333") == true)
-        assertTrue(recordedBody?.contains("2500") == true)
+        assertTrue(recordedBody?.contains("50") == true)
+        assertTrue("Typing duration delay must be preserved (elapsed: $elapsed ms)", elapsed >= 40L)
     }
 
     @Test
@@ -436,5 +439,33 @@ class BaileysBridgeTest {
         assertEquals("XYZ9-8765", code)
         assertEquals(NodeStatus.PAIRING, sessionManager.node1Session.value.status)
         assertEquals("XYZ9-8765", sessionManager.node1Session.value.pairingCode)
+    }
+
+    @Test
+    fun `WhatsAppSessionManager caches BaileysBridgeClient instances per node`() {
+        BaileysConfigManager.setEnabled(true)
+        val sessionManager = WhatsAppSessionManager()
+
+        val engine1First = sessionManager.getEngineForNode(AccountNode.PERSONAL)
+        val engine1Second = sessionManager.getEngineForNode(AccountNode.PERSONAL)
+        org.junit.Assert.assertSame("Personal node engine must be cached and reused", engine1First, engine1Second)
+
+        val engine2First = sessionManager.getEngineForNode(AccountNode.BUSINESS)
+        val engine2Second = sessionManager.getEngineForNode(AccountNode.BUSINESS)
+        org.junit.Assert.assertSame("Business node engine must be cached and reused", engine2First, engine2Second)
+        org.junit.Assert.assertNotSame("Personal and Business engines must be distinct instances", engine1First, engine2First)
+    }
+
+    @Test
+    fun `BaileysBridgeClient status changes propagate to WhatsAppSessionManager session StateFlow`() = runBlocking {
+        BaileysConfigManager.setEnabled(true)
+        val sessionManager = WhatsAppSessionManager()
+
+        val engine = sessionManager.getOrCreateBaileysEngine(AccountNode.PERSONAL)
+        assertEquals(NodeStatus.CONNECTED, sessionManager.node1Session.value.status)
+
+        // Disconnect updates session status to DISCONNECTED via status callback
+        engine.disconnect()
+        assertEquals(NodeStatus.DISCONNECTED, sessionManager.node1Session.value.status)
     }
 }

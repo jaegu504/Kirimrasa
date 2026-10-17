@@ -7,6 +7,7 @@ import com.wabulk.sender.engine.WhatsAppEngine
 import com.wabulk.sender.engine.model.NodeSession
 import com.wabulk.sender.engine.model.NodeStatus
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,7 +50,8 @@ class BaileysBridgeClient(
     private val configProvider: () -> BaileysConfig = { BaileysConfigManager.config.value },
     private val httpClient: OkHttpClient = defaultClient,
     private val fallbackEngine: WhatsAppEngine = SimulatedWhatsAppEngine(node),
-    val fallbackOnException: Boolean = true
+    val fallbackOnException: Boolean = true,
+    private val onStatusChanged: ((NodeStatus) -> Unit)? = null
 ) : WhatsAppEngine {
 
     private val json = Json {
@@ -195,12 +197,19 @@ class BaileysBridgeClient(
             httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful && fallbackOnException) {
                     fallbackEngine.sendTypingPresence(recipientPhone, durationMs)
+                    return@withContext
                 }
             }
         } catch (_: Exception) {
             if (fallbackOnException) {
                 fallbackEngine.sendTypingPresence(recipientPhone, durationMs)
+                return@withContext
             }
+        }
+
+        // Preserve typing duration delay for humanized delay and UI telemetry
+        if (durationMs > 0) {
+            delay(durationMs)
         }
     }
 
@@ -258,7 +267,7 @@ class BaileysBridgeClient(
     override suspend fun disconnect(): Unit = withContext(Dispatchers.IO) {
         activeWebSocket?.close(1000, "Node disconnecting")
         activeWebSocket = null
-        _connectionState.value = NodeStatus.DISCONNECTED
+        updateConnectionStatus(NodeStatus.DISCONNECTED)
 
         val config = configProvider()
         if (!config.isEnabled) {
@@ -298,7 +307,7 @@ class BaileysBridgeClient(
 
         val listener = object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
-                _connectionState.value = NodeStatus.CONNECTED
+                updateConnectionStatus(NodeStatus.CONNECTED)
                 customListener?.onOpen(webSocket, response)
             }
 
@@ -308,10 +317,10 @@ class BaileysBridgeClient(
                     val statusText = root["status"]?.jsonPrimitive?.content
                     if (statusText != null) {
                         when (statusText.uppercase()) {
-                            "CONNECTED" -> _connectionState.value = NodeStatus.CONNECTED
-                            "PAIRING" -> _connectionState.value = NodeStatus.PAIRING
-                            "DISCONNECTED" -> _connectionState.value = NodeStatus.DISCONNECTED
-                            "ERROR" -> _connectionState.value = NodeStatus.ERROR
+                            "CONNECTED" -> updateConnectionStatus(NodeStatus.CONNECTED)
+                            "PAIRING" -> updateConnectionStatus(NodeStatus.PAIRING)
+                            "DISCONNECTED" -> updateConnectionStatus(NodeStatus.DISCONNECTED)
+                            "ERROR" -> updateConnectionStatus(NodeStatus.ERROR)
                         }
                     }
                 } catch (_: Exception) {}
@@ -319,12 +328,12 @@ class BaileysBridgeClient(
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                _connectionState.value = NodeStatus.ERROR
+                updateConnectionStatus(NodeStatus.ERROR)
                 customListener?.onFailure(webSocket, t, response)
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                _connectionState.value = NodeStatus.DISCONNECTED
+                updateConnectionStatus(NodeStatus.DISCONNECTED)
                 customListener?.onClosed(webSocket, code, reason)
             }
         }
@@ -332,6 +341,11 @@ class BaileysBridgeClient(
         val ws = httpClient.newWebSocket(requestBuilder.build(), listener)
         activeWebSocket = ws
         return ws
+    }
+
+    private fun updateConnectionStatus(newStatus: NodeStatus) {
+        _connectionState.value = newStatus
+        onStatusChanged?.invoke(newStatus)
     }
 
     private fun buildUrl(path: String): String {

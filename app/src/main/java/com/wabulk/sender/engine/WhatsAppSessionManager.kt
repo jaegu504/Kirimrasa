@@ -37,6 +37,41 @@ class WhatsAppSessionManager(
     )
     val node2Session: StateFlow<NodeSession> = _node2Session.asStateFlow()
 
+    @Volatile
+    private var cachedNode1Engine: BaileysBridgeClient? = null
+
+    @Volatile
+    private var cachedNode2Engine: BaileysBridgeClient? = null
+
+    @Synchronized
+    fun getOrCreateBaileysEngine(nodeType: AccountNode): BaileysBridgeClient {
+        return when (nodeType) {
+            AccountNode.PERSONAL -> {
+                cachedNode1Engine ?: BaileysBridgeClient(
+                    node = _node1Session.value,
+                    configProvider = { BaileysConfigManager.config.value },
+                    onStatusChanged = { newStatus ->
+                        _node1Session.value = _node1Session.value.copy(status = newStatus)
+                    }
+                ).also { cachedNode1Engine = it }
+            }
+            AccountNode.BUSINESS, AccountNode.DUAL_SYNC -> {
+                cachedNode2Engine ?: BaileysBridgeClient(
+                    node = _node2Session.value,
+                    configProvider = { BaileysConfigManager.config.value },
+                    onStatusChanged = { newStatus ->
+                        _node2Session.value = _node2Session.value.copy(status = newStatus)
+                    }
+                ).also { cachedNode2Engine = it }
+            }
+        }
+    }
+
+    fun resetBaileysEngines() {
+        cachedNode1Engine = null
+        cachedNode2Engine = null
+    }
+
     fun getEngineForNode(nodeType: AccountNode): WhatsAppEngine {
         val session = when (nodeType) {
             AccountNode.PERSONAL -> _node1Session.value
@@ -46,10 +81,7 @@ class WhatsAppSessionManager(
         return if (engine !is SimulatedWhatsAppEngine) {
             engine
         } else if (config.isEnabled) {
-            BaileysBridgeClient(
-                node = session,
-                configProvider = { BaileysConfigManager.config.value }
-            )
+            getOrCreateBaileysEngine(nodeType)
         } else {
             SimulatedWhatsAppEngine(session)
         }
