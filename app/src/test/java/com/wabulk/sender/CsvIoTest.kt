@@ -299,4 +299,62 @@ class CsvIoTest {
         assertEquals("Dewi", entity.customNickname)
         assertEquals("[\"author\",\"vip\"]", entity.tagsJson)
     }
+
+    @Test
+    fun `parseCsv prioritizes Nomor HP over sequence column Nomor`() {
+        val csv = """
+            Nomor,Nama,Nomor HP
+            1,Budi Santoso,08123456789
+            2,Siti Aminah,08198765432
+        """.trimIndent()
+
+        val result = CsvContactParser.parseCsv(csv)
+        assertTrue(result is CsvParseResult.Success)
+        val success = result as CsvParseResult.Success
+
+        assertEquals(2, success.contacts.size)
+        assertEquals("08123456789", success.contacts[0].phoneNumber)
+        assertEquals("Budi Santoso", success.contacts[0].rawName)
+        assertEquals("08198765432", success.contacts[1].phoneNumber)
+        assertEquals("Siti Aminah", success.contacts[1].rawName)
+    }
+
+    @Test
+    fun `parseCsv handles bracketed template variable headers`() {
+        val csv = """
+            {Name},{Phone},{Company},{Custom_1}
+            Alice Smith,+15550100,Acme Corp,PromoVIP
+        """.trimIndent()
+
+        val result = CsvContactParser.parseCsv(csv)
+        assertTrue(result is CsvParseResult.Success)
+        val success = result as CsvParseResult.Success
+
+        assertEquals(1, success.contacts.size)
+        assertEquals("Alice Smith", success.contacts[0].rawName)
+        assertEquals("+15550100", success.contacts[0].phoneNumber)
+        assertEquals("Acme Corp", success.contacts[0].company)
+        assertEquals("PromoVIP", success.contacts[0].custom1)
+    }
+
+    @Test
+    fun `parseCsv recognizes extended Turkish and Indonesian phone and name headers`() {
+        val csvIndo = """
+            Nama,Nomor Telepon
+            Joko,0812111111
+        """.trimIndent()
+        val resIndo = CsvContactParser.parseCsv(csvIndo)
+        assertTrue(resIndo is CsvParseResult.Success)
+        assertEquals("0812111111", (resIndo as CsvParseResult.Success).contacts[0].phoneNumber)
+
+        val csvTurk = """
+            Ad Soyad,Cep Telefonu
+            Murat Kaya,+905551234567
+        """.trimIndent()
+        val resTurk = CsvContactParser.parseCsv(csvTurk)
+        assertTrue(resTurk is CsvParseResult.Success)
+        val contact = (resTurk as CsvParseResult.Success).contacts[0]
+        assertEquals("Murat Kaya", contact.rawName)
+        assertEquals("+905551234567", contact.phoneNumber)
+    }
 }

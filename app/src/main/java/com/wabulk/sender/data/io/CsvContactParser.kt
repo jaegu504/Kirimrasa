@@ -43,13 +43,15 @@ object CsvContactParser {
 
     private val NAME_HEADERS = setOf(
         "nama", "name", "full name", "fullname", "contact name", "isim",
-        "full_name", "contact_name", "nama lengkap"
+        "full_name", "contact_name", "nama lengkap", "ad soyad", "ad_soyad"
     )
 
     private val PHONE_HEADERS = setOf(
-        "phone", "telepon", "no hp", "no. hp", "nomor", "wa", "whatsapp",
+        "phone", "telepon", "no hp", "no. hp", "wa", "whatsapp",
         "mobile", "telefon", "no_hp", "nohp", "phone number", "phonenumber",
-        "no telepon", "mobile phone", "telephone"
+        "no telepon", "mobile phone", "telephone", "nomor hp", "nomor telepon",
+        "nomor_hp", "nomor_telepon", "hp", "no telp", "no. telp", "no_telp",
+        "telp", "cep", "cep telefonu", "cep_telefonu"
     )
 
     private val NICKNAME_HEADERS = setOf(
@@ -230,7 +232,11 @@ object CsvContactParser {
     }
 
     private fun matchHeader(header: String): ColumnType? {
-        val clean = header.trim().trim('"', '\'')
+        val clean = header.trim()
+            .trim('"', '\'')
+            .trim('{', '}')
+            .trim()
+            .trim('"', '\'')
             .replace("İ", "i")
             .replace("I", "i")
             .replace("ı", "i")
