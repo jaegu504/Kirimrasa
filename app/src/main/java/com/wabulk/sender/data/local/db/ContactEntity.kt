@@ -28,6 +28,12 @@ data class ContactEntity(
     @ColumnInfo(name = "custom_nickname")
     val customNickname: String = "",
 
+    @ColumnInfo(name = "company", defaultValue = "")
+    val company: String = "",
+
+    @ColumnInfo(name = "custom1", defaultValue = "")
+    val custom1: String = "",
+
     @ColumnInfo(name = "tags_json")
     val tagsJson: String = "[]",
 

@@ -2,7 +2,17 @@ package com.wabulk.sender.engine.queue
 
 import android.content.Context
 import android.content.Intent
+import com.wabulk.sender.data.local.db.AppDatabase
+import com.wabulk.sender.data.local.db.CampaignDao
+import com.wabulk.sender.data.local.db.CampaignEntity
+import com.wabulk.sender.data.local.db.CampaignItemEntity
+import com.wabulk.sender.data.local.db.CampaignItemStatus
+import com.wabulk.sender.data.local.db.CampaignStatus
+import com.wabulk.sender.data.local.db.ContactEntity
+import com.wabulk.sender.data.repository.ContactRepository
 import com.wabulk.sender.domain.model.AccountNode
+import com.wabulk.sender.domain.model.MessageBubble
+import com.wabulk.sender.domain.spintax.SpintaxParser
 import com.wabulk.sender.engine.WhatsAppSessionManager
 import com.wabulk.sender.engine.queue.model.QueueItem
 import com.wabulk.sender.engine.queue.model.QueueTaskStatus
@@ -16,8 +26,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 
-class DispatchQueueManager private constructor() {
+class DispatchQueueManager private constructor(
+    private var campaignDao: CampaignDao? = null
+) {
 
     private val scope = CoroutineScope(Dispatchers.Default)
     private var job: Job? = null
@@ -37,6 +50,13 @@ class DispatchQueueManager private constructor() {
     private val _currentTypingContact = MutableStateFlow<String?>(null)
     val currentTypingContact: StateFlow<String?> = _currentTypingContact.asStateFlow()
 
+    private var currentCampaignId: Long? = null
+    private var campaignStartTime: Long = 0L
+    private val queueItemToDbId = ConcurrentHashMap<String, Long>()
+    private var campaignInitJob: Job? = null
+
+    var skipDelayForTesting: Boolean = false
+
     val totalCount: Int
         get() = _queueItems.value.size
 
@@ -49,33 +69,99 @@ class DispatchQueueManager private constructor() {
     val percentComplete: Int
         get() = if (totalCount == 0) 0 else ((sentCount.toFloat() / totalCount.toFloat()) * 100).toInt()
 
+    fun setCampaignDao(dao: CampaignDao?) {
+        this.campaignDao = dao
+    }
+
+    fun getCampaignDao(): CampaignDao? = campaignDao
+
     fun enqueueBroadcast(
         items: List<QueueItem>,
-        context: Context? = null
+        context: Context? = null,
+        campaignTitle: String = "Broadcast Campaign",
+        campaignDao: CampaignDao? = null
     ) {
+        if (campaignDao != null) {
+            this.campaignDao = campaignDao
+        } else if (this.campaignDao == null && context != null) {
+            try {
+                this.campaignDao = AppDatabase.getInstance(context).campaignDao()
+            } catch (_: Exception) {}
+        }
+
         _queueItems.value = items
         _isPaused.value = false
+        queueItemToDbId.clear()
+        campaignStartTime = System.currentTimeMillis()
+
+        val dao = this.campaignDao
+        if (dao != null && items.isNotEmpty()) {
+            campaignInitJob = scope.launch(Dispatchers.IO) {
+                try {
+                    val nodeName = when (items.firstOrNull()?.nodeUsed) {
+                        AccountNode.PERSONAL -> "WA Personal"
+                        AccountNode.BUSINESS -> "WA Business"
+                        AccountNode.DUAL_SYNC -> "Dual Sync"
+                        null -> "WA Personal"
+                    }
+                    val campaign = CampaignEntity(
+                        title = campaignTitle,
+                        createdAt = campaignStartTime,
+                        totalRecipients = items.size,
+                        sentCount = 0,
+                        failedCount = 0,
+                        status = CampaignStatus.RUNNING.name,
+                        nodeUsed = nodeName,
+                        durationSeconds = 0
+                    )
+                    val cId = dao.insertCampaign(campaign)
+                    currentCampaignId = cId
+
+                    val dbItems = items.map { qItem ->
+                        CampaignItemEntity(
+                            campaignId = cId,
+                            recipientPhone = qItem.phoneNumber,
+                            recipientName = qItem.recipientName,
+                            messageText = qItem.bubbleTexts.joinToString("\n\n"),
+                            status = CampaignItemStatus.PENDING.name,
+                            errorMessage = null,
+                            sentAt = System.currentTimeMillis()
+                        )
+                    }
+                    val insertedIds = dao.insertItems(dbItems)
+                    items.forEachIndexed { index, qItem ->
+                        if (index < insertedIds.size) {
+                            queueItemToDbId[qItem.id] = insertedIds[index]
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+
         if (context != null) {
             startDispatch(context)
         }
     }
 
-    fun startDispatch(context: Context) {
+    fun startDispatch(context: Context? = null) {
         if (_isRunning.value) return
         _isRunning.value = true
         _isPaused.value = false
 
-        // Start Foreground Service
-        val serviceIntent = Intent(context, WhatsAppForegroundService::class.java).apply {
-            action = WhatsAppForegroundService.ACTION_START
-        }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent)
-        } else {
-            context.startService(serviceIntent)
+        if (context != null) {
+            try {
+                val serviceIntent = Intent(context, WhatsAppForegroundService::class.java).apply {
+                    action = WhatsAppForegroundService.ACTION_START
+                }
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    context.startForegroundService(serviceIntent)
+                } else {
+                    context.startService(serviceIntent)
+                }
+            } catch (_: Exception) {}
         }
 
-        launchExecutionLoop(context.applicationContext)
+        launchExecutionLoop(context?.applicationContext)
     }
 
     fun pauseDispatch() {
@@ -93,15 +179,41 @@ class DispatchQueueManager private constructor() {
         job?.cancel()
         job = null
 
-        if (context != null) {
-            val serviceIntent = Intent(context, WhatsAppForegroundService::class.java).apply {
-                action = WhatsAppForegroundService.ACTION_STOP
+        val cId = currentCampaignId
+        val dao = campaignDao
+        if (dao != null && cId != null) {
+            scope.launch(Dispatchers.IO) {
+                try {
+                    campaignInitJob?.join()
+                    val existing = dao.getCampaignById(cId)
+                    if (existing != null && existing.status == CampaignStatus.RUNNING.name) {
+                        val duration = ((System.currentTimeMillis() - campaignStartTime) / 1000L).coerceAtLeast(0L)
+                        val successCount = _queueItems.value.count { it.status == QueueTaskStatus.DELIVERED }
+                        val failCount = _queueItems.value.count { it.status == QueueTaskStatus.FAILED }
+                        dao.updateCampaign(
+                            existing.copy(
+                                sentCount = successCount,
+                                failedCount = failCount,
+                                status = CampaignStatus.CANCELLED.name,
+                                durationSeconds = duration
+                            )
+                        )
+                    }
+                } catch (_: Exception) {}
             }
-            context.stopService(serviceIntent)
+        }
+
+        if (context != null) {
+            try {
+                val serviceIntent = Intent(context, WhatsAppForegroundService::class.java).apply {
+                    action = WhatsAppForegroundService.ACTION_STOP
+                }
+                context.stopService(serviceIntent)
+            } catch (_: Exception) {}
         }
     }
 
-    private fun launchExecutionLoop(context: Context) {
+    private fun launchExecutionLoop(context: Context?) {
         job?.cancel()
         job = scope.launch {
             while (_isRunning.value) {
@@ -113,6 +225,29 @@ class DispatchQueueManager private constructor() {
                     // All tasks completed!
                     _isRunning.value = false
                     _currentTypingContact.value = null
+
+                    campaignInitJob?.join()
+                    val cId = currentCampaignId
+                    val dao = campaignDao
+                    if (dao != null && cId != null) {
+                        try {
+                            val duration = ((System.currentTimeMillis() - campaignStartTime) / 1000L).coerceAtLeast(0L)
+                            val successCount = _queueItems.value.count { it.status == QueueTaskStatus.DELIVERED }
+                            val failCount = _queueItems.value.count { it.status == QueueTaskStatus.FAILED }
+                            val existing = dao.getCampaignById(cId)
+                            if (existing != null) {
+                                dao.updateCampaign(
+                                    existing.copy(
+                                        sentCount = successCount,
+                                        failedCount = failCount,
+                                        status = CampaignStatus.COMPLETED.name,
+                                        durationSeconds = duration
+                                    )
+                                )
+                            }
+                        } catch (_: Exception) {}
+                    }
+
                     updateNotification(
                         context,
                         "Pengiriman Selesai!",
@@ -129,8 +264,8 @@ class DispatchQueueManager private constructor() {
                 }
                 if (!_isRunning.value) break
 
-                // Jitter delay countdown simulation (5 down to 1s for dynamic responsiveness)
-                val assignedJitter = 4
+                // Jitter delay countdown simulation (4 down to 1s)
+                val assignedJitter = if (skipDelayForTesting) 0 else 4
                 for (sec in assignedJitter downTo 1) {
                     _jitterCountdown.value = sec
                     delay(1000)
@@ -156,22 +291,53 @@ class DispatchQueueManager private constructor() {
                     sentCount
                 )
 
-                engine.sendTypingPresence(nextItem.phoneNumber, 2000L)
+                if (!skipDelayForTesting) {
+                    engine.sendTypingPresence(nextItem.phoneNumber, 2000L)
+                } else {
+                    engine.sendTypingPresence(nextItem.phoneNumber, 0L)
+                }
                 while (_isPaused.value && _isRunning.value) {
-                    delay(500)
+                    delay(if (skipDelayForTesting) 0 else 500)
                 }
                 if (!_isRunning.value) break
 
                 // Phase: Send Message
                 val messageText = nextItem.bubbleTexts.joinToString("\n\n")
                 val sendResult = engine.sendMessage(nextItem.phoneNumber, messageText)
+                val sentTimestamp = System.currentTimeMillis()
 
                 if (sendResult.isSuccess) {
-                    updateItemStatus(nextItem.id, QueueTaskStatus.DELIVERED, System.currentTimeMillis())
+                    updateItemStatus(nextItem.id, QueueTaskStatus.DELIVERED, sentTimestamp)
                 } else {
                     updateItemStatus(nextItem.id, QueueTaskStatus.FAILED, errorMessage = sendResult.errorMessage)
                 }
                 _currentTypingContact.value = null
+
+                // Update Room SQLite item
+                val dao = campaignDao
+                if (dao != null) {
+                    try {
+                        campaignInitJob?.join()
+                        val dbId = queueItemToDbId[nextItem.id]
+                        if (dbId != null) {
+                            if (sendResult.isSuccess) {
+                                dao.updateCampaignItemStatus(
+                                    id = dbId,
+                                    status = CampaignItemStatus.SENT.name,
+                                    errorMessage = null,
+                                    sentAt = sentTimestamp
+                                )
+                            } else {
+                                dao.updateCampaignItemStatus(
+                                    id = dbId,
+                                    status = CampaignItemStatus.FAILED.name,
+                                    errorMessage = sendResult.errorMessage,
+                                    sentAt = sentTimestamp
+                                )
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
 
                 updateNotification(
                     context,
@@ -204,31 +370,73 @@ class DispatchQueueManager private constructor() {
     }
 
     private fun updateNotification(
-        context: Context,
+        context: Context?,
         title: String,
         content: String,
         total: Int,
         progress: Int
     ) {
-        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-        val notification = NotificationHelper.buildNotification(
-            context = context,
-            title = title,
-            content = content,
-            progressMax = total,
-            progressCurrent = progress
-        )
-        manager.notify(NotificationHelper.NOTIFICATION_ID, notification)
+        if (context == null) return
+        try {
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? android.app.NotificationManager
+            val notification = NotificationHelper.buildNotification(
+                context = context,
+                title = title,
+                content = content,
+                progressMax = total,
+                progressCurrent = progress
+            )
+            manager?.notify(NotificationHelper.NOTIFICATION_ID, notification)
+        } catch (_: Exception) {}
     }
 
     companion object {
         @Volatile
         private var instance: DispatchQueueManager? = null
 
-        fun getInstance(): DispatchQueueManager {
+        fun getInstance(campaignDao: CampaignDao? = null): DispatchQueueManager {
             return instance ?: synchronized(this) {
-                instance ?: DispatchQueueManager().also { instance = it }
+                instance ?: DispatchQueueManager(campaignDao).also { instance = it }
+            }.also {
+                if (campaignDao != null) {
+                    it.setCampaignDao(campaignDao)
+                }
             }
+        }
+
+        fun resetForTesting(campaignDao: CampaignDao? = null): DispatchQueueManager {
+            instance?.stopDispatch()
+            val newInstance = DispatchQueueManager(campaignDao)
+            instance = newInstance
+            return newInstance
+        }
+
+        fun buildQueueItem(
+            contact: ContactEntity,
+            bubbles: List<MessageBubble>,
+            defaultCompany: String = "KirimRasa",
+            defaultCustom1: String = "PROMO30",
+            nodeUsed: AccountNode = AccountNode.PERSONAL
+        ): QueueItem {
+            val nick = contact.customNickname.ifEmpty { ContactRepository.extractSmartNickname(contact.rawName) }
+            val effectiveCompany = contact.company.ifBlank { defaultCompany }
+            val effectiveCustom1 = contact.custom1.ifBlank { defaultCustom1 }
+            val evaluatedBubbles = bubbles.map { b ->
+                val spun = SpintaxParser.spin(b.text)
+                SpintaxParser.interpolateVariables(
+                    text = spun,
+                    nickname = nick,
+                    variables = mapOf("Company" to effectiveCompany, "Custom_1" to effectiveCustom1)
+                )
+            }
+            return QueueItem(
+                contactId = contact.id,
+                recipientName = contact.rawName.replace(Regex("\\(.*?\\)"), "").trim(),
+                phoneNumber = contact.phoneNumber,
+                bubbleTexts = evaluatedBubbles,
+                nodeUsed = nodeUsed,
+                status = QueueTaskStatus.PENDING
+            )
         }
 
         private fun generateInitialDemoQueue(): List<QueueItem> {

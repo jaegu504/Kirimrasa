@@ -50,7 +50,7 @@ class BaileysBridgeClient(
     private val configProvider: () -> BaileysConfig = { BaileysConfigManager.config.value },
     private val httpClient: OkHttpClient = defaultClient,
     private val fallbackEngine: WhatsAppEngine = SimulatedWhatsAppEngine(node),
-    val fallbackOnException: Boolean = true,
+    val fallbackOnException: Boolean = false,
     private val onStatusChanged: ((NodeStatus) -> Unit)? = null
 ) : WhatsAppEngine {
 

@@ -29,6 +29,8 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE contacts ADD COLUMN company TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE contacts ADD COLUMN custom1 TEXT NOT NULL DEFAULT ''")
                 db.execSQL(
                     """
                     CREATE TABLE IF NOT EXISTS `campaigns` (

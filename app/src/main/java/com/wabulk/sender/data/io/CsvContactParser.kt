@@ -24,6 +24,8 @@ data class ParsedContact(
             rawName = rawName.ifBlank { phoneNumber },
             phoneNumber = phoneNumber,
             customNickname = customNickname,
+            company = company,
+            custom1 = custom1,
             tagsJson = jsonTags
         )
     }

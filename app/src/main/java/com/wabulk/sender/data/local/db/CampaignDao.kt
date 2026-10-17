@@ -33,6 +33,17 @@ interface CampaignDao {
     @Update
     suspend fun updateCampaign(campaign: CampaignEntity)
 
+    @Update
+    suspend fun updateItem(item: CampaignItemEntity)
+
+    @Query("UPDATE campaign_items SET status = :status, error_message = :errorMessage, sent_at = :sentAt WHERE id = :id")
+    suspend fun updateCampaignItemStatus(
+        id: Long,
+        status: String,
+        errorMessage: String?,
+        sentAt: Long = System.currentTimeMillis()
+    )
+
     @Query("SELECT * FROM campaigns ORDER BY created_at DESC")
     fun observeAllCampaigns(): Flow<List<CampaignEntity>>
 

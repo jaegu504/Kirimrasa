@@ -58,6 +58,31 @@ class FakeCampaignDao : CampaignDao {
         }
     }
 
+    override suspend fun updateItem(item: CampaignItemEntity) {
+        val index = items.indexOfFirst { it.id == item.id }
+        if (index >= 0) {
+            items[index] = item
+            updateFlows()
+        }
+    }
+
+    override suspend fun updateCampaignItemStatus(
+        id: Long,
+        status: String,
+        errorMessage: String?,
+        sentAt: Long
+    ) {
+        val index = items.indexOfFirst { it.id == id }
+        if (index >= 0) {
+            items[index] = items[index].copy(
+                status = status,
+                errorMessage = errorMessage,
+                sentAt = sentAt
+            )
+            updateFlows()
+        }
+    }
+
     override fun observeAllCampaigns(): Flow<List<CampaignEntity>> = campaignsFlow
 
     override suspend fun getCampaignById(id: Long): CampaignEntity? {

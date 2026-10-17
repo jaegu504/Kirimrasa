@@ -248,24 +248,20 @@ fun MainScreen(
                                 listOf(MessageBubble(text = "Halo {Nickname}, penawaran spesial minggu ini dari {Company}! Gunakan kode {Custom_1}."))
                             }
                             val queueItems = targetContacts.mapIndexed { idx, c ->
-                                val nick = c.customNickname.ifEmpty { ContactRepository.extractSmartNickname(c.rawName) }
-                                val evaluatedBubbles = bubbles.map { b ->
-                                    SpintaxParser.interpolateVariables(
-                                        text = SpintaxParser.spin(b.text),
-                                        nickname = nick,
-                                        variables = mapOf("Company" to companyVal, "Custom_1" to custom1Val)
-                                    )
-                                }
-                                QueueItem(
-                                    contactId = c.id,
-                                    recipientName = c.rawName.replace(Regex("\\(.*?\\)"), "").trim(),
-                                    phoneNumber = c.phoneNumber,
-                                    bubbleTexts = evaluatedBubbles,
-                                    nodeUsed = if (idx % 2 == 0) AccountNode.PERSONAL else AccountNode.BUSINESS,
-                                    status = QueueTaskStatus.PENDING
+                                DispatchQueueManager.buildQueueItem(
+                                    contact = c,
+                                    bubbles = bubbles,
+                                    defaultCompany = companyVal,
+                                    defaultCustom1 = custom1Val,
+                                    nodeUsed = if (idx % 2 == 0) AccountNode.PERSONAL else AccountNode.BUSINESS
                                 )
                             }
-                            DispatchQueueManager.getInstance().enqueueBroadcast(queueItems, context)
+                            val formattedDate = java.text.SimpleDateFormat("dd MMM HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+                            DispatchQueueManager.getInstance().enqueueBroadcast(
+                                items = queueItems,
+                                context = context,
+                                campaignTitle = "Broadcast $formattedDate"
+                            )
                             currentTab = ScreenTab.QUEUE
                         }
                     )

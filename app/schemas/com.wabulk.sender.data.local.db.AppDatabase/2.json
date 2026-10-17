@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "4dcdcca55f478395c7662796eef2075e",
+    "identityHash": "423f210859a6cefa6ef89c3ebdc33a79",
     "entities": [
       {
         "tableName": "contacts",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `system_lookup_key` TEXT NOT NULL, `raw_name` TEXT NOT NULL, `phone_number` TEXT NOT NULL, `custom_nickname` TEXT NOT NULL, `tags_json` TEXT NOT NULL, `is_selected` INTEGER NOT NULL, `last_synced_at` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `system_lookup_key` TEXT NOT NULL, `raw_name` TEXT NOT NULL, `phone_number` TEXT NOT NULL, `custom_nickname` TEXT NOT NULL, `company` TEXT NOT NULL DEFAULT '', `custom1` TEXT NOT NULL DEFAULT '', `tags_json` TEXT NOT NULL, `is_selected` INTEGER NOT NULL, `last_synced_at` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -37,6 +37,20 @@
             "columnName": "custom_nickname",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "company",
+            "columnName": "company",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "custom1",
+            "columnName": "custom1",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
           },
           {
             "fieldPath": "tagsJson",
@@ -283,7 +297,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4dcdcca55f478395c7662796eef2075e')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '423f210859a6cefa6ef89c3ebdc33a79')"
     ]
   }
 }

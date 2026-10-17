@@ -331,6 +331,35 @@ class BaileysBridgeTest {
     }
 
     @Test
+    fun `BaileysBridgeClient defaults fallbackOnException to false and reports gateway HTTP error without masking`() = runBlocking {
+        val errorHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request()
+                Response.Builder()
+                    .request(request)
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(502)
+                    .message("Bad Gateway")
+                    .body("""{"error":"Baileys socket session closed by remote"}""".toResponseBody("application/json".toMediaType()))
+                    .build()
+            }
+            .build()
+
+        val config = BaileysConfig(gatewayUrl = "http://10.0.2.2:3000", isEnabled = true)
+        val client = BaileysBridgeClient(
+            node = testNode,
+            configProvider = { config },
+            httpClient = errorHttpClient
+        )
+
+        assertFalse("fallbackOnException must default to false", client.fallbackOnException)
+
+        val sendResult = client.sendMessage("+628123456789", "Gateway error message")
+        assertFalse(sendResult.isSuccess)
+        assertEquals("Baileys socket session closed by remote", sendResult.errorMessage)
+    }
+
+    @Test
     fun `WhatsAppSessionManager resolves BaileysBridgeClient when enabled and Simulated when disabled`() {
         val sessionManager = WhatsAppSessionManager()
 

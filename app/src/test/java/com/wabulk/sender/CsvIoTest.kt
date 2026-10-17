@@ -357,4 +357,23 @@ class CsvIoTest {
         assertEquals("Murat Kaya", contact.rawName)
         assertEquals("+905551234567", contact.phoneNumber)
     }
+
+    @Test
+    fun `toContactEntity preserves company and custom1 fields`() {
+        val parsed = ParsedContact(
+            rawName = "Alice Smith",
+            phoneNumber = "+15550100",
+            customNickname = "Ali",
+            company = "Acme Corp",
+            custom1 = "VIP2026",
+            tags = listOf("leads", "vip")
+        )
+        val entity = parsed.toContactEntity()
+        assertEquals("Alice Smith", entity.rawName)
+        assertEquals("+15550100", entity.phoneNumber)
+        assertEquals("Ali", entity.customNickname)
+        assertEquals("Acme Corp", entity.company)
+        assertEquals("VIP2026", entity.custom1)
+        assertEquals("[\"leads\",\"vip\"]", entity.tagsJson)
+    }
 }
