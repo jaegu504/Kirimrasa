@@ -1,5 +1,9 @@
 package com.wabulk.sender.ui.screens.composer
 
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -56,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -92,6 +97,7 @@ fun ComposerScreen(
     val strings = LocalAppStrings.current
     val uiState by viewModel.uiState.collectAsState()
     val attachments by viewModel.attachments.collectAsState()
+    val context = LocalContext.current
     var showHelpDialog by remember { mutableStateOf(false) }
 
     var sampleMediaIndex by remember { mutableIntStateOf(0) }
@@ -116,6 +122,56 @@ fun ComposerScreen(
                 sizeBytes = 348160L
             )
         )
+    }
+
+    val mediaPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                var fileName = "lampiran_${System.currentTimeMillis()}"
+                var fileSize = 0L
+
+                context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+                    if (cursor.moveToFirst()) {
+                        if (nameIndex != -1) {
+                            fileName = cursor.getString(nameIndex) ?: fileName
+                        }
+                        if (sizeIndex != -1) {
+                            fileSize = cursor.getLong(sizeIndex)
+                        }
+                    }
+                }
+
+                val mimeType = context.contentResolver.getType(uri) ?: when {
+                    fileName.endsWith(".jpg", true) || fileName.endsWith(".jpeg", true) -> "image/jpeg"
+                    fileName.endsWith(".png", true) -> "image/png"
+                    fileName.endsWith(".webp", true) -> "image/webp"
+                    fileName.endsWith(".mp4", true) -> "video/mp4"
+                    fileName.endsWith(".pdf", true) -> "application/pdf"
+                    else -> "application/octet-stream"
+                }
+
+                val attachment = MediaAttachment(
+                    id = java.util.UUID.randomUUID().toString(),
+                    uriString = uri.toString(),
+                    fileName = fileName,
+                    mimeType = mimeType,
+                    sizeBytes = fileSize
+                )
+                viewModel.addAttachment(attachment)
+            } catch (_: Exception) {
+                val nextAttachment = sampleMediaPool[sampleMediaIndex % sampleMediaPool.size]
+                sampleMediaIndex++
+                viewModel.addAttachment(nextAttachment.copy(id = java.util.UUID.randomUUID().toString()))
+            }
+        } else {
+            val nextAttachment = sampleMediaPool[sampleMediaIndex % sampleMediaPool.size]
+            sampleMediaIndex++
+            viewModel.addAttachment(nextAttachment.copy(id = java.util.UUID.randomUUID().toString()))
+        }
     }
 
     // Seed default sample attachments on initial composition
@@ -331,9 +387,13 @@ fun ComposerScreen(
         MediaCarousel(
             attachments = attachments,
             onAddAttachment = {
-                val nextAttachment = sampleMediaPool[sampleMediaIndex % sampleMediaPool.size]
-                sampleMediaIndex++
-                viewModel.addAttachment(nextAttachment.copy(id = java.util.UUID.randomUUID().toString()))
+                try {
+                    mediaPickerLauncher.launch("*/*")
+                } catch (_: Exception) {
+                    val nextAttachment = sampleMediaPool[sampleMediaIndex % sampleMediaPool.size]
+                    sampleMediaIndex++
+                    viewModel.addAttachment(nextAttachment.copy(id = java.util.UUID.randomUUID().toString()))
+                }
             },
             onRemoveAttachment = { viewModel.removeAttachment(it) }
         )

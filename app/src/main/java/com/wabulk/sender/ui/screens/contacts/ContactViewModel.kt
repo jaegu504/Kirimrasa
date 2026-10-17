@@ -3,11 +3,14 @@ package com.wabulk.sender.ui.screens.contacts
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.wabulk.sender.data.io.CsvContactParser
+import com.wabulk.sender.data.io.CsvParseResult
 import com.wabulk.sender.data.local.db.AppDatabase
 import com.wabulk.sender.data.local.db.ContactEntity
 import com.wabulk.sender.data.local.db.TagEntity
 import com.wabulk.sender.data.repository.ContactRepository
 import com.wabulk.sender.data.sync.ContactSyncEngine
+import java.io.InputStream
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -154,6 +157,58 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
                 _isSyncing.value = false
             }
         }
+    }
+
+    fun importContactsFromCsv(csvText: String): CsvParseResult {
+        val result = CsvContactParser.parseCsv(csvText)
+        if (result is CsvParseResult.Success) {
+            viewModelScope.launch {
+                val entities = result.contacts
+                    .distinctBy { it.phoneNumber }
+                    .map { it.toContactEntity() }
+                db.contactDao().insertAll(entities)
+
+                result.contacts.flatMap { it.tags }.distinct().forEach { tag ->
+                    if (tag.isNotBlank()) {
+                        repository.createTag(tag)
+                    }
+                }
+                _lastSyncResult.value = "+${result.contacts.size} diimpor dari CSV"
+            }
+        }
+        return result
+    }
+
+    fun importContactsFromStream(inputStream: InputStream): CsvParseResult {
+        val result = CsvContactParser.parseCsv(inputStream)
+        if (result is CsvParseResult.Success) {
+            viewModelScope.launch {
+                val entities = result.contacts
+                    .distinctBy { it.phoneNumber }
+                    .map { it.toContactEntity() }
+                db.contactDao().insertAll(entities)
+
+                result.contacts.flatMap { it.tags }.distinct().forEach { tag ->
+                    if (tag.isNotBlank()) {
+                        repository.createTag(tag)
+                    }
+                }
+                _lastSyncResult.value = "+${result.contacts.size} diimpor dari CSV"
+            }
+        }
+        return result
+    }
+
+    fun importSampleCsv(): CsvParseResult {
+        val sampleCsv = """
+            Nama,No Telepon,Panggilan,Perusahaan,Custom_1,Tag
+            Budi Santoso,+6281234567801,Budi,PT Maju Jaya,DISKON50,VIP
+            Siti Nurhaliza,+6281234567802,Siti,Karya Abadi,FREEONGKIR,Bisnis
+            Ahmad Fauzi,+6281234567803,Ahmad,Fauzi Tech,CASHBACK10,Klien
+            Dewi Lestari,+6281234567804,Dewi,Bintang Mulia,MEMBERVIP,Keluarga
+            Eko Prasetyo,+6281234567805,Eko,Prasetyo Store,HEMAT20,Teman
+        """.trimIndent()
+        return importContactsFromCsv(sampleCsv)
     }
 
     // Seed default tags if empty

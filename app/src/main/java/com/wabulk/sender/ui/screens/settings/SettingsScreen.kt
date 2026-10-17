@@ -18,12 +18,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Link
@@ -45,12 +48,15 @@ import androidx.compose.material.icons.filled.Timelapse
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -111,6 +117,9 @@ fun SettingsScreen(
     val pauseDurationMin by viewModel.pauseDurationMin.collectAsState()
     val batchSizeMsgs by viewModel.batchSizeMsgs.collectAsState()
     val selectedAiTone by viewModel.selectedAiTone.collectAsState()
+    val baileysConfig by viewModel.baileysConfig.collectAsState()
+    val gatewayTestResult by viewModel.gatewayTestResult.collectAsState()
+    val isTestingGateway by viewModel.isTestingGateway.collectAsState()
 
     var pingState by remember { mutableStateOf<String?>(null) }
     var codeCopiedState by remember { mutableStateOf(false) }
@@ -801,6 +810,244 @@ fun SettingsScreen(
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Icon(imageVector = Icons.Default.LinkOff, contentDescription = null, tint = StatusError, modifier = Modifier.size(14.dp))
                             Text(text = "Putuskan Node 2", color = StatusError, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Baileys Bridge Gateway Configuration Card
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(EmeraldDarkSurfaceLowest)
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Header: Title + Toggle Switch
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .background(if (baileysConfig.isEnabled) EmeraldPrimary.copy(alpha = 0.15f) else EmeraldDarkSurfaceHigh),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Dns,
+                            contentDescription = null,
+                            tint = if (baileysConfig.isEnabled) EmeraldPrimary else TextMutedBody,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = "Baileys Bridge Gateway",
+                                color = TextCrispPrimary,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(if (baileysConfig.isEnabled) EmeraldSecondaryContainer.copy(alpha = 0.4f) else EmeraldDarkSurfaceHigh)
+                                    .padding(horizontal = 4.dp, vertical = 1.dp)
+                            ) {
+                                Text(
+                                    text = if (baileysConfig.isEnabled) "AKTIF" else "NONAKTIF",
+                                    color = if (baileysConfig.isEnabled) EmeraldSecondary else TextMutedBody,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        Text(
+                            text = "Gateway multi-device tanpa scan berulang",
+                            color = TextMutedBody,
+                            fontSize = 10.sp
+                        )
+                    }
+                }
+
+                Switch(
+                    checked = baileysConfig.isEnabled,
+                    onCheckedChange = { viewModel.toggleBaileysEnabled(it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = EmeraldPrimary,
+                        uncheckedThumbColor = TextMutedBody,
+                        uncheckedTrackColor = EmeraldDarkSurfaceHigh
+                    )
+                )
+            }
+
+            // Description text
+            Text(
+                text = "Gunakan gateway server Node.js Baileys lokal atau remote untuk pengiriman pesan massal berkecepatan tinggi dengan multi-device protocol.",
+                color = TextMutedBody,
+                fontSize = 11.sp,
+                lineHeight = 15.sp
+            )
+
+            // URL Gateway Input
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "URL GATEWAY",
+                    color = TextCrispPrimary,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                )
+                BasicTextField(
+                    value = baileysConfig.gatewayUrl,
+                    onValueChange = { viewModel.updateGatewayUrl(it) },
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        color = TextCrispPrimary,
+                        fontSize = 12.sp,
+                        fontFamily = FontFamily.Monospace
+                    ),
+                    cursorBrush = SolidColor(EmeraldPrimary),
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(EmeraldDarkSurfaceLow)
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (baileysConfig.gatewayUrl.isEmpty()) {
+                                Text(
+                                    text = "http://10.0.2.2:3000",
+                                    color = TextSubduedTertiary,
+                                    fontSize = 12.sp,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+            }
+
+            // API Key Input
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "API KEY (OPSIONAL)",
+                    color = TextCrispPrimary,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
+                )
+                BasicTextField(
+                    value = baileysConfig.apiKey,
+                    onValueChange = { viewModel.updateApiKey(it) },
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        color = TextCrispPrimary,
+                        fontSize = 12.sp,
+                        fontFamily = FontFamily.Monospace
+                    ),
+                    cursorBrush = SolidColor(EmeraldPrimary),
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(EmeraldDarkSurfaceLow)
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (baileysConfig.apiKey.isEmpty()) {
+                                Text(
+                                    text = "Bearer token atau secret key (kosongkan jika tanpa auth)",
+                                    color = TextSubduedTertiary,
+                                    fontSize = 12.sp
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+            }
+
+            // Action: Test Gateway Connection Button & Result Pill
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(EmeraldDarkSurfaceHigh)
+                        .springClickable { viewModel.testGatewayConnection() }
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        if (isTestingGateway) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(13.dp),
+                                color = EmeraldPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Sensors,
+                                contentDescription = null,
+                                tint = EmeraldPrimary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                        Text(
+                            text = if (isTestingGateway) "Menguji..." else "Uji Koneksi Gateway",
+                            color = TextCrispPrimary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                // Result Pill
+                if (gatewayTestResult != null) {
+                    val isSuccess = gatewayTestResult!!.isSuccess
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(if (isSuccess) EmeraldPrimaryContainer else StatusErrorContainer)
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isSuccess) Icons.Default.Check else Icons.Default.Close,
+                                contentDescription = null,
+                                tint = if (isSuccess) EmeraldOnPrimaryContainer else StatusError,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                text = if (isSuccess) "Terhubung (${gatewayTestResult!!.latencyMs}ms)" else "Gagal (${gatewayTestResult!!.message})",
+                                color = if (isSuccess) EmeraldOnPrimaryContainer else StatusError,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }

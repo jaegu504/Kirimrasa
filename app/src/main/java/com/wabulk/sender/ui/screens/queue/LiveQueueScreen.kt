@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayCircle
@@ -43,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -78,6 +80,7 @@ fun LiveQueueScreen(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val context = LocalContext.current
     val items by viewModel.filteredItems.collectAsState()
     val isPaused by viewModel.isPaused.collectAsState()
     val isRunning by viewModel.isRunning.collectAsState()
@@ -486,6 +489,35 @@ fun LiveQueueScreen(
                             fontWeight = FontWeight.Bold
                         )
                     }
+                }
+            }
+
+            // Ekspor Laporan CSV Button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(EmeraldDarkSurfaceHigh)
+                    .springClickable { viewModel.exportCampaignReport(context) },
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FileDownload,
+                        contentDescription = null,
+                        tint = EmeraldPrimary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Ekspor Laporan CSV",
+                        color = EmeraldPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }

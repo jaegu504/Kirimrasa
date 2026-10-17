@@ -8,18 +8,33 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.wabulk.sender.domain.model.AccountNode
+import com.wabulk.sender.engine.PingResult
 import com.wabulk.sender.engine.WhatsAppSessionManager
+import com.wabulk.sender.engine.baileys.BaileysBridgeClient
+import com.wabulk.sender.engine.baileys.BaileysConfig
+import com.wabulk.sender.engine.baileys.BaileysConfigManager
 import com.wabulk.sender.engine.model.NodeSession
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
     val sessionManager = WhatsAppSessionManager.getInstance()
     val node1Session: StateFlow<NodeSession> = sessionManager.node1Session
     val node2Session: StateFlow<NodeSession> = sessionManager.node2Session
+
+    // Baileys Bridge Gateway configuration
+    val baileysConfig: StateFlow<BaileysConfig> = BaileysConfigManager.config
+
+    private val _gatewayTestResult = MutableStateFlow<PingResult?>(null)
+    val gatewayTestResult: StateFlow<PingResult?> = _gatewayTestResult.asStateFlow()
+
+    private val _isTestingGateway = MutableStateFlow(false)
+    val isTestingGateway: StateFlow<Boolean> = _isTestingGateway.asStateFlow()
 
     // Anti-ban settings state
     private val _selectedPreset = MutableStateFlow(1) // 0: Conservative, 1: Optimal, 2: Turbo
@@ -70,6 +85,42 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun selectAiTone(toneIndex: Int) {
         _selectedAiTone.value = toneIndex
+    }
+
+    fun updateGatewayUrl(url: String) {
+        BaileysConfigManager.setGatewayUrl(url)
+    }
+
+    fun updateApiKey(key: String) {
+        BaileysConfigManager.setApiKey(key)
+    }
+
+    fun toggleBaileysEnabled(enabled: Boolean) {
+        BaileysConfigManager.setEnabled(enabled)
+    }
+
+    fun testGatewayConnection() {
+        viewModelScope.launch {
+            _isTestingGateway.value = true
+            _gatewayTestResult.value = null
+            try {
+                val client = BaileysBridgeClient(
+                    node = node1Session.value,
+                    configProvider = { BaileysConfigManager.config.value.copy(isEnabled = true) },
+                    fallbackOnException = false
+                )
+                val result = client.ping()
+                _gatewayTestResult.value = result
+            } catch (e: Exception) {
+                _gatewayTestResult.value = PingResult(
+                    isSuccess = false,
+                    latencyMs = 0L,
+                    message = e.message ?: "Koneksi gateway gagal"
+                )
+            } finally {
+                _isTestingGateway.value = false
+            }
+        }
     }
 
     fun requestNewPairingCode(node: AccountNode): String {

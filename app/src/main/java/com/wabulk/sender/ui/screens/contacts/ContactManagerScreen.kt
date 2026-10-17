@@ -1,5 +1,8 @@
 package com.wabulk.sender.ui.screens.contacts
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,9 +35,11 @@ import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -91,6 +97,7 @@ fun ContactManagerScreen(
     val lastSyncResult by viewModel.lastSyncResult.collectAsState()
 
     var showNewTagDialog by remember { mutableStateOf(false) }
+    var showImportCsvDialog by remember { mutableStateOf(false) }
     var contactForTagManagement by remember { mutableStateOf<ContactEntity?>(null) }
 
     LaunchedEffect(Unit) {
@@ -132,34 +139,64 @@ fun ContactManagerScreen(
                 )
             }
 
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(EmeraldDarkSurfaceHigh)
-                    .springClickable { viewModel.syncContacts() }
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (isSyncing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(14.dp),
-                            color = EmeraldPrimary,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
+                // Impor CSV Button
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(EmeraldDarkSurfaceHigh)
+                        .springClickable { showImportCsvDialog = true }
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         Icon(
-                            imageVector = Icons.Default.Sync,
+                            imageVector = Icons.Default.FileUpload,
                             contentDescription = null,
                             tint = EmeraldPrimary,
                             modifier = Modifier.size(14.dp)
                         )
+                        Text(
+                            text = "Impor CSV",
+                            color = EmeraldPrimary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
-                    Text(
-                        text = if (isSyncing) "Syncing..." else strings.contactsSyncBtn,
-                        color = EmeraldPrimary,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                }
+
+                // Sync Button
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(EmeraldDarkSurfaceHigh)
+                        .springClickable { viewModel.syncContacts() }
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (isSyncing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(14.dp),
+                                color = EmeraldPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Sync,
+                                contentDescription = null,
+                                tint = EmeraldPrimary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                        Text(
+                            text = if (isSyncing) "Syncing..." else strings.contactsSyncBtn,
+                            color = EmeraldPrimary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
         }
@@ -385,6 +422,15 @@ fun ContactManagerScreen(
                         viewModel.addTagToContact(liveContact.id, trimmed)
                     }
                 }
+            )
+        }
+
+        // Dialog Impor CSV Kontak
+        if (showImportCsvDialog) {
+            ImportCsvDialog(
+                onDismiss = { showImportCsvDialog = false },
+                onImportFile = { stream -> viewModel.importContactsFromStream(stream) },
+                onImportSample = { viewModel.importSampleCsv() }
             )
         }
     }
@@ -923,4 +969,202 @@ private fun ManageContactTagsDialog(
         }
     }
 }
+
+@Composable
+private fun ImportCsvDialog(
+    onDismiss: () -> Unit,
+    onImportFile: (java.io.InputStream) -> com.wabulk.sender.data.io.CsvParseResult,
+    onImportSample: () -> com.wabulk.sender.data.io.CsvParseResult
+) {
+    val context = LocalContext.current
+    var lastImportStatus by remember { mutableStateOf<String?>(null) }
+    var isSuccess by remember { mutableStateOf(false) }
+
+    val csvPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    when (val result = onImportFile(stream)) {
+                        is com.wabulk.sender.data.io.CsvParseResult.Success -> {
+                            isSuccess = true
+                            lastImportStatus = "Berhasil mengimpor ${result.contacts.size} kontak (${result.rowCount} baris dibaca, ${result.skippedCount} dilewati)"
+                        }
+                        is com.wabulk.sender.data.io.CsvParseResult.Error -> {
+                            isSuccess = false
+                            lastImportStatus = "Gagal: ${result.message}"
+                        }
+                    }
+                } ?: run {
+                    isSuccess = false
+                    lastImportStatus = "Gagal membuka file CSV"
+                }
+            } catch (e: Exception) {
+                isSuccess = false
+                lastImportStatus = "Error: ${e.message}"
+            }
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .background(EmeraldDarkSurfaceContainer)
+                .padding(20.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Impor Kontak CSV",
+                            color = TextCrispPrimary,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Pilih file CSV atau muat contoh instan",
+                            color = TextMutedBody,
+                            fontSize = 11.sp
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(EmeraldDarkSurfaceHigh)
+                            .springClickable { onDismiss() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Cancel,
+                            contentDescription = "Tutup",
+                            tint = TextMutedBody,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                Text(
+                    text = "File CSV dapat memuat kolom: Nama, Nomor Telepon, Panggilan, Perusahaan, Custom_1, dan Tag. Pemisah koma (,) atau titik-koma (;) didukung otomatis.",
+                    color = TextMutedBody,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp
+                )
+
+                // Option 1: File Picker
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(EmeraldPrimaryContainer)
+                        .springClickable {
+                            csvPickerLauncher.launch("*/*")
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.UploadFile,
+                            contentDescription = null,
+                            tint = EmeraldOnPrimaryContainer,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "Pilih File CSV Perangkat",
+                            color = EmeraldOnPrimaryContainer,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                // Option 2: Sample CSV Loader
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(EmeraldDarkSurfaceHigh)
+                        .springClickable {
+                            val result = onImportSample()
+                            if (result is com.wabulk.sender.data.io.CsvParseResult.Success) {
+                                isSuccess = true
+                                lastImportStatus = "Berhasil mengimpor ${result.contacts.size} kontak contoh"
+                            } else if (result is com.wabulk.sender.data.io.CsvParseResult.Error) {
+                                isSuccess = false
+                                lastImportStatus = "Gagal: ${result.message}"
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoFixHigh,
+                            contentDescription = null,
+                            tint = EmeraldPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Muat Contoh CSV (5 Kontak Demo)",
+                            color = TextCrispPrimary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                // Status banner if present
+                if (lastImportStatus != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isSuccess) EmeraldPrimary.copy(alpha = 0.15f) else Color(0xFF381414))
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = lastImportStatus!!,
+                            color = if (isSuccess) EmeraldPrimary else Color(0xFFFFB4AB),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // Close Button
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(EmeraldDarkSurfaceLow)
+                        .springClickable { onDismiss() }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Tutup",
+                        color = TextCrispPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+    }
+}
+
 
