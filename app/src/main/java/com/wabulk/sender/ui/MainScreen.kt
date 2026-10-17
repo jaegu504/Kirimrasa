@@ -1,0 +1,282 @@
+package com.wabulk.sender.ui
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Translate
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.wabulk.sender.data.locale.AppLanguage
+import com.wabulk.sender.data.locale.LocalAppStrings
+import com.wabulk.sender.data.locale.LocalizationManager
+import com.wabulk.sender.theme.EmeraldDarkSurface
+import com.wabulk.sender.theme.EmeraldDarkSurfaceHigh
+import com.wabulk.sender.theme.EmeraldDarkSurfaceLow
+import com.wabulk.sender.theme.EmeraldPrimary
+import com.wabulk.sender.theme.TextCrispPrimary
+import com.wabulk.sender.theme.TextMutedBody
+import com.wabulk.sender.theme.pulseGlow
+import com.wabulk.sender.theme.springClickable
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.wabulk.sender.data.repository.ContactRepository
+import com.wabulk.sender.domain.model.AccountNode
+import com.wabulk.sender.domain.model.MessageBubble
+import com.wabulk.sender.domain.spintax.SpintaxParser
+import com.wabulk.sender.engine.queue.DispatchQueueManager
+import com.wabulk.sender.engine.queue.model.QueueItem
+import com.wabulk.sender.engine.queue.model.QueueTaskStatus
+import com.wabulk.sender.ui.navigation.EmeraldBottomNav
+import com.wabulk.sender.ui.navigation.ScreenTab
+import com.wabulk.sender.ui.screens.composer.ComposerScreen
+import com.wabulk.sender.ui.screens.composer.ComposerViewModel
+import com.wabulk.sender.ui.screens.contacts.ContactManagerScreen
+import com.wabulk.sender.ui.screens.contacts.ContactViewModel
+import com.wabulk.sender.ui.screens.queue.LiveQueueScreen
+import com.wabulk.sender.ui.screens.settings.SettingsScreen
+
+@Composable
+fun MainScreen(
+    localizationManager: LocalizationManager,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val currentLanguage by localizationManager.currentLanguage.collectAsState()
+    val strings = localizationManager.getStrings(currentLanguage)
+    var currentTab by remember { mutableStateOf(ScreenTab.COMPOSE) }
+    val contactViewModel: ContactViewModel = viewModel()
+    val composerViewModel: ComposerViewModel = viewModel()
+    val contacts by contactViewModel.contacts.collectAsState()
+    val selectedCount by contactViewModel.selectedCount.collectAsState()
+
+    CompositionLocalProvider(LocalAppStrings provides strings) {
+        Scaffold(
+            modifier = modifier
+                .fillMaxSize()
+                .background(EmeraldDarkSurface),
+            containerColor = EmeraldDarkSurface,
+            topBar = {
+                // Top App Header conforming to Stitch DESIGN.md
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(EmeraldDarkSurfaceLow.copy(alpha = 0.95f))
+                        .statusBarsPadding()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Left: Pulsing status dot + Screen Title
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .clip(CircleShape)
+                                    .background(EmeraldPrimary)
+                                    .pulseGlow()
+                            )
+
+                            Text(
+                                text = when (currentTab) {
+                                    ScreenTab.COMPOSE -> strings.navCompose.uppercase()
+                                    ScreenTab.CONTACTS -> strings.navContacts.uppercase()
+                                    ScreenTab.QUEUE -> strings.navQueue.uppercase()
+                                    ScreenTab.SETTINGS -> strings.navSettings.uppercase()
+                                },
+                                color = TextCrispPrimary,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+
+                        // Right: Quick Language Toggle Pill + Shield Icon + Avatar Monogram
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Quick Language Switcher pill in Top Bar
+                            Box(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(EmeraldDarkSurfaceHigh)
+                                    .springClickable {
+                                        val nextLang = if (currentLanguage == AppLanguage.INDONESIAN) {
+                                            AppLanguage.TURKISH
+                                        } else {
+                                            AppLanguage.INDONESIAN
+                                        }
+                                        localizationManager.setLanguage(nextLang)
+                                    }
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(text = currentLanguage.flagEmoji, fontSize = 12.sp)
+                                    Text(
+                                        text = currentLanguage.code.uppercase(),
+                                        color = EmeraldPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            // Shield (Quick link to Security Settings)
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .springClickable { currentTab = ScreenTab.SETTINGS },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Shield,
+                                    contentDescription = "Shield",
+                                    tint = TextMutedBody,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            // User Avatar (Quick link to Settings)
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(EmeraldPrimary)
+                                    .springClickable { currentTab = ScreenTab.SETTINGS },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Profile",
+                                    tint = Color(0xFF003915),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            bottomBar = {
+                EmeraldBottomNav(
+                    currentTab = currentTab,
+                    onTabSelected = { currentTab = it }
+                )
+            }
+        ) { innerPadding ->
+            // Screen content with Spring animated transition between tabs
+            AnimatedContent(
+                targetState = currentTab,
+                transitionSpec = {
+                    val springSpec = spring<Float>(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                    val direction = if (targetState.ordinal > initialState.ordinal) 1 else -1
+
+                    (slideInHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { width -> direction * width / 2 } +
+                            fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)))
+                        .togetherWith(
+                            slideOutHorizontally(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { width -> -direction * width / 2 } +
+                                    fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMediumLow))
+                        )
+                },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                label = "tabTransition"
+            ) { tab ->
+                when (tab) {
+                    ScreenTab.COMPOSE -> ComposerScreen(
+                        viewModel = composerViewModel,
+                        selectedContactCount = selectedCount,
+                        onLaunchCampaign = {
+                            val targetContacts = if (contacts.any { it.isSelected }) {
+                                contacts.filter { it.isSelected }
+                            } else {
+                                contacts.take(10)
+                            }
+                            val companyVal = composerViewModel.uiState.value.customVariables["Company"] ?: "KirimRasa"
+                            val custom1Val = composerViewModel.uiState.value.customVariables["Custom_1"] ?: "PROMO30"
+                            val bubbles = composerViewModel.uiState.value.bubbles.filter { it.text.isNotBlank() }.ifEmpty {
+                                listOf(MessageBubble(text = "Halo {Nickname}, penawaran spesial minggu ini dari {Company}! Gunakan kode {Custom_1}."))
+                            }
+                            val queueItems = targetContacts.mapIndexed { idx, c ->
+                                val nick = c.customNickname.ifEmpty { ContactRepository.extractSmartNickname(c.rawName) }
+                                val evaluatedBubbles = bubbles.map { b ->
+                                    SpintaxParser.interpolateVariables(
+                                        text = SpintaxParser.spin(b.text),
+                                        nickname = nick,
+                                        variables = mapOf("Company" to companyVal, "Custom_1" to custom1Val)
+                                    )
+                                }
+                                QueueItem(
+                                    contactId = c.id,
+                                    recipientName = c.rawName.replace(Regex("\\(.*?\\)"), "").trim(),
+                                    phoneNumber = c.phoneNumber,
+                                    bubbleTexts = evaluatedBubbles,
+                                    nodeUsed = if (idx % 2 == 0) AccountNode.PERSONAL else AccountNode.BUSINESS,
+                                    status = QueueTaskStatus.PENDING
+                                )
+                            }
+                            DispatchQueueManager.getInstance().enqueueBroadcast(queueItems, context)
+                            currentTab = ScreenTab.QUEUE
+                        }
+                    )
+                    ScreenTab.CONTACTS -> ContactManagerScreen(viewModel = contactViewModel)
+                    ScreenTab.QUEUE -> LiveQueueScreen()
+                    ScreenTab.SETTINGS -> SettingsScreen(
+                        currentLanguage = currentLanguage,
+                        onLanguageSelected = { localizationManager.setLanguage(it) }
+                    )
+                }
+            }
+        }
+    }
+}

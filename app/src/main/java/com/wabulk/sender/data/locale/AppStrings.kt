@@ -1,0 +1,413 @@
+package com.wabulk.sender.data.locale
+
+import androidx.compose.runtime.compositionLocalOf
+
+interface AppStrings {
+    // Navigation Tabs
+    val navCompose: String
+    val navContacts: String
+    val navQueue: String
+    val navSettings: String
+
+    // Top Header & Meta
+    val appTitle: String
+    val livePulseStatus: String
+    val antiBanLevel3: String
+    val campaignTagDraft: String
+
+    // Screen 1: Composer
+    val composerTitle: String
+    val composerAccountPersonal: String
+    val composerAccountBusiness: String
+    val composerAccountDual: String
+    val composerPrimaryNode: String
+    val composerMediaQueue: String
+    val composerAutoCompressed: String
+    val composerAttachedCount: (Int) -> String
+    val composerAttachButton: String
+    val composerSpintaxTitle: String
+    val composerSpintaxTapToInsert: String
+    val composerPlaceholder: String
+    val composerSpintaxValidated: String
+    val composerCharCount: (Int, Int) -> String
+    val composerAiRewriteBtn: String
+    val composerToneFriendly: String
+    val composerToneShorter: String
+    val composerToneMaxVariance: String
+    val composerLivePreviewTitle: String
+    val composerOnlinePreview: String
+    val composerDynamicJitterTitle: String
+    val composerSafeDelayRange: String
+    val composerJitterFast: String
+    val composerJitterMetaCompliant: String
+    val composerJitterRelaxed: String
+    val composerLaunchBtn: String
+    val composerLaunchContactsCount: (Int) -> String
+
+    // Screen 2: Contacts
+    val contactsTitle: String
+    val contactsSubtitle: String
+    val contactsSyncBtn: String
+    val contactsSyncedAgo: String
+    val contactsTotalMetric: String
+    val contactsSelectedMetric: String
+    val contactsNicknamesMetric: String
+    val contactsSearchPlaceholder: String
+    val contactsTagAll: (Int) -> String
+    val contactsTagFamily: (Int) -> String
+    val contactsTagFriends: (Int) -> String
+    val contactsTagBusiness: (Int) -> String
+    val contactsNewTagBtn: String
+    val contactsSelectAllInTag: (String, Int) -> String
+    val contactsBulkAssignTagBtn: String
+    val contactsCallNameLabel: String
+    val contactsGreetingPreview: (String) -> String
+    val contactsQuickFormat: String
+    val contactsFormatFirstName: String
+    val contactsFormatRemoveNotes: String
+    val contactsFormatAddHello: String
+
+    // Screen 3: Queue
+    val queueTitle: String
+    val queueCampaignName: String
+    val queueMsgPerMin: String
+    val queueDualNodeActive: String
+    val queueSafeBadge: String
+    val queueSentCount: (Int, Int) -> String
+    val queueCompletePercentage: (Int) -> String
+    val queueRecipientsRemaining: (Int) -> String
+    val queueEstTimeLeft: String
+    val queueWaitingJitter: (Int) -> String
+    val queueTypingCadenceActive: String
+    val queueMetricSuccess: String
+    val queueMetricAvgDelay: String
+    val queueMetricFlagAlert: String
+    val queuePauseBtn: String
+    val queueStopBtn: String
+    val queueFilterAll: String
+    val queueFilterActive: String
+    val queueFilterDelivered: String
+    val queueFilterPending: String
+
+    // Screen 4: Settings & Safety
+    val settingsTitle: String
+    val settingsSubtitle: String
+    val settingsShieldActive: String
+    val settingsGuardrailVersion: String
+    val settingsEnginesTitle: String
+    val settingsEnginesCount: String
+    val settingsNode1Title: String
+    val settingsNode1NodeNum: String
+    val settingsConnected: String
+    val settingsUptime: String
+    val settingsHealth: String
+    val settingsTestPingBtn: String
+    val settingsPinging: String
+    val settingsPongResult: String
+    val settingsDisconnectBtn: String
+    val settingsNode2Title: String
+    val settingsNode2NodeNum: String
+    val settingsPairingReady: String
+    val settingsPairingDescription: String
+    val settingsExpiresIn: String
+    val settingsCopyOpenBtn: String
+    val settingsCodeCopied: String
+    val settingsSwitchToQr: String
+    val settingsAntiBanTitle: String
+    val settingsRecommended: String
+    val settingsJitterTitle: String
+    val settingsJitterSubtitle: String
+    val settingsPresetConservative: String
+    val settingsPresetOptimal: String
+    val settingsPresetTurbo: String
+    val settingsTypingSimTitle: String
+    val settingsTypingSimSubtitle: String
+    val settingsAutoRotateTitle: String
+    val settingsAutoRotateSubtitle: String
+    val settingsAutoRotatePattern: String
+    val settingsCooldownTitle: String
+    val settingsCooldownSubtitle: String
+    val settingsPauseDuration: String
+    val settingsBatchSize: String
+    val settingsCooldownNotice: (Int) -> String
+    val settingsAiToneTitle: String
+    val settingsSpintaxEngineTag: String
+    val settingsToneCasual: String
+    val settingsToneFriendlyPicker: String
+    val settingsToneFormal: String
+    val settingsAiToneDesc: String
+    val settingsLanguageTitle: String
+    val settingsLanguageSubtitle: String
+    val settingsSelectIndonesian: String
+    val settingsSelectTurkish: String
+}
+
+object IndonesianStrings : AppStrings {
+    override val navCompose = "Buat Pesan"
+    override val navContacts = "Kontak"
+    override val navQueue = "Antrean"
+    override val navSettings = "Pengaturan"
+
+    override val appTitle = "WhatsApp Bulk"
+    override val livePulseStatus = "Aktif"
+    override val antiBanLevel3 = "Anti-Ban: Level 3"
+    override val campaignTagDraft = "#104 • Draf"
+
+    override val composerTitle = "Peracik Pesan"
+    override val composerAccountPersonal = "WA Personal"
+    override val composerAccountBusiness = "WA Bisnis"
+    override val composerAccountDual = "Sinkron Ganda"
+    override val composerPrimaryNode = "(Node Utama)"
+    override val composerMediaQueue = "Antrean Media"
+    override val composerAutoCompressed = "(Kompres Otomatis)"
+    override val composerAttachedCount = { count: Int -> "$count Terlampir" }
+    override val composerAttachButton = "+ Lampirkan"
+    override val composerSpintaxTitle = "Variabel Dinamis Spintax"
+    override val composerSpintaxTapToInsert = "Ketuk untuk menyisipkan"
+    override val composerPlaceholder = "Tulis pesan siaran personal dengan dukungan spintax..."
+    override val composerSpintaxValidated = "Spintax Tervalidasi"
+    override val composerCharCount = { chars: Int, segments: Int -> "$chars karakter • $segments Segmen WA" }
+    override val composerAiRewriteBtn = "Tulis Ulang AI & Anti-Spam Spin"
+    override val composerToneFriendly = "✨ Ramah"
+    override val composerToneShorter = "⚡ Ringkas"
+    override val composerToneMaxVariance = "🛡️ Variasi Maks"
+    override val composerLivePreviewTitle = "PRATINJAU LANGSUNG"
+    override val composerOnlinePreview = "Pratinjau Online"
+    override val composerDynamicJitterTitle = "Jeda Acak Dinamis"
+    override val composerSafeDelayRange = "Jeda Aman: 25s - 60s"
+    override val composerJitterFast = "Cepat (Agresif)"
+    override val composerJitterMetaCompliant = "Sesuai Standar • Waktu Acak"
+    override val composerJitterRelaxed = "Santai"
+    override val composerLaunchBtn = "Mulai Kirim Massal"
+    override val composerLaunchContactsCount = { count: Int -> "$count Kontak" }
+
+    override val contactsTitle = "Pengelola Kontak"
+    override val contactsSubtitle = "Sinkronisasi Buku Telepon & Personalisasi"
+    override val contactsSyncBtn = "Sinkron"
+    override val contactsSyncedAgo = "2m lalu"
+    override val contactsTotalMetric = "Total"
+    override val contactsSelectedMetric = "Dipilih"
+    override val contactsNicknamesMetric = "Panggilan"
+    override val contactsSearchPlaceholder = "Cari nama, nomor, atau tag..."
+    override val contactsTagAll = { count: Int -> "Semua ($count)" }
+    override val contactsTagFamily = { count: Int -> "Keluarga ($count)" }
+    override val contactsTagFriends = { count: Int -> "Teman ($count)" }
+    override val contactsTagBusiness = { count: Int -> "Bisnis ($count)" }
+    override val contactsNewTagBtn = "Tag Baru"
+    override val contactsSelectAllInTag = { tag: String, count: Int -> "Pilih Semua di $tag ($count)" }
+    override val contactsBulkAssignTagBtn = "Tetapkan Tag Massal"
+    override val contactsCallNameLabel = "Nama Panggilan Sapaan / Call Name"
+    override val contactsGreetingPreview = { name: String -> "Pratinjau: \"Hai $name! 👋\"" }
+    override val contactsQuickFormat = "Format cepat:"
+    override val contactsFormatFirstName = "Nama depan saja"
+    override val contactsFormatRemoveNotes = "Hapus catatan kontak"
+    override val contactsFormatAddHello = "+ Hai / Halo"
+
+    override val queueTitle = "Antrean Pengiriman Langsung"
+    override val queueCampaignName = "Kampanye #104: Promosi Musiman"
+    override val queueMsgPerMin = "1.2 pesan/mnt"
+    override val queueDualNodeActive = "Node WA Ganda • Sinkron Aktif"
+    override val queueSafeBadge = "Aman Lvl 3"
+    override val queueSentCount = { sent: Int, total: Int -> "$sent / $total Terkirim" }
+    override val queueCompletePercentage = { pct: Int -> "$pct% Selesai" }
+    override val queueRecipientsRemaining = { count: Int -> "$count Penerima Tersisa" }
+    override val queueEstTimeLeft = "Est. 14m 10s tersisa"
+    override val queueWaitingJitter = { sec: Int -> "Menunggu jeda anti-ban: ${sec}s" }
+    override val queueTypingCadenceActive = "Ritme mengetik manusiawi aktif"
+    override val queueMetricSuccess = "Berhasil"
+    override val queueMetricAvgDelay = "Rata Jeda"
+    override val queueMetricFlagAlert = "Peringatan"
+    override val queuePauseBtn = "Jeda Antrean"
+    override val queueStopBtn = "Hentikan Kiriman"
+    override val queueFilterAll = "Semua"
+    override val queueFilterActive = "Aktif"
+    override val queueFilterDelivered = "Terkirim"
+    override val queueFilterPending = "Menunggu"
+
+    override val settingsTitle = "Pengaturan & Keamanan Akun"
+    override val settingsSubtitle = "Algoritma anti-ban, perutean multi-node & ritme manusiawi"
+    override val settingsShieldActive = "Perlindungan Level 3 Aktif"
+    override val settingsGuardrailVersion = "Guardrail v4.2"
+    override val settingsEnginesTitle = "Mesin Terhubung"
+    override val settingsEnginesCount = "2 Node Terkonfigurasi"
+    override val settingsNode1Title = "WhatsApp Personal"
+    override val settingsNode1NodeNum = "Node #1"
+    override val settingsConnected = "Terhubung"
+    override val settingsUptime = "Waktu Aktif:"
+    override val settingsHealth = "Kesehatan:"
+    override val settingsTestPingBtn = "Uji Ping"
+    override val settingsPinging = "Menguji Ping (18ms)..."
+    override val settingsPongResult = "Pong! 18ms"
+    override val settingsDisconnectBtn = "Putuskan"
+    override val settingsNode2Title = "WhatsApp Business"
+    override val settingsNode2NodeNum = "Node #2"
+    override val settingsPairingReady = "Siap Ditautkan"
+    override val settingsPairingDescription = "Tautkan di ponsel yang sama ini secara instan tanpa perlu layar kedua atau pindai QR."
+    override val settingsExpiresIn = "Kedaluwarsa dalam"
+    override val settingsCopyOpenBtn = "Salin Kode & Buka WhatsApp"
+    override val settingsCodeCopied = "Kode Disalin ke Clipboard!"
+    override val settingsSwitchToQr = "Atau beralih ke pindai QR biasa"
+    override val settingsAntiBanTitle = "Humanizer Anti-Ban"
+    override val settingsRecommended = "Disarankan"
+    override val settingsJitterTitle = "Rentang Jeda Acak (Jitter)"
+    override val settingsJitterSubtitle = "Jeda manusia organik di antara paket keluar"
+    override val settingsPresetConservative = "Konservatif (35-75s)"
+    override val settingsPresetOptimal = "Optimal (25-65s)"
+    override val settingsPresetTurbo = "Turbo (15-30s)"
+    override val settingsTypingSimTitle = "Simulasi Indikator Mengetik"
+    override val settingsTypingSimSubtitle = "Memancarkan status mengetik WhatsApp sebelum kirim"
+    override val settingsAutoRotateTitle = "Rotasi Otomatis Mesin"
+    override val settingsAutoRotateSubtitle = "Membagi beban pengiriman secara merata antar node (50/50)"
+    override val settingsAutoRotatePattern = "Pola aktif: Bergantian Node #1 ➔ Node #2"
+    override val settingsCooldownTitle = "Jeda Istirahat Kelompok (Cooldown)"
+    override val settingsCooldownSubtitle = "Siklus henti berkala untuk menghindari heuristik deteksi spam"
+    override val settingsPauseDuration = "Durasi Istirahat"
+    override val settingsBatchSize = "Ukuran Tiap Kelompok"
+    override val settingsCooldownNotice = { count: Int -> "Mesin otomatis beristirahat tiap $count pengiriman keluar" }
+    override val settingsAiToneTitle = "Nada Bawaan Tulis Ulang AI"
+    override val settingsSpintaxEngineTag = "Mesin Spintax"
+    override val settingsToneCasual = "Santai"
+    override val settingsToneFriendlyPicker = "Ramah"
+    override val settingsToneFormal = "Formal"
+    override val settingsAiToneDesc = "Digunakan saat pemutaran pesan satu ketukan untuk menghasilkan variasi kalimat yang lolos ambang batas anti-spam WhatsApp."
+    override val settingsLanguageTitle = "Bahasa Aplikasi (Dil Seçimi)"
+    override val settingsLanguageSubtitle = "Ganti bahasa antarmuka secara instan"
+    override val settingsSelectIndonesian = "Bahasa Indonesia"
+    override val settingsSelectTurkish = "Türkçe"
+}
+
+object TurkishStrings : AppStrings {
+    override val navCompose = "Mesaj Oluştur"
+    override val navContacts = "Kişiler"
+    override val navQueue = "Kuyruk"
+    override val navSettings = "Ayarlar"
+
+    override val appTitle = "WhatsApp Bulk"
+    override val livePulseStatus = "Aktif"
+    override val antiBanLevel3 = "Anti-Ban: Seviye 3"
+    override val campaignTagDraft = "#104 • Taslak"
+
+    override val composerTitle = "Kampanya Oluşturucu"
+    override val composerAccountPersonal = "WA Bireysel"
+    override val composerAccountBusiness = "WA İşletme"
+    override val composerAccountDual = "Çift Senkron"
+    override val composerPrimaryNode = "(Birincil Düğüm)"
+    override val composerMediaQueue = "Medya Kuyruğu"
+    override val composerAutoCompressed = "(Otomatik Sıkıştırma)"
+    override val composerAttachedCount = { count: Int -> "$count Eklendi" }
+    override val composerAttachButton = "+ Ekle"
+    override val composerSpintaxTitle = "Spintax Dinamik Değişkenleri"
+    override val composerSpintaxTapToInsert = "Eklemek için dokunun"
+    override val composerPlaceholder = "Spintax destekli kişiselleştirilmiş toplu mesajınızı yazın..."
+    override val composerSpintaxValidated = "Spintax Doğrulandı"
+    override val composerCharCount = { chars: Int, segments: Int -> "$chars karakter • $segments WA Segmenti" }
+    override val composerAiRewriteBtn = "Yapay Zeka Yeniden Yazım & Anti-Spam Döngüsü"
+    override val composerToneFriendly = "✨ Samimi"
+    override val composerToneShorter = "⚡ Kısa"
+    override val composerToneMaxVariance = "🛡️ Maks Varyans"
+    override val composerLivePreviewTitle = "CANLI ÖNİZLEME"
+    override val composerOnlinePreview = "Çevrimiçi Önizleme"
+    override val composerDynamicJitterTitle = "Dinamik Gönderim Gecikmesi"
+    override val composerSafeDelayRange = "Güvenli Aralık: 25sn - 60sn"
+    override val composerJitterFast = "Hızlı (Agresif)"
+    override val composerJitterMetaCompliant = "Meta Uyumlu • Rastgele Zamanlama"
+    override val composerJitterRelaxed = "Rahat"
+    override val composerLaunchBtn = "Toplu Yayını Başlat"
+    override val composerLaunchContactsCount = { count: Int -> "$count Kişi" }
+
+    override val contactsTitle = "Kişi Yöneticisi"
+    override val contactsSubtitle = "Rehber Senkronizasyonu & Kişiselleştirme"
+    override val contactsSyncBtn = "Senkronize Et"
+    override val contactsSyncedAgo = "2dk önce"
+    override val contactsTotalMetric = "Toplam"
+    override val contactsSelectedMetric = "Seçilen"
+    override val contactsNicknamesMetric = "Takma Ad"
+    override val contactsSearchPlaceholder = "İsim, numara veya etiket ara..."
+    override val contactsTagAll = { count: Int -> "Tümü ($count)" }
+    override val contactsTagFamily = { count: Int -> "Aile ($count)" }
+    override val contactsTagFriends = { count: Int -> "Arkadaşlar ($count)" }
+    override val contactsTagBusiness = { count: Int -> "İş ($count)" }
+    override val contactsNewTagBtn = "Yeni Etiket"
+    override val contactsSelectAllInTag = { tag: String, count: Int -> "$tag içindeki Tümünü Seç ($count)" }
+    override val contactsBulkAssignTagBtn = "Toplu Etiket Ata"
+    override val contactsCallNameLabel = "Hitap / Samimi Takma Ad"
+    override val contactsGreetingPreview = { name: String -> "Önizleme: \"Merhaba $name! 👋\"" }
+    override val contactsQuickFormat = "Hızlı format:"
+    override val contactsFormatFirstName = "Sadece ilk ad"
+    override val contactsFormatRemoveNotes = "Ek notları temizle"
+    override val contactsFormatAddHello = "+ Merhaba / Selam"
+
+    override val queueTitle = "Canlı Gönderim Kuyruğu"
+    override val queueCampaignName = "Kampanya #104: Sezon Promosyon Yayını"
+    override val queueMsgPerMin = "1.2 mesaj/dk"
+    override val queueDualNodeActive = "Çift WA Düğümü • Senkronizasyon Aktif"
+    override val queueSafeBadge = "Güvenli Sv. 3"
+    override val queueSentCount = { sent: Int, total: Int -> "$sent / $total Gönderildi" }
+    override val queueCompletePercentage = { pct: Int -> "%$pct Tamamlandı" }
+    override val queueRecipientsRemaining = { count: Int -> "$count Kalan Alıcı" }
+    override val queueEstTimeLeft = "Tahmini 14dk 10sn kaldı"
+    override val queueWaitingJitter = { sec: Int -> "Anti-ban gecikmesi bekleniyor: ${sec}sn" }
+    override val queueTypingCadenceActive = "İnsansı yazma ritmi aktif"
+    override val queueMetricSuccess = "Başarı"
+    override val queueMetricAvgDelay = "Ort. Gecikme"
+    override val queueMetricFlagAlert = "Uyarı"
+    override val queuePauseBtn = "Kuyruğu Duraklat"
+    override val queueStopBtn = "Yayını Durdur"
+    override val queueFilterAll = "Tümü"
+    override val queueFilterActive = "Aktif"
+    override val queueFilterDelivered = "İletildi"
+    override val queueFilterPending = "Bekliyor"
+
+    override val settingsTitle = "Hesaplar ve Güvenlik Ayarları"
+    override val settingsSubtitle = "Anti-ban algoritmaları, çoklu düğüm yönlendirmesi & insansı tempo"
+    override val settingsShieldActive = "Seviye 3 Kalkan Aktif"
+    override val settingsGuardrailVersion = "Guardrail v4.2"
+    override val settingsEnginesTitle = "Bağlı Motorlar"
+    override val settingsEnginesCount = "2 Düğüm Yapılandırıldı"
+    override val settingsNode1Title = "WhatsApp Bireysel"
+    override val settingsNode1NodeNum = "Düğüm #1"
+    override val settingsConnected = "Bağlandı"
+    override val settingsUptime = "Çalışma Süresi:"
+    override val settingsHealth = "Sağlık:"
+    override val settingsTestPingBtn = "Ping Testi"
+    override val settingsPinging = "Ping Gönderiliyor (18ms)..."
+    override val settingsPongResult = "Pong! 18ms"
+    override val settingsDisconnectBtn = "Bağlantıyı Kes"
+    override val settingsNode2Title = "WhatsApp İşletme"
+    override val settingsNode2NodeNum = "Düğüm #2"
+    override val settingsPairingReady = "Eşleşmeye Hazır"
+    override val settingsPairingDescription = "İkinci bir telefona veya QR taramaya gerek kalmadan bu cihazda anında bağlayın."
+    override val settingsExpiresIn = "Kalan süre"
+    override val settingsCopyOpenBtn = "Kodu Kopyala & WhatsApp'ı Aç"
+    override val settingsCodeCopied = "Kod Panoya Kopyalandı!"
+    override val settingsSwitchToQr = "Veya standart QR taramasına geçin"
+    override val settingsAntiBanTitle = "Anti-Ban İnsancıllaştırıcı"
+    override val settingsRecommended = "Önerilen"
+    override val settingsJitterTitle = "Rastgele Gecikme Aralığı (Jitter)"
+    override val settingsJitterSubtitle = "Giden paketler arasında organik insansı duraklamalar"
+    override val settingsPresetConservative = "Muhafazakar (35-75sn)"
+    override val settingsPresetOptimal = "Optimal (25-65sn)"
+    override val settingsPresetTurbo = "Turbo (15-30sn)"
+    override val settingsTypingSimTitle = "Yazıyor Göstergesini Simüle Et"
+    override val settingsTypingSimSubtitle = "Gönderimden önce standart WhatsApp yazıyor durumu yayınlar"
+    override val settingsAutoRotateTitle = "Motorları Otomatik Döndür"
+    override val settingsAutoRotateSubtitle = "Mesaj gönderimini bağlı düğümler arasında eşit olarak paylaştırır (%50/%50)"
+    override val settingsAutoRotatePattern = "Aktif düzen: Düğüm #1 ➔ Düğüm #2 dönüşümü"
+    override val settingsCooldownTitle = "Grup Dinlenme Molası (Cooldown)"
+    override val settingsCooldownSubtitle = "Otomatik spam sezgisel tespitlerini önlemek için periyodik mola döngüleri"
+    override val settingsPauseDuration = "Mola Süresi"
+    override val settingsBatchSize = "Her Grup Boyutu"
+    override val settingsCooldownNotice = { count: Int -> "Motor her $count giden mesajda otomatik olarak sessiz molaya girer" }
+    override val settingsAiToneTitle = "Varsayılan Yapay Zeka Yeniden Yazım Tonu"
+    override val settingsSpintaxEngineTag = "Spintax Motoru"
+    override val settingsToneCasual = "Gündelik"
+    override val settingsToneFriendlyPicker = "Samimi"
+    override val settingsToneFormal = "Resmi"
+    override val settingsAiToneDesc = "WhatsApp anti-spam eşiklerini geçen özgün sözdizimsel varyantlar üretmek için tek dokunuşla kullanılır."
+    override val settingsLanguageTitle = "Uygulama Dili (Pengaturan Bahasa)"
+    override val settingsLanguageSubtitle = "Arayüz dilini anında değiştirin"
+    override val settingsSelectIndonesian = "Bahasa Indonesia"
+    override val settingsSelectTurkish = "Türkçe"
+}
+
+val LocalAppStrings = compositionLocalOf<AppStrings> { IndonesianStrings }
