@@ -29,6 +29,14 @@ class ContactSyncTest {
     }
 
     @Test
+    fun `extractSmartNickname returns empty for phone number only names`() {
+        assertEquals("", ContactRepository.extractSmartNickname("+62 812-1414-935"))
+        assertEquals("", ContactRepository.extractSmartNickname("+628123456789"))
+        assertEquals("", ContactRepository.extractSmartNickname("0812 345 6789"))
+        assertEquals("", ContactRepository.extractSmartNickname("+1 (555) 019-2834"))
+    }
+
+    @Test
     fun `extractInitials generates correct initials`() {
         assertEquals("SJ", ContactRepository.extractInitials("Sarah Jenkins (Apex Fitness Sales Lead)"))
         assertEquals("DM", ContactRepository.extractInitials("David M. Miller"))

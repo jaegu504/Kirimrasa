@@ -36,8 +36,7 @@ class WhatsAppSessionTest {
         assertEquals(NodeStatus.CONNECTED, node1.status)
 
         assertEquals(AccountNode.BUSINESS, node2.nodeType)
-        assertEquals(NodeStatus.PAIRING, node2.status)
-        assertNotNull(node2.pairingCode)
+        assertEquals(NodeStatus.DISCONNECTED, node2.status)
     }
 
     @Test

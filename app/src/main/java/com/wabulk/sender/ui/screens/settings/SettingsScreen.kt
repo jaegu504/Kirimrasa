@@ -22,11 +22,13 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.AccessibilityNew
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.Link
@@ -120,6 +122,18 @@ fun SettingsScreen(
     val baileysConfig by viewModel.baileysConfig.collectAsState()
     val gatewayTestResult by viewModel.gatewayTestResult.collectAsState()
     val isTestingGateway by viewModel.isTestingGateway.collectAsState()
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isWaInstalled = remember { com.wabulk.sender.engine.OnDeviceWhatsAppEngine.isPackageInstalled(context, "com.whatsapp") }
+    val isWbInstalled = remember { com.wabulk.sender.engine.OnDeviceWhatsAppEngine.isPackageInstalled(context, "com.whatsapp.w4b") }
+    var isA11yActive by remember { mutableStateOf(com.wabulk.sender.service.WhatsAppAccessibilityService.isAccessibilityServiceEnabled(context)) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            isA11yActive = com.wabulk.sender.service.WhatsAppAccessibilityService.isAccessibilityServiceEnabled(context)
+            delay(1500)
+        }
+    }
 
     var pingState by remember { mutableStateOf<String?>(null) }
     var codeCopiedState by remember { mutableStateOf(false) }
@@ -367,7 +381,7 @@ fun SettingsScreen(
             }
 
             // Node 1: WhatsApp Personal
-            val isNode1Connected = node1Session.status == NodeStatus.CONNECTED
+            var localNode1Phone by remember(node1Session.phoneNumber) { mutableStateOf(node1Session.phoneNumber) }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -386,13 +400,13 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(CircleShape)
-                                .background(if (isNode1Connected) EmeraldPrimary.copy(alpha = 0.15f) else StatusErrorContainer.copy(alpha = 0.3f)),
+                                .background(if (isWaInstalled) EmeraldPrimary.copy(alpha = 0.15f) else StatusErrorContainer.copy(alpha = 0.3f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Chat,
                                 contentDescription = null,
-                                tint = if (isNode1Connected) EmeraldPrimary else StatusError,
+                                tint = if (isWaInstalled) EmeraldPrimary else StatusError,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -419,143 +433,129 @@ fun SettingsScreen(
                                 }
                             }
                             Text(
-                                text = if (isNode1Connected) node1Session.phoneNumber else "Node Tidak Terhubung",
-                                color = TextMutedBody,
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace
+                                text = if (isWaInstalled) "Terdeteksi di HP (WhatsApp Personal)" else "Aplikasi WhatsApp Belum Terpasang",
+                                color = if (isWaInstalled) EmeraldPrimary else StatusError,
+                                fontSize = 11.sp
                             )
                         }
                     }
 
-                    Row(
+                    Box(
                         modifier = Modifier
                             .clip(CircleShape)
-                            .background(if (isNode1Connected) EmeraldPrimary.copy(alpha = 0.15f) else StatusErrorContainer.copy(alpha = 0.3f))
-                            .padding(horizontal = 8.dp, vertical = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            .background(if (isWaInstalled) EmeraldPrimary.copy(alpha = 0.15f) else StatusErrorContainer.copy(alpha = 0.3f))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(if (isNode1Connected) EmeraldPrimary else StatusError)
-                        )
                         Text(
-                            text = if (isNode1Connected) strings.settingsConnected else "Terputus",
-                            color = if (isNode1Connected) EmeraldPrimary else StatusError,
+                            text = if (isWaInstalled) "Siap Pakai" else "Belum Ada",
+                            color = if (isWaInstalled) EmeraldPrimary else StatusError,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
-                // Stats Strip
-                if (isNode1Connected) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(EmeraldDarkSurfaceLow)
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(imageVector = Icons.Default.Timelapse, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(13.dp))
-                            Text(text = "${strings.settingsUptime} 48h 12m", color = TextCrispPrimary, fontSize = 10.sp)
+                // Phone Input Field
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Nomor WhatsApp Anda:",
+                        color = TextMutedBody,
+                        fontSize = 10.sp
+                    )
+                    BasicTextField(
+                        value = localNode1Phone,
+                        onValueChange = {
+                            localNode1Phone = it
+                            viewModel.updateNodePhone(AccountNode.PERSONAL, it)
+                        },
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            color = EmeraldPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        ),
+                        cursorBrush = SolidColor(EmeraldPrimary),
+                        decorationBox = { innerTextField ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(EmeraldDarkSurfaceLow)
+                                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (localNode1Phone.isEmpty()) {
+                                    Text(
+                                        text = "Ketik nomor WhatsApp Anda (cth: +62 812-3456-7890)",
+                                        color = TextSubduedTertiary,
+                                        fontSize = 11.sp
+                                    )
+                                }
+                                innerTextField()
+                            }
                         }
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(imageVector = Icons.Default.Favorite, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(13.dp))
-                            Text(text = "${strings.settingsHealth} 99.4%", color = TextCrispPrimary, fontSize = 10.sp)
-                        }
-                    }
+                    )
                 }
 
-                // Actions
+                // Action Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (isNode1Connected) {
-                        // Test Ping Button
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(36.dp)
-                                .clip(CircleShape)
-                                .background(EmeraldDarkSurfaceHigh)
-                                .springClickable {
-                                    coroutineScope.launch {
-                                        pingState = strings.settingsPinging
-                                        viewModel.pingNode(AccountNode.PERSONAL)
-                                        delay(500)
-                                        pingState = strings.settingsPongResult
-                                        delay(1500)
-                                        pingState = null
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(36.dp)
+                            .clip(CircleShape)
+                            .background(EmeraldDarkSurfaceHigh)
+                            .springClickable {
+                                try {
+                                    val launchIntent = context.packageManager.getLaunchIntentForPackage("com.whatsapp")
+                                    if (launchIntent != null) {
+                                        context.startActivity(launchIntent)
+                                    } else {
+                                        android.widget.Toast.makeText(context, "WhatsApp Personal tidak terpasang di HP", android.widget.Toast.LENGTH_SHORT).show()
                                     }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (pingState != null) Icons.Default.Sync else Icons.Default.Sensors,
-                                    contentDescription = null,
-                                    tint = if (pingState == strings.settingsPongResult) EmeraldPrimary else TextCrispPrimary,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Text(
-                                    text = pingState ?: strings.settingsTestPingBtn,
-                                    color = if (pingState == strings.settingsPongResult) EmeraldPrimary else TextCrispPrimary,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                                } catch (_: Exception) {}
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(imageVector = Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(14.dp))
+                            Text(text = "Buka WhatsApp", color = EmeraldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
+                    }
 
-                        // Disconnect Button
-                        Box(
-                            modifier = Modifier
-                                .height(36.dp)
-                                .clip(CircleShape)
-                                .background(StatusErrorContainer.copy(alpha = 0.4f))
-                                .springClickable {
-                                    viewModel.disconnectNode(AccountNode.PERSONAL)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(36.dp)
+                            .clip(CircleShape)
+                            .background(EmeraldDarkSurfaceHigh)
+                            .springClickable {
+                                coroutineScope.launch {
+                                    pingState = "Memeriksa..."
+                                    val res = viewModel.pingNode(AccountNode.PERSONAL)
+                                    delay(400)
+                                    pingState = if (res) "Siap Digunakan!" else "Gagal"
+                                    delay(1500)
+                                    pingState = null
                                 }
-                                .padding(horizontal = 14.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Icon(imageVector = Icons.Default.LinkOff, contentDescription = null, tint = StatusError, modifier = Modifier.size(14.dp))
-                                Text(text = strings.settingsDisconnectBtn, color = StatusError, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    } else {
-                        // Reconnect Button
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(36.dp)
-                                .clip(CircleShape)
-                                .background(EmeraldPrimaryContainer)
-                                .springClickable {
-                                    viewModel.connectNode(AccountNode.PERSONAL, "+1 (555) 019-2834")
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Icon(imageVector = Icons.Default.Link, contentDescription = null, tint = EmeraldOnPrimaryContainer, modifier = Modifier.size(15.dp))
-                                Text(text = "Hubungkan Ulang Node 1", color = EmeraldOnPrimaryContainer, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(imageVector = Icons.Default.Sensors, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(14.dp))
+                            Text(text = pingState ?: "Uji Kesiapan", color = EmeraldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
 
-            // Node 2: WhatsApp Business (Pairing Ready with 8-Digit Pairing Code)
-            val isNode2Connected = node2Session.status == NodeStatus.CONNECTED
+            // Node 2: WhatsApp Business
+            var localNode2Phone by remember(node2Session.phoneNumber) { mutableStateOf(node2Session.phoneNumber) }
+            var pingStateBusiness by remember { mutableStateOf<String?>(null) }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -574,13 +574,13 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(CircleShape)
-                                .background(if (isNode2Connected) EmeraldPrimary.copy(alpha = 0.15f) else EmeraldSecondaryContainer.copy(alpha = 0.4f)),
+                                .background(if (isWbInstalled) EmeraldPrimary.copy(alpha = 0.15f) else StatusErrorContainer.copy(alpha = 0.3f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Store,
                                 contentDescription = null,
-                                tint = if (isNode2Connected) EmeraldPrimary else EmeraldSecondary,
+                                tint = if (isWbInstalled) EmeraldPrimary else StatusError,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -607,7 +607,164 @@ fun SettingsScreen(
                                 }
                             }
                             Text(
-                                text = if (isNode2Connected) node2Session.phoneNumber else "WhatsApp Business Engine",
+                                text = if (isWbInstalled) "Terdeteksi di HP (WhatsApp Business)" else "Aplikasi WA Business Belum Terpasang",
+                                color = if (isWbInstalled) EmeraldPrimary else StatusError,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(if (isWbInstalled) EmeraldPrimary.copy(alpha = 0.15f) else StatusErrorContainer.copy(alpha = 0.3f))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = if (isWbInstalled) "Siap Pakai" else "Belum Ada",
+                            color = if (isWbInstalled) EmeraldPrimary else StatusError,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                // Phone Input Field
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Nomor WhatsApp Business Anda:",
+                        color = TextMutedBody,
+                        fontSize = 10.sp
+                    )
+                    BasicTextField(
+                        value = localNode2Phone,
+                        onValueChange = {
+                            localNode2Phone = it
+                            viewModel.updateNodePhone(AccountNode.BUSINESS, it)
+                        },
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            color = EmeraldPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace
+                        ),
+                        cursorBrush = SolidColor(EmeraldPrimary),
+                        decorationBox = { innerTextField ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(EmeraldDarkSurfaceLow)
+                                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (localNode2Phone.isEmpty()) {
+                                    Text(
+                                        text = "Ketik nomor WA Business Anda (cth: +62 812-3456-7890)",
+                                        color = TextSubduedTertiary,
+                                        fontSize = 11.sp
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        }
+                    )
+                }
+
+                // Action Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(36.dp)
+                            .clip(CircleShape)
+                            .background(EmeraldDarkSurfaceHigh)
+                            .springClickable {
+                                try {
+                                    val launchIntent = context.packageManager.getLaunchIntentForPackage("com.whatsapp.w4b")
+                                    if (launchIntent != null) {
+                                        context.startActivity(launchIntent)
+                                    } else {
+                                        android.widget.Toast.makeText(context, "WhatsApp Business tidak terpasang di HP", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                } catch (_: Exception) {}
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(imageVector = Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(14.dp))
+                            Text(text = "Buka WA Business", color = EmeraldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(36.dp)
+                            .clip(CircleShape)
+                            .background(EmeraldDarkSurfaceHigh)
+                            .springClickable {
+                                coroutineScope.launch {
+                                    pingStateBusiness = "Memeriksa..."
+                                    val res = viewModel.pingNode(AccountNode.BUSINESS)
+                                    delay(400)
+                                    pingStateBusiness = if (res) "Siap Digunakan!" else "Gagal"
+                                    delay(1500)
+                                    pingStateBusiness = null
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Icon(imageVector = Icons.Default.Sensors, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(14.dp))
+                            Text(text = pingStateBusiness ?: "Uji Kesiapan", color = EmeraldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+
+            // Layanan Aksesibilitas Android Card
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(EmeraldDarkSurfaceLowest)
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(if (isA11yActive) EmeraldPrimary.copy(alpha = 0.15f) else EmeraldSecondaryContainer.copy(alpha = 0.4f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccessibilityNew,
+                                contentDescription = null,
+                                tint = if (isA11yActive) EmeraldPrimary else EmeraldSecondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Layanan Aksesibilitas HP",
+                                color = TextCrispPrimary,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Otomatisasi Klik Kirim Tanpa Server",
                                 color = TextMutedBody,
                                 fontSize = 11.sp
                             )
@@ -617,200 +774,52 @@ fun SettingsScreen(
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
-                            .background(if (isNode2Connected) EmeraldPrimary.copy(alpha = 0.15f) else EmeraldSecondaryContainer.copy(alpha = 0.5f))
+                            .background(if (isA11yActive) EmeraldPrimary.copy(alpha = 0.15f) else StatusErrorContainer.copy(alpha = 0.3f))
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Text(
-                            text = if (isNode2Connected) strings.settingsConnected else strings.settingsPairingReady,
-                            color = if (isNode2Connected) EmeraldPrimary else EmeraldSecondary,
+                            text = if (isA11yActive) "Otomatis Aktif ✓" else "Perlu Diaktifkan",
+                            color = if (isA11yActive) EmeraldPrimary else StatusError,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
-                if (!isNode2Connected) {
-                    Text(
-                        text = strings.settingsPairingDescription,
-                        color = TextMutedBody,
-                        fontSize = 11.sp,
-                        lineHeight = 15.sp
-                    )
+                Text(
+                    text = if (isA11yActive)
+                        "Layanan Aksesibilitas aktif! Pesan antrean akan terbuka di WhatsApp dan tombol 'Kirim' akan ditekan otomatis tanpa Anda perlu mengetuk manual."
+                    else
+                        "Agar pesan bulk dapat terkirim secara otomatis tanpa perlu server Baileys, aktifkan Layanan Aksesibilitas 'WhatsApp Bulk Sender' di pengaturan HP Anda.",
+                    color = TextMutedBody,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp
+                )
 
-                    // 8-Digit Pairing Code Display
-                    val rawCode = node2Session.pairingCode.ifEmpty { "K97B-42VX" }
-                    val parts = rawCode.split("-")
-                    val codeGroup1 = parts.getOrNull(0)?.map { it.toString() } ?: listOf("K", "9", "7", "B")
-                    val codeGroup2 = parts.getOrNull(1)?.map { it.toString() } ?: listOf("4", "2", "V", "X")
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(EmeraldDarkSurfaceLow)
-                            .padding(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            codeGroup1.forEach { char ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(width = 30.dp, height = 36.dp)
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(EmeraldDarkSurfaceLowest),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = char,
-                                        color = EmeraldPrimary,
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontFamily = FontFamily.Monospace
-                                    )
-                                }
-                            }
-
-                            Text(
-                                text = "-",
-                                color = TextMutedBody,
-                                fontSize = 18.sp,
-                                modifier = Modifier.padding(horizontal = 2.dp)
-                            )
-
-                            codeGroup2.forEach { char ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(width = 30.dp, height = 36.dp)
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(EmeraldDarkSurfaceLowest),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = char,
-                                        color = EmeraldPrimary,
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontFamily = FontFamily.Monospace
-                                    )
-                                }
-                            }
-                        }
-
-                        // Countdown Timer & Refresh button
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Schedule,
-                                contentDescription = null,
-                                tint = EmeraldPrimary,
-                                modifier = Modifier.size(13.dp)
-                            )
-                            val mins = pairingSecondsLeft / 60
-                            val secs = pairingSecondsLeft % 60
-                            Text(
-                                text = "${strings.settingsExpiresIn} %02d:%02d".format(mins, secs),
-                                color = TextMutedBody,
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Box(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(EmeraldDarkSurfaceHighest)
-                                    .springClickable {
-                                        viewModel.requestNewPairingCode(AccountNode.BUSINESS)
-                                    }
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(11.dp))
-                                    Text(text = "Kode Baru", color = EmeraldPrimary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-                    }
-
-                    // Copy Code & Open WhatsApp Button
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(44.dp)
-                            .clip(CircleShape)
-                            .background(EmeraldPrimary)
-                            .springClickable {
-                                codeCopiedState = true
-                                viewModel.copyCodeAndOpenWhatsApp(rawCode)
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        LaunchedEffect(codeCopiedState) {
-                            if (codeCopiedState) {
-                                delay(1800)
-                                codeCopiedState = false
-                            }
-                        }
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (codeCopiedState) Icons.Default.Check else Icons.Default.ContentCopy,
-                                contentDescription = null,
-                                tint = Color(0xFF003915),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = if (codeCopiedState) strings.settingsCodeCopied else strings.settingsCopyOpenBtn,
-                                color = Color(0xFF003915),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            if (!codeCopiedState) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                                    contentDescription = null,
-                                    tint = Color(0xFF003915),
-                                    modifier = Modifier.size(14.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    // Switch to QR button
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .springClickable { showQrDialog = true },
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(imageVector = Icons.Default.QrCodeScanner, contentDescription = null, tint = TextMutedBody, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = strings.settingsSwitchToQr, color = TextMutedBody, fontSize = 10.sp)
-                    }
-                } else {
-                    // Connected Node 2 actions
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(36.dp)
-                            .clip(CircleShape)
-                            .background(StatusErrorContainer.copy(alpha = 0.4f))
-                            .springClickable { viewModel.disconnectNode(AccountNode.BUSINESS) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(imageVector = Icons.Default.LinkOff, contentDescription = null, tint = StatusError, modifier = Modifier.size(14.dp))
-                            Text(text = "Putuskan Node 2", color = StatusError, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (isA11yActive) EmeraldDarkSurfaceHigh else EmeraldPrimary)
+                        .springClickable {
+                            com.wabulk.sender.service.WhatsAppAccessibilityService.openAccessibilitySettings(context)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(
+                            imageVector = if (isA11yActive) Icons.Default.Settings else Icons.Default.AccessibilityNew,
+                            contentDescription = null,
+                            tint = if (isA11yActive) EmeraldPrimary else Color(0xFF003915),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = if (isA11yActive) "Buka Pengaturan Aksesibilitas" else "Aktifkan Layanan Aksesibilitas Sekarang",
+                            color = if (isA11yActive) EmeraldPrimary else Color(0xFF003915),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

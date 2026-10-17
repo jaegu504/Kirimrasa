@@ -131,12 +131,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         sessionManager.disconnectNode(node)
     }
 
+    fun updateNodePhone(node: AccountNode, phone: String) {
+        sessionManager.updateNodePhone(node, phone)
+    }
+
     fun connectNode(node: AccountNode, phone: String = "+62 812-3456-7890") {
         sessionManager.connectNode(node, phone)
     }
 
     suspend fun pingNode(node: AccountNode): Boolean {
-        return sessionManager.pingNode(node)
+        return sessionManager.pingNode(node, getApplication())
     }
 
     fun copyCodeAndOpenWhatsApp(code: String) {

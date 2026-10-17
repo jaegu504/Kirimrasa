@@ -278,7 +278,7 @@ class DispatchQueueManager private constructor(
 
                 // Resolve engine for this node
                 val sessionManager = WhatsAppSessionManager.getInstance()
-                val engine = sessionManager.getEngineForNode(nextItem.nodeUsed)
+                val engine = sessionManager.getEngineForNode(nextItem.nodeUsed, context)
 
                 // Phase: Typing simulation
                 _currentTypingContact.value = nextItem.recipientName

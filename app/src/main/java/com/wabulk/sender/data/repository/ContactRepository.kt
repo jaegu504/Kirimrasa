@@ -123,13 +123,23 @@ class ContactRepository(
         }
 
         fun extractSmartNickname(rawName: String): String {
-            return rawName
+            val lettersOnly = rawName.filter { it.isLetter() }
+            if (lettersOnly.length < 2) {
+                // If the name is basically a phone number or symbols without a real human name, don't treat "+62" as nickname
+                return ""
+            }
+
+            val cleaned = rawName
                 .replace(Regex("\\(.*?\\)"), "") // Remove parenthetical notes
                 .replace(Regex("^(dr\\.|Drs\\.|Ir\\.|Prof\\.?)\\s+", RegexOption.IGNORE_CASE), "") // Remove titles
                 .trim()
-                .split(" ")
-                .firstOrNull()
-                ?.trim() ?: rawName.take(8)
+
+            val firstWord = cleaned.split(" ").firstOrNull()?.trim() ?: ""
+            val firstWordLetters = firstWord.filter { it.isLetter() }
+            if (firstWordLetters.length < 2) {
+                return ""
+            }
+            return firstWord
         }
     }
 }

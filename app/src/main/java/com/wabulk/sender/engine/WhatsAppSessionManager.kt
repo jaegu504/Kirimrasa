@@ -17,10 +17,10 @@ class WhatsAppSessionManager(
         NodeSession(
             id = "node-personal-01",
             nodeType = AccountNode.PERSONAL,
-            phoneNumber = "+1 (555) 019-2834",
+            phoneNumber = "",
             status = NodeStatus.CONNECTED,
-            uptimeSeconds = 48 * 3600 + 12 * 60,
-            healthPercent = 99.4f
+            uptimeSeconds = 0,
+            healthPercent = 100f
         )
     )
     val node1Session: StateFlow<NodeSession> = _node1Session.asStateFlow()
@@ -30,12 +30,23 @@ class WhatsAppSessionManager(
             id = "node-business-02",
             nodeType = AccountNode.BUSINESS,
             phoneNumber = "",
-            status = NodeStatus.PAIRING,
-            pairingCode = "K97B-42VX",
-            codeExpiresAt = System.currentTimeMillis() + 165_000L
+            status = NodeStatus.DISCONNECTED,
+            pairingCode = "",
+            codeExpiresAt = 0L
         )
     )
     val node2Session: StateFlow<NodeSession> = _node2Session.asStateFlow()
+
+    fun updateNodePhone(nodeType: AccountNode, phoneNumber: String) {
+        when (nodeType) {
+            AccountNode.PERSONAL -> {
+                _node1Session.value = _node1Session.value.copy(phoneNumber = phoneNumber)
+            }
+            AccountNode.BUSINESS, AccountNode.DUAL_SYNC -> {
+                _node2Session.value = _node2Session.value.copy(phoneNumber = phoneNumber)
+            }
+        }
+    }
 
     @Volatile
     private var cachedNode1Engine: BaileysBridgeClient? = null
@@ -72,7 +83,7 @@ class WhatsAppSessionManager(
         cachedNode2Engine = null
     }
 
-    fun getEngineForNode(nodeType: AccountNode): WhatsAppEngine {
+    fun getEngineForNode(nodeType: AccountNode, context: android.content.Context? = null): WhatsAppEngine {
         val session = when (nodeType) {
             AccountNode.PERSONAL -> _node1Session.value
             AccountNode.BUSINESS, AccountNode.DUAL_SYNC -> _node2Session.value
@@ -82,6 +93,8 @@ class WhatsAppSessionManager(
             engine
         } else if (config.isEnabled) {
             getOrCreateBaileysEngine(nodeType)
+        } else if (context != null) {
+            OnDeviceWhatsAppEngine(context.applicationContext, session)
         } else {
             SimulatedWhatsAppEngine(session)
         }
@@ -177,8 +190,8 @@ class WhatsAppSessionManager(
         getEngineForNode(nodeType).disconnect()
     }
 
-    suspend fun pingNode(nodeType: AccountNode): Boolean {
-        val activeEngine = getEngineForNode(nodeType)
+    suspend fun pingNode(nodeType: AccountNode, context: android.content.Context? = null): Boolean {
+        val activeEngine = getEngineForNode(nodeType, context)
         val result = activeEngine.ping()
         val success = result.isSuccess
         if (success) {

@@ -32,13 +32,19 @@ import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.StopCircle
+import androidx.compose.material.icons.filled.AccessibilityNew
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -204,6 +210,49 @@ fun LiveQueueScreen(
                 color = TextMutedBody,
                 fontSize = 11.sp
             )
+        }
+
+        // Accessibility Service Automation Pill / Alert Banner
+        var a11yActive by remember { mutableStateOf(com.wabulk.sender.service.WhatsAppAccessibilityService.isAccessibilityServiceEnabled(context)) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                a11yActive = com.wabulk.sender.service.WhatsAppAccessibilityService.isAccessibilityServiceEnabled(context)
+                delay(2000)
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (a11yActive) EmeraldDarkSurfaceLowest else EmeraldSecondaryContainer.copy(alpha = 0.35f))
+                .springClickable {
+                    if (!a11yActive) {
+                        com.wabulk.sender.service.WhatsAppAccessibilityService.openAccessibilitySettings(context)
+                    }
+                }
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = if (a11yActive) Icons.Default.CheckCircle else Icons.Default.AccessibilityNew,
+                    contentDescription = null,
+                    tint = if (a11yActive) EmeraldPrimary else EmeraldSecondary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = if (a11yActive)
+                        "Mode Otomatis Aktif — Tombol kirim WhatsApp akan ditekan otomatis"
+                    else
+                        "Layanan Aksesibilitas nonaktif — Ketuk untuk aktifkan pengiriman otomatis",
+                    color = if (a11yActive) EmeraldPrimary else TextCrispPrimary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
 
         // Primary Campaign Progress Card

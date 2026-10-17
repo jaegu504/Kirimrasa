@@ -120,13 +120,14 @@ fun ContactManagerScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f, fill = false)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = strings.contactsTitle,
                         color = TextCrispPrimary,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
                     )
                     Box(
                         modifier = Modifier
@@ -139,13 +140,16 @@ fun ContactManagerScreen(
                 Text(
                     text = strings.contactsSubtitle,
                     color = TextMutedBody,
-                    fontSize = 11.sp
+                    fontSize = 11.sp,
+                    maxLines = 1
                 )
             }
 
+            Spacer(modifier = Modifier.width(8.dp))
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 // Impor CSV Button
                 Box(
@@ -153,20 +157,22 @@ fun ContactManagerScreen(
                         .clip(CircleShape)
                         .background(EmeraldDarkSurfaceHigh)
                         .springClickable { showImportCsvDialog = true }
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                        .padding(horizontal = 9.dp, vertical = 6.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         Icon(
                             imageVector = Icons.Default.FileUpload,
                             contentDescription = null,
                             tint = EmeraldPrimary,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(13.dp)
                         )
                         Text(
                             text = strings.contactsImportCsvBtn,
                             color = EmeraldPrimary,
                             fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
@@ -177,12 +183,12 @@ fun ContactManagerScreen(
                         .clip(CircleShape)
                         .background(EmeraldDarkSurfaceHigh)
                         .springClickable { viewModel.syncContacts() }
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                        .padding(horizontal = 9.dp, vertical = 6.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         if (isSyncing) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(14.dp),
+                                modifier = Modifier.size(13.dp),
                                 color = EmeraldPrimary,
                                 strokeWidth = 2.dp
                             )
@@ -191,14 +197,16 @@ fun ContactManagerScreen(
                                 imageVector = Icons.Default.Sync,
                                 contentDescription = null,
                                 tint = EmeraldPrimary,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(13.dp)
                             )
                         }
                         Text(
                             text = if (isSyncing) "Syncing..." else strings.contactsSyncBtn,
                             color = EmeraldPrimary,
                             fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
@@ -656,13 +664,18 @@ private fun ContactCard(
 
         // Quick Format Pills
         Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = strings.contactsQuickFormat,
                 color = TextSubduedTertiary,
                 fontSize = 10.sp,
-                modifier = Modifier.align(Alignment.CenterVertically)
+                maxLines = 1,
+                softWrap = false
             )
             QuickPill(strings.contactsFormatFirstName) { onQuickFirstName() }
             QuickPill(strings.contactsFormatRemoveNotes) { onQuickRemoveNotes() }
@@ -684,7 +697,9 @@ private fun QuickPill(label: String, onClick: () -> Unit) {
             text = label,
             color = EmeraldPrimary,
             fontSize = 10.sp,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            softWrap = false
         )
     }
 }
