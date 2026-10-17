@@ -163,14 +163,8 @@ fun ComposerScreen(
                 )
                 viewModel.addAttachment(attachment)
             } catch (_: Exception) {
-                val nextAttachment = sampleMediaPool[sampleMediaIndex % sampleMediaPool.size]
-                sampleMediaIndex++
-                viewModel.addAttachment(nextAttachment.copy(id = java.util.UUID.randomUUID().toString()))
+                // If resolving selected URI fails, do not add attachment
             }
-        } else {
-            val nextAttachment = sampleMediaPool[sampleMediaIndex % sampleMediaPool.size]
-            sampleMediaIndex++
-            viewModel.addAttachment(nextAttachment.copy(id = java.util.UUID.randomUUID().toString()))
         }
     }
 

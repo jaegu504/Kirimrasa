@@ -499,7 +499,11 @@ fun LiveQueueScreen(
                     .height(42.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(EmeraldDarkSurfaceHigh)
-                    .springClickable { viewModel.exportCampaignReport(context) },
+                    .springClickable {
+                        viewModel.exportCampaignReport(context) { count ->
+                            strings.queueExportSuccessToast(count)
+                        }
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Row(
@@ -513,7 +517,7 @@ fun LiveQueueScreen(
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = "Ekspor Laporan CSV",
+                        text = strings.queueExportCsvBtn,
                         color = EmeraldPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold

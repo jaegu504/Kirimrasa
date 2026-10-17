@@ -66,6 +66,11 @@ interface AppStrings {
     val contactsFormatFirstName: String
     val contactsFormatRemoveNotes: String
     val contactsFormatAddHello: String
+    val contactsImportCsvBtn: String
+    val contactsImportDialogTitle: String
+    val contactsImportPickFile: String
+    val contactsImportLoadSample: String
+    val contactsImportResult: (Int, Int) -> String
 
     // Screen 3: Queue
     val queueTitle: String
@@ -84,6 +89,8 @@ interface AppStrings {
     val queueMetricFlagAlert: String
     val queuePauseBtn: String
     val queueStopBtn: String
+    val queueExportCsvBtn: String
+    val queueExportSuccessToast: (Int) -> String
     val queueFilterAll: String
     val queueFilterActive: String
     val queueFilterDelivered: String
@@ -136,6 +143,12 @@ interface AppStrings {
     val settingsToneFriendlyPicker: String
     val settingsToneFormal: String
     val settingsAiToneDesc: String
+    val settingsBaileysTitle: String
+    val settingsBaileysSubtitle: String
+    val settingsBaileysToggle: String
+    val settingsBaileysUrlLabel: String
+    val settingsBaileysKeyLabel: String
+    val settingsBaileysTestBtn: String
     val settingsLanguageTitle: String
     val settingsLanguageSubtitle: String
     val settingsSelectIndonesian: String
@@ -202,6 +215,11 @@ object IndonesianStrings : AppStrings {
     override val contactsFormatFirstName = "Nama depan saja"
     override val contactsFormatRemoveNotes = "Hapus catatan kontak"
     override val contactsFormatAddHello = "+ Hai / Halo"
+    override val contactsImportCsvBtn = "Impor CSV"
+    override val contactsImportDialogTitle = "Impor Kontak CSV"
+    override val contactsImportPickFile = "Pilih File CSV Perangkat"
+    override val contactsImportLoadSample = "Muat Contoh CSV (5 Kontak Demo)"
+    override val contactsImportResult = { imported: Int, total: Int -> "Berhasil mengimpor $imported kontak dari $total baris" }
 
     override val queueTitle = "Antrean Pengiriman Langsung"
     override val queueCampaignName = "Kampanye #104: Promosi Musiman"
@@ -219,6 +237,8 @@ object IndonesianStrings : AppStrings {
     override val queueMetricFlagAlert = "Peringatan"
     override val queuePauseBtn = "Jeda Antrean"
     override val queueStopBtn = "Hentikan Kiriman"
+    override val queueExportCsvBtn = "Ekspor Laporan CSV"
+    override val queueExportSuccessToast = { count: Int -> "Laporan CSV berhasil diekspor ($count data)" }
     override val queueFilterAll = "Semua"
     override val queueFilterActive = "Aktif"
     override val queueFilterDelivered = "Terkirim"
@@ -270,6 +290,12 @@ object IndonesianStrings : AppStrings {
     override val settingsToneFriendlyPicker = "Ramah"
     override val settingsToneFormal = "Formal"
     override val settingsAiToneDesc = "Digunakan saat pemutaran pesan satu ketukan untuk menghasilkan variasi kalimat yang lolos ambang batas anti-spam WhatsApp."
+    override val settingsBaileysTitle = "Baileys Bridge Gateway"
+    override val settingsBaileysSubtitle = "Gateway multi-device tanpa scan berulang"
+    override val settingsBaileysToggle = "Gunakan Baileys Gateway"
+    override val settingsBaileysUrlLabel = "URL GATEWAY"
+    override val settingsBaileysKeyLabel = "API KEY (OPSIONAL)"
+    override val settingsBaileysTestBtn = "Uji Koneksi Gateway"
     override val settingsLanguageTitle = "Bahasa Aplikasi (Dil Seçimi)"
     override val settingsLanguageSubtitle = "Ganti bahasa antarmuka secara instan"
     override val settingsSelectIndonesian = "Bahasa Indonesia"
@@ -336,6 +362,11 @@ object TurkishStrings : AppStrings {
     override val contactsFormatFirstName = "Sadece ilk ad"
     override val contactsFormatRemoveNotes = "Ek notları temizle"
     override val contactsFormatAddHello = "+ Merhaba / Selam"
+    override val contactsImportCsvBtn = "CSV İçe Aktar"
+    override val contactsImportDialogTitle = "CSV Kişilerini İçe Aktar"
+    override val contactsImportPickFile = "Cihazdan CSV Dosyası Seç"
+    override val contactsImportLoadSample = "Örnek CSV Yükle (5 Demo Kişi)"
+    override val contactsImportResult = { imported: Int, total: Int -> "$total satırdan $imported kişi başarıyla içe aktarıldı" }
 
     override val queueTitle = "Canlı Gönderim Kuyruğu"
     override val queueCampaignName = "Kampanya #104: Sezon Promosyon Yayını"
@@ -353,6 +384,8 @@ object TurkishStrings : AppStrings {
     override val queueMetricFlagAlert = "Uyarı"
     override val queuePauseBtn = "Kuyruğu Duraklat"
     override val queueStopBtn = "Yayını Durdur"
+    override val queueExportCsvBtn = "CSV Raporunu Dışa Aktar"
+    override val queueExportSuccessToast = { count: Int -> "CSV raporu başarıyla dışa aktarıldı ($count kayıt)" }
     override val queueFilterAll = "Tümü"
     override val queueFilterActive = "Aktif"
     override val queueFilterDelivered = "İletildi"
@@ -404,6 +437,12 @@ object TurkishStrings : AppStrings {
     override val settingsToneFriendlyPicker = "Samimi"
     override val settingsToneFormal = "Resmi"
     override val settingsAiToneDesc = "WhatsApp anti-spam eşiklerini geçen özgün sözdizimsel varyantlar üretmek için tek dokunuşla kullanılır."
+    override val settingsBaileysTitle = "Baileys Köprü Ağ Geçidi"
+    override val settingsBaileysSubtitle = "Tekrar tarama gerektirmeyen çoklu cihaz ağ geçidi"
+    override val settingsBaileysToggle = "Baileys Ağ Geçidini Kullan"
+    override val settingsBaileysUrlLabel = "AĞ GEÇİDİ URL'Sİ"
+    override val settingsBaileysKeyLabel = "API ANAHTARI (İSTEĞE BAĞLI)"
+    override val settingsBaileysTestBtn = "Ağ Geçidi Bağlantısını Test Et"
     override val settingsLanguageTitle = "Uygulama Dili (Pengaturan Bahasa)"
     override val settingsLanguageSubtitle = "Arayüz dilini anında değiştirin"
     override val settingsSelectIndonesian = "Bahasa Indonesia"

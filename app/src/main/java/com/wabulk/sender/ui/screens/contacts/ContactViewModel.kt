@@ -11,6 +11,7 @@ import com.wabulk.sender.data.local.db.TagEntity
 import com.wabulk.sender.data.repository.ContactRepository
 import com.wabulk.sender.data.sync.ContactSyncEngine
 import java.io.InputStream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class ContactViewModel(application: Application) : AndroidViewModel(application) {
@@ -159,47 +161,43 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun importContactsFromCsv(csvText: String): CsvParseResult {
+    suspend fun importContactsFromCsv(csvText: String): CsvParseResult = withContext(Dispatchers.IO) {
         val result = CsvContactParser.parseCsv(csvText)
         if (result is CsvParseResult.Success) {
-            viewModelScope.launch {
-                val entities = result.contacts
-                    .distinctBy { it.phoneNumber }
-                    .map { it.toContactEntity() }
-                db.contactDao().insertAll(entities)
+            val entities = result.contacts
+                .distinctBy { it.phoneNumber }
+                .map { it.toContactEntity() }
+            db.contactDao().insertAll(entities)
 
-                result.contacts.flatMap { it.tags }.distinct().forEach { tag ->
-                    if (tag.isNotBlank()) {
-                        repository.createTag(tag)
-                    }
+            result.contacts.flatMap { it.tags }.distinct().forEach { tag ->
+                if (tag.isNotBlank()) {
+                    repository.createTag(tag)
                 }
-                _lastSyncResult.value = "+${result.contacts.size} diimpor dari CSV"
             }
+            _lastSyncResult.value = "+${result.contacts.size} diimpor dari CSV"
         }
-        return result
+        result
     }
 
-    fun importContactsFromStream(inputStream: InputStream): CsvParseResult {
+    suspend fun importContactsFromStream(inputStream: InputStream): CsvParseResult = withContext(Dispatchers.IO) {
         val result = CsvContactParser.parseCsv(inputStream)
         if (result is CsvParseResult.Success) {
-            viewModelScope.launch {
-                val entities = result.contacts
-                    .distinctBy { it.phoneNumber }
-                    .map { it.toContactEntity() }
-                db.contactDao().insertAll(entities)
+            val entities = result.contacts
+                .distinctBy { it.phoneNumber }
+                .map { it.toContactEntity() }
+            db.contactDao().insertAll(entities)
 
-                result.contacts.flatMap { it.tags }.distinct().forEach { tag ->
-                    if (tag.isNotBlank()) {
-                        repository.createTag(tag)
-                    }
+            result.contacts.flatMap { it.tags }.distinct().forEach { tag ->
+                if (tag.isNotBlank()) {
+                    repository.createTag(tag)
                 }
-                _lastSyncResult.value = "+${result.contacts.size} diimpor dari CSV"
             }
+            _lastSyncResult.value = "+${result.contacts.size} diimpor dari CSV"
         }
-        return result
+        result
     }
 
-    fun importSampleCsv(): CsvParseResult {
+    suspend fun importSampleCsv(): CsvParseResult = withContext(Dispatchers.IO) {
         val sampleCsv = """
             Nama,No Telepon,Panggilan,Perusahaan,Custom_1,Tag
             Budi Santoso,+6281234567801,Budi,PT Maju Jaya,DISKON50,VIP
@@ -208,7 +206,7 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
             Dewi Lestari,+6281234567804,Dewi,Bintang Mulia,MEMBERVIP,Keluarga
             Eko Prasetyo,+6281234567805,Eko,Prasetyo Store,HEMAT20,Teman
         """.trimIndent()
-        return importContactsFromCsv(sampleCsv)
+        importContactsFromCsv(sampleCsv)
     }
 
     // Seed default tags if empty

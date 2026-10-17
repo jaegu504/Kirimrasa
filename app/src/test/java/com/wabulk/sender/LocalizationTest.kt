@@ -42,5 +42,34 @@ class LocalizationTest {
 
         val greetingTr = TurkishStrings.contactsGreetingPreview("Ahmet")
         assertTrue(greetingTr.contains("Ahmet"))
+
+        // New Task 4 UI enhancement strings
+        assertNotNull(IndonesianStrings.settingsBaileysTitle)
+        assertNotNull(IndonesianStrings.settingsBaileysSubtitle)
+        assertNotNull(IndonesianStrings.settingsBaileysToggle)
+        assertNotNull(IndonesianStrings.settingsBaileysUrlLabel)
+        assertNotNull(IndonesianStrings.settingsBaileysKeyLabel)
+        assertNotNull(IndonesianStrings.settingsBaileysTestBtn)
+        assertNotNull(IndonesianStrings.contactsImportCsvBtn)
+        assertNotNull(IndonesianStrings.contactsImportDialogTitle)
+        assertNotNull(IndonesianStrings.contactsImportPickFile)
+        assertNotNull(IndonesianStrings.contactsImportLoadSample)
+        assertNotNull(IndonesianStrings.contactsImportResult(5, 5))
+        assertNotNull(IndonesianStrings.queueExportCsvBtn)
+        assertNotNull(IndonesianStrings.queueExportSuccessToast(10))
+
+        assertNotNull(TurkishStrings.settingsBaileysTitle)
+        assertNotNull(TurkishStrings.settingsBaileysSubtitle)
+        assertNotNull(TurkishStrings.settingsBaileysToggle)
+        assertNotNull(TurkishStrings.settingsBaileysUrlLabel)
+        assertNotNull(TurkishStrings.settingsBaileysKeyLabel)
+        assertNotNull(TurkishStrings.settingsBaileysTestBtn)
+        assertNotNull(TurkishStrings.contactsImportCsvBtn)
+        assertNotNull(TurkishStrings.contactsImportDialogTitle)
+        assertNotNull(TurkishStrings.contactsImportPickFile)
+        assertNotNull(TurkishStrings.contactsImportLoadSample)
+        assertNotNull(TurkishStrings.contactsImportResult(5, 5))
+        assertNotNull(TurkishStrings.queueExportCsvBtn)
+        assertNotNull(TurkishStrings.queueExportSuccessToast(10))
     }
 }

@@ -51,7 +51,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -159,7 +163,7 @@ fun ContactManagerScreen(
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = "Impor CSV",
+                            text = strings.contactsImportCsvBtn,
                             color = EmeraldPrimary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold
@@ -428,6 +432,7 @@ fun ContactManagerScreen(
         // Dialog Impor CSV Kontak
         if (showImportCsvDialog) {
             ImportCsvDialog(
+                strings = strings,
                 onDismiss = { showImportCsvDialog = false },
                 onImportFile = { stream -> viewModel.importContactsFromStream(stream) },
                 onImportSample = { viewModel.importSampleCsv() }
@@ -972,11 +977,13 @@ private fun ManageContactTagsDialog(
 
 @Composable
 private fun ImportCsvDialog(
+    strings: AppStrings,
     onDismiss: () -> Unit,
-    onImportFile: (java.io.InputStream) -> com.wabulk.sender.data.io.CsvParseResult,
-    onImportSample: () -> com.wabulk.sender.data.io.CsvParseResult
+    onImportFile: suspend (java.io.InputStream) -> com.wabulk.sender.data.io.CsvParseResult,
+    onImportSample: suspend () -> com.wabulk.sender.data.io.CsvParseResult
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var lastImportStatus by remember { mutableStateOf<String?>(null) }
     var isSuccess by remember { mutableStateOf(false) }
 
@@ -984,25 +991,32 @@ private fun ImportCsvDialog(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            try {
-                context.contentResolver.openInputStream(uri)?.use { stream ->
-                    when (val result = onImportFile(stream)) {
-                        is com.wabulk.sender.data.io.CsvParseResult.Success -> {
-                            isSuccess = true
-                            lastImportStatus = "Berhasil mengimpor ${result.contacts.size} kontak (${result.rowCount} baris dibaca, ${result.skippedCount} dilewati)"
-                        }
-                        is com.wabulk.sender.data.io.CsvParseResult.Error -> {
-                            isSuccess = false
-                            lastImportStatus = "Gagal: ${result.message}"
-                        }
+            coroutineScope.launch {
+                try {
+                    val stream = withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(uri)
                     }
-                } ?: run {
+                    if (stream != null) {
+                        stream.use { s ->
+                            when (val result = onImportFile(s)) {
+                                is com.wabulk.sender.data.io.CsvParseResult.Success -> {
+                                    isSuccess = true
+                                    lastImportStatus = strings.contactsImportResult(result.contacts.size, result.rowCount)
+                                }
+                                is com.wabulk.sender.data.io.CsvParseResult.Error -> {
+                                    isSuccess = false
+                                    lastImportStatus = "Gagal: ${result.message}"
+                                }
+                            }
+                        }
+                    } else {
+                        isSuccess = false
+                        lastImportStatus = "Gagal membuka file CSV"
+                    }
+                } catch (e: Exception) {
                     isSuccess = false
-                    lastImportStatus = "Gagal membuka file CSV"
+                    lastImportStatus = "Error: ${e.message}"
                 }
-            } catch (e: Exception) {
-                isSuccess = false
-                lastImportStatus = "Error: ${e.message}"
             }
         }
     }
@@ -1023,7 +1037,7 @@ private fun ImportCsvDialog(
                 ) {
                     Column {
                         Text(
-                            text = "Impor Kontak CSV",
+                            text = strings.contactsImportDialogTitle,
                             color = TextCrispPrimary,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
@@ -1081,7 +1095,7 @@ private fun ImportCsvDialog(
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "Pilih File CSV Perangkat",
+                            text = strings.contactsImportPickFile,
                             color = EmeraldOnPrimaryContainer,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
@@ -1097,13 +1111,15 @@ private fun ImportCsvDialog(
                         .clip(RoundedCornerShape(12.dp))
                         .background(EmeraldDarkSurfaceHigh)
                         .springClickable {
-                            val result = onImportSample()
-                            if (result is com.wabulk.sender.data.io.CsvParseResult.Success) {
-                                isSuccess = true
-                                lastImportStatus = "Berhasil mengimpor ${result.contacts.size} kontak contoh"
-                            } else if (result is com.wabulk.sender.data.io.CsvParseResult.Error) {
-                                isSuccess = false
-                                lastImportStatus = "Gagal: ${result.message}"
+                            coroutineScope.launch {
+                                val result = onImportSample()
+                                if (result is com.wabulk.sender.data.io.CsvParseResult.Success) {
+                                    isSuccess = true
+                                    lastImportStatus = strings.contactsImportResult(result.contacts.size, result.rowCount)
+                                } else if (result is com.wabulk.sender.data.io.CsvParseResult.Error) {
+                                    isSuccess = false
+                                    lastImportStatus = "Gagal: ${result.message}"
+                                }
                             }
                         },
                     contentAlignment = Alignment.Center
@@ -1119,7 +1135,7 @@ private fun ImportCsvDialog(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = "Muat Contoh CSV (5 Kontak Demo)",
+                            text = strings.contactsImportLoadSample,
                             color = TextCrispPrimary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold

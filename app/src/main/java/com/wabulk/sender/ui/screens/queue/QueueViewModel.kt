@@ -4,8 +4,10 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import java.io.File
 import com.wabulk.sender.data.io.CampaignCsvExporter
 import com.wabulk.sender.data.local.db.AppDatabase
 import com.wabulk.sender.data.local.db.CampaignEntity
@@ -13,6 +15,7 @@ import com.wabulk.sender.data.local.db.CampaignItemEntity
 import com.wabulk.sender.engine.queue.DispatchQueueManager
 import com.wabulk.sender.engine.queue.model.QueueItem
 import com.wabulk.sender.engine.queue.model.QueueTaskStatus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class QueueViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -82,61 +86,110 @@ class QueueViewModel(application: Application) : AndroidViewModel(application) {
         queueManager.startDispatch(getApplication())
     }
 
-    fun exportCampaignReport(context: Context) {
+    fun exportCampaignReport(context: Context, onExportSuccess: ((Int) -> String)? = null) {
         viewModelScope.launch {
             try {
                 val db = AppDatabase.getInstance(context)
                 val campaignDao = db.campaignDao()
-                val recentCampaigns = campaignDao.getRecentCampaigns(1)
-                val campaign = recentCampaigns.firstOrNull() ?: CampaignEntity(
-                    id = 1L,
-                    title = "Kampanye Pesan Massal WhatsApp",
-                    totalRecipients = totalCount.value,
-                    sentCount = sentCount.value,
-                    failedCount = 0,
-                    status = if (sentCount.value == totalCount.value && totalCount.value > 0) "COMPLETED" else "IN_PROGRESS",
-                    createdAt = System.currentTimeMillis()
-                )
 
-                val dbItems = campaignDao.getItemsForCampaign(campaign.id)
-                val itemsToExport = if (dbItems.isNotEmpty()) {
-                    dbItems
-                } else {
-                    val currentQueue = queueManager.queueItems.value
-                    currentQueue.mapIndexed { index, qItem ->
-                        val msgText = qItem.bubbleTexts.joinToString("\n\n").ifBlank { "Halo ${qItem.recipientName}" }
-                        CampaignItemEntity(
-                            id = (index + 1).toLong(),
-                            campaignId = campaign.id,
-                            recipientPhone = qItem.phoneNumber,
-                            recipientName = qItem.recipientName,
-                            messageText = msgText,
-                            status = when (qItem.status) {
-                                QueueTaskStatus.DELIVERED -> "DELIVERED"
-                                QueueTaskStatus.FAILED -> "FAILED"
-                                QueueTaskStatus.PAUSED -> "PAUSED"
-                                QueueTaskStatus.TYPING -> "TYPING"
-                                QueueTaskStatus.PENDING -> "PENDING"
-                            },
-                            errorMessage = qItem.errorMessage ?: if (qItem.status == QueueTaskStatus.FAILED) "Gagal terkirim" else null,
-                            sentAt = qItem.sentTimestamp ?: System.currentTimeMillis()
-                        )
+                val (campaign, itemsToExport, reportFile, csvContent) = withContext(Dispatchers.IO) {
+                    val recentCampaigns = campaignDao.getRecentCampaigns(1)
+                    val camp = recentCampaigns.firstOrNull() ?: CampaignEntity(
+                        id = 1L,
+                        title = "Kampanye Pesan Massal WhatsApp",
+                        totalRecipients = totalCount.value,
+                        sentCount = sentCount.value,
+                        failedCount = 0,
+                        status = if (sentCount.value == totalCount.value && totalCount.value > 0) "COMPLETED" else "IN_PROGRESS",
+                        createdAt = System.currentTimeMillis()
+                    )
+
+                    val dbItems = campaignDao.getItemsForCampaign(camp.id)
+                    val items = if (dbItems.isNotEmpty()) {
+                        dbItems
+                    } else {
+                        val currentQueue = queueManager.queueItems.value
+                        currentQueue.mapIndexed { index, qItem ->
+                            val msgText = qItem.bubbleTexts.joinToString("\n\n").ifBlank { "Halo ${qItem.recipientName}" }
+                            CampaignItemEntity(
+                                id = (index + 1).toLong(),
+                                campaignId = camp.id,
+                                recipientPhone = qItem.phoneNumber,
+                                recipientName = qItem.recipientName,
+                                messageText = msgText,
+                                status = when (qItem.status) {
+                                    QueueTaskStatus.DELIVERED -> "DELIVERED"
+                                    QueueTaskStatus.FAILED -> "FAILED"
+                                    QueueTaskStatus.PAUSED -> "PAUSED"
+                                    QueueTaskStatus.TYPING -> "TYPING"
+                                    QueueTaskStatus.PENDING -> "PENDING"
+                                },
+                                errorMessage = qItem.errorMessage ?: if (qItem.status == QueueTaskStatus.FAILED) "Gagal terkirim" else null,
+                                sentAt = qItem.sentTimestamp ?: System.currentTimeMillis()
+                            )
+                        }
                     }
+
+                    val csv = CampaignCsvExporter.generateCsv(camp, items)
+
+                    val reportsDir = File(context.cacheDir, "reports").apply { mkdirs() }
+                    val file = File(reportsDir, "campaign_report_${camp.id}.csv")
+                    file.writeText(csv, Charsets.UTF_8)
+
+                    listOf(camp, items, file, csv)
                 }
 
-                val csvContent = CampaignCsvExporter.generateCsv(campaign, itemsToExport)
+                @Suppress("UNCHECKED_CAST")
+                val typedCamp = campaign as CampaignEntity
+                @Suppress("UNCHECKED_CAST")
+                val typedItems = itemsToExport as List<CampaignItemEntity>
+                val typedFile = reportFile as File
+                val typedCsv = csvContent as String
+
+                var reportUri: android.net.Uri? = null
+                try {
+                    reportUri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        typedFile
+                    )
+                } catch (_: Exception) {
+                    reportUri = null
+                }
 
                 val sendIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/csv"
-                    putExtra(Intent.EXTRA_SUBJECT, "Laporan Kampanye ${campaign.title}")
-                    putExtra(Intent.EXTRA_TEXT, csvContent)
+                    putExtra(Intent.EXTRA_SUBJECT, "Laporan Kampanye ${typedCamp.title}")
+                    putExtra(Intent.EXTRA_TEXT, typedCsv)
+                    if (reportUri != null) {
+                        putExtra(Intent.EXTRA_STREAM, reportUri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
+
                 val chooser = Intent.createChooser(sendIntent, "Ekspor Laporan CSV").apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    if (reportUri != null) {
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
                 }
+
+                if (reportUri != null) {
+                    val resInfoList = context.packageManager.queryIntentActivities(
+                        chooser,
+                        android.content.pm.PackageManager.MATCH_DEFAULT_ONLY
+                    )
+                    for (resolveInfo in resInfoList) {
+                        val packageName = resolveInfo.activityInfo.packageName
+                        context.grantUriPermission(packageName, reportUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                }
+
                 context.startActivity(chooser)
-                Toast.makeText(context, "Laporan CSV berhasil diekspor (${itemsToExport.size} data)", Toast.LENGTH_SHORT).show()
+                val successMsg = onExportSuccess?.invoke(typedItems.size)
+                    ?: "Laporan CSV berhasil diekspor (${typedItems.size} data)"
+                Toast.makeText(context, successMsg, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 Toast.makeText(context, "Gagal mengekspor laporan: ${e.message}", Toast.LENGTH_LONG).show()
             }

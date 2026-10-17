@@ -852,7 +852,7 @@ fun SettingsScreen(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
-                                text = "Baileys Bridge Gateway",
+                                text = strings.settingsBaileysTitle,
                                 color = TextCrispPrimary,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
@@ -872,7 +872,7 @@ fun SettingsScreen(
                             }
                         }
                         Text(
-                            text = "Gateway multi-device tanpa scan berulang",
+                            text = strings.settingsBaileysSubtitle,
                             color = TextMutedBody,
                             fontSize = 10.sp
                         )
@@ -902,7 +902,7 @@ fun SettingsScreen(
             // URL Gateway Input
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "URL GATEWAY",
+                    text = strings.settingsBaileysUrlLabel,
                     color = TextCrispPrimary,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
@@ -944,7 +944,7 @@ fun SettingsScreen(
             // API Key Input
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "API KEY (OPSIONAL)",
+                    text = strings.settingsBaileysKeyLabel,
                     color = TextCrispPrimary,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
@@ -1015,7 +1015,7 @@ fun SettingsScreen(
                             )
                         }
                         Text(
-                            text = if (isTestingGateway) "Menguji..." else "Uji Koneksi Gateway",
+                            text = if (isTestingGateway) "Menguji..." else strings.settingsBaileysTestBtn,
                             color = TextCrispPrimary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
