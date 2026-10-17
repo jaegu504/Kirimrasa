@@ -141,6 +141,10 @@ class DispatchQueueManager private constructor() {
                 }
                 if (!_isRunning.value) break
 
+                // Resolve engine for this node
+                val sessionManager = WhatsAppSessionManager.getInstance()
+                val engine = sessionManager.getEngineForNode(nextItem.nodeUsed)
+
                 // Phase: Typing simulation
                 _currentTypingContact.value = nextItem.recipientName
                 updateItemStatus(nextItem.id, QueueTaskStatus.TYPING)
@@ -152,14 +156,21 @@ class DispatchQueueManager private constructor() {
                     sentCount
                 )
 
-                delay(2000)
+                engine.sendTypingPresence(nextItem.phoneNumber, 2000L)
                 while (_isPaused.value && _isRunning.value) {
                     delay(500)
                 }
                 if (!_isRunning.value) break
 
-                // Phase: Delivered
-                updateItemStatus(nextItem.id, QueueTaskStatus.DELIVERED, System.currentTimeMillis())
+                // Phase: Send Message
+                val messageText = nextItem.bubbleTexts.joinToString("\n\n")
+                val sendResult = engine.sendMessage(nextItem.phoneNumber, messageText)
+
+                if (sendResult.isSuccess) {
+                    updateItemStatus(nextItem.id, QueueTaskStatus.DELIVERED, System.currentTimeMillis())
+                } else {
+                    updateItemStatus(nextItem.id, QueueTaskStatus.FAILED, errorMessage = sendResult.errorMessage)
+                }
                 _currentTypingContact.value = null
 
                 updateNotification(
@@ -173,10 +184,19 @@ class DispatchQueueManager private constructor() {
         }
     }
 
-    private fun updateItemStatus(itemId: String, status: QueueTaskStatus, timestamp: Long? = null) {
+    private fun updateItemStatus(
+        itemId: String,
+        status: QueueTaskStatus,
+        timestamp: Long? = null,
+        errorMessage: String? = null
+    ) {
         _queueItems.value = _queueItems.value.map { item ->
             if (item.id == itemId) {
-                item.copy(status = status, sentTimestamp = timestamp ?: item.sentTimestamp)
+                item.copy(
+                    status = status,
+                    sentTimestamp = timestamp ?: item.sentTimestamp,
+                    errorMessage = errorMessage ?: item.errorMessage
+                )
             } else {
                 item
             }

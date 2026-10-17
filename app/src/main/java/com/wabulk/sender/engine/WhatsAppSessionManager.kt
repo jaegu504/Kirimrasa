@@ -1,6 +1,8 @@
 package com.wabulk.sender.engine
 
 import com.wabulk.sender.domain.model.AccountNode
+import com.wabulk.sender.engine.baileys.BaileysBridgeClient
+import com.wabulk.sender.engine.baileys.BaileysConfigManager
 import com.wabulk.sender.engine.model.NodeSession
 import com.wabulk.sender.engine.model.NodeStatus
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +37,24 @@ class WhatsAppSessionManager(
     )
     val node2Session: StateFlow<NodeSession> = _node2Session.asStateFlow()
 
+    fun getEngineForNode(nodeType: AccountNode): WhatsAppEngine {
+        val session = when (nodeType) {
+            AccountNode.PERSONAL -> _node1Session.value
+            AccountNode.BUSINESS, AccountNode.DUAL_SYNC -> _node2Session.value
+        }
+        val config = BaileysConfigManager.config.value
+        return if (engine !is SimulatedWhatsAppEngine) {
+            engine
+        } else if (config.isEnabled) {
+            BaileysBridgeClient(
+                node = session,
+                configProvider = { BaileysConfigManager.config.value }
+            )
+        } else {
+            SimulatedWhatsAppEngine(session)
+        }
+    }
+
     fun requestNewPairingCode(nodeType: AccountNode): String {
         val newCode = generatePairingCode()
         val expiresAt = System.currentTimeMillis() + (180 * 1000L) // 3 minutes
@@ -56,6 +76,32 @@ class WhatsAppSessionManager(
             }
         }
         return newCode
+    }
+
+    suspend fun requestPairingCodeRemote(nodeType: AccountNode, phoneNumber: String): String {
+        val activeEngine = getEngineForNode(nodeType)
+        val code = activeEngine.requestPairingCode(phoneNumber)
+        val expiresAt = System.currentTimeMillis() + (180 * 1000L) // 3 minutes
+
+        when (nodeType) {
+            AccountNode.PERSONAL -> {
+                _node1Session.value = _node1Session.value.copy(
+                    status = NodeStatus.PAIRING,
+                    phoneNumber = phoneNumber,
+                    pairingCode = code,
+                    codeExpiresAt = expiresAt
+                )
+            }
+            AccountNode.BUSINESS, AccountNode.DUAL_SYNC -> {
+                _node2Session.value = _node2Session.value.copy(
+                    status = NodeStatus.PAIRING,
+                    phoneNumber = phoneNumber,
+                    pairingCode = code,
+                    codeExpiresAt = expiresAt
+                )
+            }
+        }
+        return code
     }
 
     fun connectNode(nodeType: AccountNode, phoneNumber: String = "+62 812-3456-7890") {
@@ -94,8 +140,15 @@ class WhatsAppSessionManager(
         }
     }
 
+    suspend fun disconnectNodeRemote(nodeType: AccountNode) {
+        disconnectNode(nodeType)
+        getEngineForNode(nodeType).disconnect()
+    }
+
     suspend fun pingNode(nodeType: AccountNode): Boolean {
-        val success = engine.ping(nodeType)
+        val activeEngine = getEngineForNode(nodeType)
+        val result = activeEngine.ping()
+        val success = result.isSuccess
         if (success) {
             val now = System.currentTimeMillis()
             when (nodeType) {
