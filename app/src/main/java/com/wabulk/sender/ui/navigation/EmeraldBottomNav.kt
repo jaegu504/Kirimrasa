@@ -40,6 +40,7 @@ import com.wabulk.sender.theme.springClickable
 fun EmeraldBottomNav(
     currentTab: ScreenTab,
     onTabSelected: (ScreenTab) -> Unit,
+    queueBadgeCount: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
@@ -87,7 +88,8 @@ fun EmeraldBottomNav(
                             )
 
                             // Queue Badge Counter
-                            if (tab.badgeCount != null && tab.badgeCount > 0) {
+                            val badge = if (tab == ScreenTab.QUEUE && queueBadgeCount > 0) queueBadgeCount else null
+                            if (badge != null) {
                                 Box(
                                     modifier = Modifier
                                         .size(16.dp)
@@ -96,7 +98,7 @@ fun EmeraldBottomNav(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = tab.badgeCount.toString(),
+                                        text = if (badge > 99) "99+" else badge.toString(),
                                         color = EmeraldOnPrimaryContainer,
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold

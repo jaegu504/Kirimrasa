@@ -18,6 +18,7 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
 
     val localizationManager = LocalizationManager(applicationContext)
+    com.wabulk.sender.engine.WhatsAppSessionManager.getInstance(applicationContext)
 
     setContent {
       WhatsAppBulkTheme {

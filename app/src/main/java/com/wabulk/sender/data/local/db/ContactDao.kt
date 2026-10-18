@@ -53,6 +53,12 @@ interface ContactDao {
     @Query("UPDATE contacts SET is_selected = :selected WHERE tags_json LIKE '%' || :tag || '%'")
     suspend fun selectAllInTag(tag: String, selected: Boolean)
 
+    @Query("UPDATE contacts SET is_selected = :selected")
+    suspend fun selectAll(selected: Boolean)
+
+    @Query("UPDATE contacts SET custom_nickname = '' WHERE custom_nickname LIKE '+%' OR custom_nickname NOT GLOB '*[a-zA-Z]*'")
+    suspend fun sanitizeInvalidNicknames()
+
     @Query("UPDATE contacts SET tags_json = :tagsJson WHERE id = :contactId")
     suspend fun updateTags(contactId: Long, tagsJson: String)
 

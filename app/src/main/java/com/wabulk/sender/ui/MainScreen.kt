@@ -83,6 +83,8 @@ fun MainScreen(
     val composerViewModel: ComposerViewModel = viewModel()
     val contacts by contactViewModel.contacts.collectAsState()
     val selectedCount by contactViewModel.selectedCount.collectAsState()
+    val queueItems by DispatchQueueManager.getInstance().queueItems.collectAsState()
+    val pendingQueueCount = queueItems.count { it.status == QueueTaskStatus.PENDING || it.status == QueueTaskStatus.TYPING }
 
     CompositionLocalProvider(LocalAppStrings provides strings) {
         Scaffold(
@@ -206,7 +208,8 @@ fun MainScreen(
             bottomBar = {
                 EmeraldBottomNav(
                     currentTab = currentTab,
-                    onTabSelected = { currentTab = it }
+                    onTabSelected = { currentTab = it },
+                    queueBadgeCount = pendingQueueCount
                 )
             }
         ) { innerPadding ->
@@ -240,20 +243,28 @@ fun MainScreen(
                             val targetContacts = if (contacts.any { it.isSelected }) {
                                 contacts.filter { it.isSelected }
                             } else {
-                                contacts.take(10)
+                                contacts
                             }
                             val companyVal = composerViewModel.uiState.value.customVariables["Company"] ?: "KirimRasa"
                             val custom1Val = composerViewModel.uiState.value.customVariables["Custom_1"] ?: "PROMO30"
                             val bubbles = composerViewModel.uiState.value.bubbles.filter { it.text.isNotBlank() }.ifEmpty {
                                 listOf(MessageBubble(text = "Halo {Nickname}, penawaran spesial minggu ini dari {Company}! Gunakan kode {Custom_1}."))
                             }
+                            val mediaUris = composerViewModel.attachments.value.map { it.uriString }
+                            val selectedAccount = composerViewModel.uiState.value.selectedAccount
                             val queueItems = targetContacts.mapIndexed { idx, c ->
+                                val chosenNode = when (selectedAccount) {
+                                    AccountNode.PERSONAL -> AccountNode.PERSONAL
+                                    AccountNode.BUSINESS -> AccountNode.BUSINESS
+                                    AccountNode.DUAL_SYNC -> if (idx % 2 == 0) AccountNode.PERSONAL else AccountNode.BUSINESS
+                                }
                                 DispatchQueueManager.buildQueueItem(
                                     contact = c,
                                     bubbles = bubbles,
                                     defaultCompany = companyVal,
                                     defaultCustom1 = custom1Val,
-                                    nodeUsed = if (idx % 2 == 0) AccountNode.PERSONAL else AccountNode.BUSINESS
+                                    nodeUsed = chosenNode,
+                                    mediaUris = mediaUris
                                 )
                             }
                             val formattedDate = java.text.SimpleDateFormat("dd MMM HH:mm", java.util.Locale.getDefault()).format(java.util.Date())

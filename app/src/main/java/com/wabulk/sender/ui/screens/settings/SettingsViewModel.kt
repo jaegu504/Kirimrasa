@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
-    val sessionManager = WhatsAppSessionManager.getInstance()
+    val sessionManager = WhatsAppSessionManager.getInstance(application)
     val node1Session: StateFlow<NodeSession> = sessionManager.node1Session
     val node2Session: StateFlow<NodeSession> = sessionManager.node2Session
 
@@ -127,15 +127,26 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         return sessionManager.requestNewPairingCode(node)
     }
 
+    fun requestGatewayPairingCode(node: AccountNode, phoneNumber: String, onResult: (Result<String>) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val code = sessionManager.requestPairingCodeRemote(node, phoneNumber)
+                onResult(Result.success(code))
+            } catch (e: Exception) {
+                onResult(Result.failure(e))
+            }
+        }
+    }
+
     fun disconnectNode(node: AccountNode) {
         sessionManager.disconnectNode(node)
     }
 
     fun updateNodePhone(node: AccountNode, phone: String) {
-        sessionManager.updateNodePhone(node, phone)
+        sessionManager.updateNodePhone(node, phone, getApplication())
     }
 
-    fun connectNode(node: AccountNode, phone: String = "+62 812-3456-7890") {
+    fun connectNode(node: AccountNode, phone: String = "") {
         sessionManager.connectNode(node, phone)
     }
 

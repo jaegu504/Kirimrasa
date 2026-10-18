@@ -35,7 +35,7 @@ class DispatchQueueManager private constructor(
     private val scope = CoroutineScope(Dispatchers.Default)
     private var job: Job? = null
 
-    private val _queueItems = MutableStateFlow<List<QueueItem>>(generateInitialDemoQueue())
+    private val _queueItems = MutableStateFlow<List<QueueItem>>(emptyList())
     val queueItems: StateFlow<List<QueueItem>> = _queueItems.asStateFlow()
 
     private val _isPaused = MutableStateFlow(false)
@@ -49,6 +49,9 @@ class DispatchQueueManager private constructor(
 
     private val _currentTypingContact = MutableStateFlow<String?>(null)
     val currentTypingContact: StateFlow<String?> = _currentTypingContact.asStateFlow()
+
+    private val _campaignTitle = MutableStateFlow<String>("Broadcast Siap Dimulai")
+    val campaignTitle: StateFlow<String> = _campaignTitle.asStateFlow()
 
     private var currentCampaignId: Long? = null
     private var campaignStartTime: Long = 0L
@@ -91,6 +94,7 @@ class DispatchQueueManager private constructor(
 
         _queueItems.value = items
         _isPaused.value = false
+        _campaignTitle.value = campaignTitle
         queueItemToDbId.clear()
         campaignStartTime = System.currentTimeMillis()
 
@@ -301,15 +305,58 @@ class DispatchQueueManager private constructor(
                 }
                 if (!_isRunning.value) break
 
-                // Phase: Send Message
-                val messageText = nextItem.bubbleTexts.joinToString("\n\n")
-                val sendResult = engine.sendMessage(nextItem.phoneNumber, messageText)
+                // Phase: Send Message (Supporting Split Messages & Media Attachments)
+                var overallSuccess = true
+                var lastErrorMessage: String? = null
+
+                if (nextItem.mediaUris.isNotEmpty()) {
+                    // Send media first. If there are bubbles, first bubble is used as caption
+                    val firstBubble = nextItem.bubbleTexts.firstOrNull() ?: ""
+                    val mediaResult = engine.sendMessage(
+                        recipientPhone = nextItem.phoneNumber,
+                        messageText = firstBubble,
+                        mediaUrls = nextItem.mediaUris
+                    )
+                    if (!mediaResult.isSuccess) {
+                        overallSuccess = false
+                        lastErrorMessage = mediaResult.errorMessage
+                    }
+
+                    // Send remaining split message bubbles after media
+                    val remainingBubbles = if (firstBubble.isNotEmpty()) nextItem.bubbleTexts.drop(1) else nextItem.bubbleTexts
+                    for (bubble in remainingBubbles) {
+                        if (!_isRunning.value) break
+                        while (_isPaused.value && _isRunning.value) delay(500)
+                        if (!skipDelayForTesting) delay(1800L)
+                        val bubbleRes = engine.sendMessage(nextItem.phoneNumber, bubble, emptyList())
+                        if (!bubbleRes.isSuccess) {
+                            overallSuccess = false
+                            lastErrorMessage = bubbleRes.errorMessage
+                        }
+                    }
+                } else {
+                    // No media: Send each bubble as a distinct split message
+                    val bubblesToSend = nextItem.bubbleTexts.ifEmpty { listOf("") }
+                    for ((bIdx, bubble) in bubblesToSend.withIndex()) {
+                        if (!_isRunning.value) break
+                        while (_isPaused.value && _isRunning.value) delay(500)
+                        if (bIdx > 0 && !skipDelayForTesting) {
+                            delay(1800L)
+                        }
+                        val bubbleRes = engine.sendMessage(nextItem.phoneNumber, bubble, emptyList())
+                        if (!bubbleRes.isSuccess) {
+                            overallSuccess = false
+                            lastErrorMessage = bubbleRes.errorMessage
+                        }
+                    }
+                }
+
                 val sentTimestamp = System.currentTimeMillis()
 
-                if (sendResult.isSuccess) {
+                if (overallSuccess) {
                     updateItemStatus(nextItem.id, QueueTaskStatus.DELIVERED, sentTimestamp)
                 } else {
-                    updateItemStatus(nextItem.id, QueueTaskStatus.FAILED, errorMessage = sendResult.errorMessage)
+                    updateItemStatus(nextItem.id, QueueTaskStatus.FAILED, errorMessage = lastErrorMessage)
                 }
                 _currentTypingContact.value = null
 
@@ -320,7 +367,7 @@ class DispatchQueueManager private constructor(
                         campaignInitJob?.join()
                         val dbId = queueItemToDbId[nextItem.id]
                         if (dbId != null) {
-                            if (sendResult.isSuccess) {
+                            if (overallSuccess) {
                                 dao.updateCampaignItemStatus(
                                     id = dbId,
                                     status = CampaignItemStatus.SENT.name,
@@ -331,7 +378,7 @@ class DispatchQueueManager private constructor(
                                 dao.updateCampaignItemStatus(
                                     id = dbId,
                                     status = CampaignItemStatus.FAILED.name,
-                                    errorMessage = sendResult.errorMessage,
+                                    errorMessage = lastErrorMessage,
                                     sentAt = sentTimestamp
                                 )
                             }
@@ -416,7 +463,8 @@ class DispatchQueueManager private constructor(
             bubbles: List<MessageBubble>,
             defaultCompany: String = "KirimRasa",
             defaultCustom1: String = "PROMO30",
-            nodeUsed: AccountNode = AccountNode.PERSONAL
+            nodeUsed: AccountNode = AccountNode.PERSONAL,
+            mediaUris: List<String> = emptyList()
         ): QueueItem {
             val nick = contact.customNickname.ifEmpty { ContactRepository.extractSmartNickname(contact.rawName) }
             val effectiveCompany = contact.company.ifBlank { defaultCompany }
@@ -434,6 +482,7 @@ class DispatchQueueManager private constructor(
                 recipientName = contact.rawName.replace(Regex("\\(.*?\\)"), "").trim(),
                 phoneNumber = contact.phoneNumber,
                 bubbleTexts = evaluatedBubbles,
+                mediaUris = mediaUris,
                 nodeUsed = nodeUsed,
                 status = QueueTaskStatus.PENDING
             )
@@ -446,9 +495,9 @@ class DispatchQueueManager private constructor(
                 "Nurul Hidayah", "Farhan Rizki"
             )
             val phones = listOf(
-                "+1 (555) 392-8104", "+1 (555) 749-2041", "+44 7911 123456", "+65 9123 4567",
-                "+91 98765 43210", "+62 812-3456-7890", "+62 813-9876-5432", "+62 819-0123-4567",
-                "+62 821-2345-6789", "+62 856-7890-1234"
+                "+62 811-2345-6789", "+62 812-3456-7890", "+62 813-9876-5432", "+62 819-0123-4567",
+                "+62 821-2345-6789", "+62 856-7890-1234", "+62 877-1234-5678", "+62 878-9012-3456",
+                "+62 896-1234-5678", "+62 899-0123-4567"
             )
 
             return names.mapIndexed { index, name ->

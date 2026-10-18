@@ -108,29 +108,23 @@ class WhatsAppAccessibilityService : AccessibilityService() {
 
         val rootNode = rootInActiveWindow ?: return
         try {
-            // Find send button by view ID or text/contentDescription
+            // Find send button by exact view ID first
             var sendButton = rootNode.findAccessibilityNodeInfosByViewId("$pkg:id/send")
                 .firstOrNull { it.isClickable && it.isEnabled }
 
             if (sendButton == null) {
-                // Multilingual fallback: Send, Kirim, Gönder
-                val descriptions = listOf("Send", "Kirim", "Gönder", "send", "kirim")
-                for (desc in descriptions) {
-                    val matching = rootNode.findAccessibilityNodeInfosByText(desc)
-                    sendButton = matching.firstOrNull { it.isClickable && it.isEnabled }
-                    if (sendButton != null) break
-                }
+                sendButton = findSendButtonRecursive(rootNode)
             }
 
             if (sendButton != null) {
                 lastClickTime = now
-                // Brief delay so WhatsApp finishes parsing intent text
+                isAutomationRunning = false // Stop automation immediately before clicking so it never acts on return
                 Thread.sleep(300)
                 sendButton.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                 _messageSentSignal.tryEmit(true)
 
                 // Wait for send animation then return back to WhatsAppBulk
-                Thread.sleep(500)
+                Thread.sleep(600)
                 performGlobalAction(GLOBAL_ACTION_BACK)
             }
         } catch (_: Exception) {
@@ -139,6 +133,42 @@ class WhatsAppAccessibilityService : AccessibilityService() {
                 rootNode.recycle()
             } catch (_: Exception) {}
         }
+    }
+
+    private fun findSendButtonRecursive(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        val viewId = node.viewIdResourceName ?: ""
+        val desc = node.contentDescription?.toString()?.trim() ?: ""
+        val text = node.text?.toString()?.trim() ?: ""
+
+        // Strictly ignore any Meta AI elements or search bars
+        if (desc.contains("meta", ignoreCase = true) ||
+            text.contains("meta", ignoreCase = true) ||
+            viewId.contains("meta", ignoreCase = true) ||
+            desc.contains("search", ignoreCase = true) ||
+            desc.contains("cari", ignoreCase = true) ||
+            text.contains("cari", ignoreCase = true)
+        ) {
+            return null
+        }
+
+        val isSendId = viewId.endsWith(":id/send", ignoreCase = true)
+        val isSendDesc = desc.equals("Send", ignoreCase = true) ||
+                desc.equals("Kirim", ignoreCase = true) ||
+                desc.equals("Gönder", ignoreCase = true)
+        val isSendText = text.equals("Send", ignoreCase = true) ||
+                text.equals("Kirim", ignoreCase = true) ||
+                text.equals("Gönder", ignoreCase = true)
+
+        if ((isSendId || isSendDesc || isSendText) && node.isClickable && node.isEnabled) {
+            return node
+        }
+
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val result = findSendButtonRecursive(child)
+            if (result != null) return result
+        }
+        return null
     }
 
     override fun onInterrupt() {

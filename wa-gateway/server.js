@@ -1,0 +1,409 @@
+const express = require('express');
+const http = require('http');
+const { WebSocketServer } = require('ws');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
+const pino = require('pino');
+const {
+    default: makeWASocket,
+    useMultiFileAuthState,
+    DisconnectReason,
+    fetchLatestBaileysVersion,
+    makeCacheableSignalKeyStore,
+    delay
+} = require('@whiskeysockets/baileys');
+
+const app = express();
+const server = http.createServer(app);
+const wss = new WebSocketServer({ noServer: true });
+
+const PORT = process.env.PORT || 3000;
+const API_KEY = process.env.API_KEY || '';
+const SESSIONS_DIR = process.env.SESSIONS_DIR || path.join(__dirname, 'sessions');
+
+if (!fs.existsSync(SESSIONS_DIR)) {
+    fs.mkdirSync(SESSIONS_DIR, { recursive: true });
+}
+
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Logger
+const logger = pino({ level: process.env.LOG_LEVEL || 'warn' });
+
+// In-memory active nodes map
+// nodeMap: nodeId -> { sock, state, saveCreds, status, phoneNumber, wsClients: Set }
+const nodeMap = new Map();
+
+// Helper: Normalize Indonesian & international phone numbers
+function normalizePhone(phone) {
+    let clean = phone.replace(/[^0-9]/g, '');
+    if (clean.startsWith('0')) {
+        clean = '62' + clean.slice(1);
+    } else if (clean.startsWith('8')) {
+        clean = '62' + clean;
+    }
+    return clean;
+}
+
+// Authentication middleware
+function authMiddleware(req, res, next) {
+    if (!API_KEY) return next();
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.replace(/^Bearer\s+/i, '').trim() === API_KEY.trim()) {
+        return next();
+    }
+    return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
+}
+
+// Helper: Broadcast status to connected WebSockets for this node
+function broadcastStatus(nodeId, status) {
+    const node = nodeMap.get(nodeId);
+    if (!node || !node.wsClients) return;
+    const payload = JSON.stringify({ nodeId, status, timestamp: Date.now() });
+    for (const ws of node.wsClients) {
+        if (ws.readyState === ws.OPEN) {
+            ws.send(payload);
+        }
+    }
+}
+
+// Initialize Baileys Socket for a node
+async function getOrCreateSocket(nodeId, phoneNumber = null) {
+    let node = nodeMap.get(nodeId);
+    if (node && node.sock && node.status === 'CONNECTED') {
+        return node;
+    }
+
+    const sessionPath = path.join(SESSIONS_DIR, `node_${nodeId}`);
+    if (!fs.existsSync(sessionPath)) {
+        fs.mkdirSync(sessionPath, { recursive: true });
+    }
+
+    const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+    const { version } = await fetchLatestBaileysVersion();
+
+    const sock = makeWASocket({
+        version,
+        logger,
+        printQRInTerminal: false,
+        auth: {
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(state.keys, logger)
+        },
+        browser: ['Ubuntu', 'Chrome', '20.0.04'],
+        generateHighQualityLinkPreview: true,
+        connectTimeoutMs: 60000,
+        keepAliveIntervalMs: 25000,
+        emitOwnEvents: false,
+        retryRequestDelayMs: 250
+    });
+
+    if (!node) {
+        node = {
+            sock,
+            state,
+            saveCreds,
+            status: state.creds?.registered ? 'CONNECTED' : 'DISCONNECTED',
+            phoneNumber: phoneNumber || '',
+            wsClients: new Set()
+        };
+        nodeMap.set(nodeId, node);
+    } else {
+        node.sock = sock;
+        node.state = state;
+        node.saveCreds = saveCreds;
+        if (phoneNumber) node.phoneNumber = phoneNumber;
+    }
+
+    sock.ev.on('creds.update', saveCreds);
+
+    sock.ev.on('connection.update', async (update) => {
+        const { connection, lastDisconnect } = update;
+        if (connection === 'close') {
+            const statusCode = lastDisconnect?.error?.output?.statusCode;
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+            node.status = 'DISCONNECTED';
+            broadcastStatus(nodeId, 'DISCONNECTED');
+            logger.warn({ nodeId, statusCode }, 'Connection closed');
+
+            if (shouldReconnect) {
+                logger.info({ nodeId }, 'Attempting reconnection in 5s...');
+                setTimeout(() => getOrCreateSocket(nodeId, node.phoneNumber), 5000);
+            } else {
+                logger.warn({ nodeId }, 'Logged out from device, deleting session credentials');
+                try {
+                    fs.rmSync(sessionPath, { recursive: true, force: true });
+                } catch (_) {}
+            }
+        } else if (connection === 'open') {
+            node.status = 'CONNECTED';
+            broadcastStatus(nodeId, 'CONNECTED');
+            logger.info({ nodeId }, 'WhatsApp connection established successfully!');
+        } else if (connection === 'connecting') {
+            node.status = 'CONNECTING';
+            broadcastStatus(nodeId, 'CONNECTING');
+        }
+    });
+
+    return node;
+}
+
+// REST ROUTES
+
+// 1. Health check & info
+app.get('/', (req, res) => {
+    res.json({
+        service: 'WhatsApp Bulk Gateway (Baileys)',
+        version: '1.0.0',
+        activeNodes: Array.from(nodeMap.entries()).map(([id, n]) => ({
+            id,
+            status: n.status,
+            phoneNumber: n.phoneNumber || ''
+        })),
+        uptimeSeconds: Math.floor(process.uptime())
+    });
+});
+
+// 2. Request Pairing Code (8 digits)
+app.post('/api/nodes/:nodeId/pair', authMiddleware, async (req, res) => {
+    const { nodeId } = req.params;
+    const { phoneNumber } = req.body;
+
+    if (!phoneNumber) {
+        return res.status(400).json({ error: 'Parameter phoneNumber wajib diisi' });
+    }
+
+    const cleanPhone = normalizePhone(phoneNumber);
+
+    try {
+        const sessionPath = path.join(SESSIONS_DIR, `node_${nodeId}`);
+        // If re-pairing with different phone or clean slate, purge old credentials
+        if (fs.existsSync(sessionPath) && !nodeMap.get(nodeId)?.sock?.user) {
+            fs.rmSync(sessionPath, { recursive: true, force: true });
+        }
+
+        const node = await getOrCreateSocket(nodeId, cleanPhone);
+        node.phoneNumber = cleanPhone;
+
+        // Give socket a brief moment to connect to WA WebSocket
+        await delay(2000);
+
+        if (!node.sock.authState.creds.registered) {
+            const code = await node.sock.requestPairingCode(cleanPhone);
+            logger.info({ nodeId, cleanPhone, code }, 'Pairing code generated');
+            return res.json({
+                success: true,
+                code: code,
+                pairingCode: code,
+                phoneNumber: cleanPhone,
+                expiresInSeconds: 180
+            });
+        } else {
+            return res.json({
+                success: true,
+                status: 'ALREADY_CONNECTED',
+                message: 'Perangkat sudah terhubung'
+            });
+        }
+    } catch (err) {
+        logger.error({ err: err.message }, 'Gagal mendapatkan pairing code');
+        return res.status(500).json({
+            error: 'Gagal membuat pairing code: ' + (err.message || err)
+        });
+    }
+});
+
+// 3. Node Connection Status
+app.get('/api/nodes/:nodeId/status', authMiddleware, async (req, res) => {
+    const { nodeId } = req.params;
+    let node = nodeMap.get(nodeId);
+
+    // If not in memory, check if session folder exists
+    if (!node) {
+        const sessionPath = path.join(SESSIONS_DIR, `node_${nodeId}`);
+        if (fs.existsSync(sessionPath)) {
+            try {
+                node = await getOrCreateSocket(nodeId);
+            } catch (_) {}
+        }
+    }
+
+    const status = node ? node.status : 'DISCONNECTED';
+    return res.json({
+        nodeId,
+        status,
+        phoneNumber: node?.phoneNumber || '',
+        registered: node?.sock?.user ? true : false
+    });
+});
+
+// 4. Send Message (Split Message Text or Media)
+app.post('/api/nodes/:nodeId/send', authMiddleware, async (req, res) => {
+    const { nodeId } = req.params;
+    const { recipient, message, media } = req.body;
+
+    if (!recipient) {
+        return res.status(400).json({ error: 'recipient phone number is required' });
+    }
+
+    const node = nodeMap.get(nodeId);
+    if (!node || !node.sock || node.status !== 'CONNECTED') {
+        return res.status(400).json({
+            error: `Node ${nodeId} belum terhubung ke WhatsApp. Silakan hubungkan dulu.`
+        });
+    }
+
+    const cleanPhone = normalizePhone(recipient);
+    const jid = `${cleanPhone}@s.whatsapp.net`;
+
+    try {
+        let sentMessage;
+
+        // Check if media is present
+        const mediaList = Array.isArray(media) ? media.filter(m => m && !m.startsWith('dummy://')) : [];
+
+        if (mediaList.length > 0) {
+            const firstMedia = mediaList[0];
+            let mediaBuffer;
+
+            if (firstMedia.startsWith('http://') || firstMedia.startsWith('https://')) {
+                // Fetch from remote URL
+                const fetchRes = await fetch(firstMedia);
+                mediaBuffer = Buffer.from(await fetchRes.arrayBuffer());
+            } else if (firstMedia.startsWith('data:')) {
+                // Data URL base64
+                const base64Data = firstMedia.split(',')[1];
+                mediaBuffer = Buffer.from(base64Data, 'base64');
+            } else if (fs.existsSync(firstMedia)) {
+                mediaBuffer = fs.readFileSync(firstMedia);
+            }
+
+            if (mediaBuffer) {
+                // Determine media type
+                const isImage = /\.(jpe?g|png|webp)$/i.test(firstMedia) || firstMedia.includes('image/');
+                const isVideo = /\.(mp4|mov|avi)$/i.test(firstMedia) || firstMedia.includes('video/');
+
+                if (isImage) {
+                    sentMessage = await node.sock.sendMessage(jid, {
+                        image: mediaBuffer,
+                        caption: message || undefined
+                    });
+                } else if (isVideo) {
+                    sentMessage = await node.sock.sendMessage(jid, {
+                        video: mediaBuffer,
+                        caption: message || undefined
+                    });
+                } else {
+                    sentMessage = await node.sock.sendMessage(jid, {
+                        document: mediaBuffer,
+                        mimetype: 'application/octet-stream',
+                        fileName: path.basename(firstMedia) || 'document',
+                        caption: message || undefined
+                    });
+                }
+            }
+        }
+
+        // If no media was sent, send as text
+        if (!sentMessage) {
+            sentMessage = await node.sock.sendMessage(jid, { text: message || '' });
+        }
+
+        return res.json({
+            success: true,
+            messageId: sentMessage?.key?.id || `msg-${Date.now()}`,
+            timestamp: Date.now()
+        });
+    } catch (err) {
+        logger.error({ err: err.message, recipient }, 'Gagal mengirim pesan');
+        return res.status(500).json({
+            error: 'Gagal mengirim pesan: ' + (err.message || err)
+        });
+    }
+});
+
+// 5. Send Typing Presence
+app.post('/api/nodes/:nodeId/presence', authMiddleware, async (req, res) => {
+    const { nodeId } = req.params;
+    const { recipient, durationMs } = req.body;
+
+    const node = nodeMap.get(nodeId);
+    if (!node || !node.sock || node.status !== 'CONNECTED') {
+        return res.json({ success: true, warning: 'Node not connected, presence skipped' });
+    }
+
+    try {
+        const cleanPhone = normalizePhone(recipient || '');
+        const jid = `${cleanPhone}@s.whatsapp.net`;
+        await node.sock.sendPresenceUpdate('composing', jid);
+        if (durationMs && durationMs > 0) {
+            await delay(Math.min(durationMs, 5000));
+            await node.sock.sendPresenceUpdate('paused', jid);
+        }
+        return res.json({ success: true });
+    } catch (_) {
+        return res.json({ success: true });
+    }
+});
+
+// 6. Disconnect / Logout
+app.post('/api/nodes/:nodeId/disconnect', authMiddleware, async (req, res) => {
+    const { nodeId } = req.params;
+    const node = nodeMap.get(nodeId);
+
+    try {
+        if (node?.sock) {
+            await node.sock.logout().catch(() => {});
+            node.sock.end(new Error('Manual disconnect'));
+        }
+    } catch (_) {}
+
+    const sessionPath = path.join(SESSIONS_DIR, `node_${nodeId}`);
+    try {
+        fs.rmSync(sessionPath, { recursive: true, force: true });
+    } catch (_) {}
+
+    nodeMap.delete(nodeId);
+    broadcastStatus(nodeId, 'DISCONNECTED');
+
+    return res.json({ success: true, message: `Node ${nodeId} diputuskan dan sesi dihapus` });
+});
+
+// WebSocket Server for real-time status updates
+server.on('upgrade', (request, socket, head) => {
+    const pathname = request.url ? new URL(request.url, `http://${request.headers.host}`).pathname : '';
+    const match = pathname.match(/^\/ws\/nodes\/([a-zA-Z0-9_\-]+)$/);
+
+    if (match) {
+        const nodeId = match[1];
+        wss.handleUpgrade(request, socket, head, (ws) => {
+            let node = nodeMap.get(nodeId);
+            if (!node) {
+                node = { wsClients: new Set(), status: 'DISCONNECTED' };
+                nodeMap.set(nodeId, node);
+            }
+            node.wsClients.add(ws);
+
+            // Send current status immediately on connect
+            ws.send(JSON.stringify({ nodeId, status: node.status, timestamp: Date.now() }));
+
+            ws.on('close', () => {
+                node.wsClients.delete(ws);
+            });
+        });
+    } else {
+        socket.destroy();
+    }
+});
+
+// Start Server
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`=================================================`);
+    console.log(`🚀 WA Bulk Gateway running on port ${PORT}`);
+    console.log(`📡 Health Check: http://localhost:${PORT}/`);
+    console.log(`⚡ API Authentication: ${API_KEY ? 'Active' : 'Disabled (Open)'}`);
+    console.log(`=================================================`);
+});

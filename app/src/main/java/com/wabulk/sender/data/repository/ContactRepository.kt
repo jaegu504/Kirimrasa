@@ -67,17 +67,20 @@ class ContactRepository(
 
     fun observeSelectedContacts(): Flow<List<ContactEntity>> = contactDao.observeSelected()
 
+    suspend fun selectAll(selected: Boolean) {
+        contactDao.selectAll(selected)
+    }
+
+    suspend fun sanitizeNicknames() {
+        contactDao.sanitizeInvalidNicknames()
+    }
+
     /**
      * Applies quick format: extract first name from rawName as nickname.
      */
     suspend fun quickFormatFirstName(contactId: Long) {
         val contact = contactDao.getAll().find { it.id == contactId } ?: return
-        val firstName = contact.rawName
-            .replace(Regex("\\(.*?\\)"), "") // Remove parenthetical notes
-            .trim()
-            .split(" ")
-            .firstOrNull()
-            ?.trim() ?: return
+        val firstName = extractSmartNickname(contact.rawName)
         contactDao.updateNickname(contactId, firstName)
     }
 
@@ -86,22 +89,26 @@ class ContactRepository(
      */
     suspend fun quickFormatRemoveNotes(contactId: Long) {
         val contact = contactDao.getAll().find { it.id == contactId } ?: return
-        val cleanName = contact.rawName
-            .replace(Regex("\\(.*?\\)"), "")
-            .replace(Regex("\\s+"), " ")
-            .trim()
-        contactDao.updateNickname(contactId, cleanName)
+        val smartNick = extractSmartNickname(contact.rawName)
+        if (smartNick.isNotBlank()) {
+            val cleanName = contact.rawName
+                .replace(Regex("\\(.*?\\)"), "")
+                .replace(Regex("\\s+"), " ")
+                .trim()
+            contactDao.updateNickname(contactId, cleanName)
+        } else {
+            contactDao.updateNickname(contactId, "")
+        }
     }
 
     /**
-     * Applies quick format: prepend Hey/Hello to nickname.
+     * Applies quick format: prepend Hey/Hello/Hai to nickname.
      */
-    suspend fun quickFormatAddGreeting(contactId: Long, greeting: String = "Hey") {
+    suspend fun quickFormatAddGreeting(contactId: Long, greeting: String = "Hai") {
         val contact = contactDao.getAll().find { it.id == contactId } ?: return
-        val nick = contact.customNickname.ifEmpty {
-            contact.rawName.replace(Regex("\\(.*?\\)"), "").trim().split(" ").firstOrNull() ?: ""
-        }
-        contactDao.updateNickname(contactId, "$greeting $nick")
+        val nick = contact.customNickname.ifEmpty { extractSmartNickname(contact.rawName) }
+        val targetNick = if (nick.isNotBlank()) "$greeting $nick" else "$greeting Kak"
+        contactDao.updateNickname(contactId, targetNick)
     }
 
     companion object {
@@ -114,11 +121,16 @@ class ContactRepository(
         }
 
         fun extractInitials(name: String): String {
+            val lettersOnly = name.filter { it.isLetter() }
+            if (lettersOnly.length < 2) {
+                return "WA"
+            }
             val parts = name.replace(Regex("\\(.*?\\)"), "").trim().split(" ").filter { it.isNotBlank() }
+            val letterParts = parts.filter { part -> part.any { it.isLetter() } }
             return when {
-                parts.size >= 2 -> "${parts[0].first().uppercase()}${parts[1].first().uppercase()}"
-                parts.size == 1 -> parts[0].take(2).uppercase()
-                else -> "??"
+                letterParts.size >= 2 -> "${letterParts[0].first { it.isLetter() }.uppercase()}${letterParts[1].first { it.isLetter() }.uppercase()}"
+                letterParts.size == 1 -> letterParts[0].filter { it.isLetter() }.take(2).uppercase()
+                else -> "WA"
             }
         }
 

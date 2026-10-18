@@ -16,6 +16,7 @@ data class QueueItem(
     val recipientName: String,
     val phoneNumber: String,
     val bubbleTexts: List<String>,
+    val mediaUris: List<String> = emptyList(),
     val nodeUsed: AccountNode = AccountNode.PERSONAL,
     val status: QueueTaskStatus = QueueTaskStatus.PENDING,
     val jitterSecondsAssigned: Int = 34,

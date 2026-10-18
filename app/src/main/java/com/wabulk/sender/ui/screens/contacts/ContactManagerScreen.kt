@@ -114,20 +114,19 @@ fun ContactManagerScreen(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Subtitle & Sync Pill Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f, fill = false)) {
+        // Header: Title on left, Action Buttons (Impor CSV, Sinkron) on right
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = strings.contactsTitle,
                         color = TextCrispPrimary,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
                     )
                     Box(
                         modifier = Modifier
@@ -137,80 +136,78 @@ fun ContactManagerScreen(
                             .pulseGlow()
                     )
                 }
-                Text(
-                    text = strings.contactsSubtitle,
-                    color = TextMutedBody,
-                    fontSize = 11.sp,
-                    maxLines = 1
-                )
-            }
 
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                // Impor CSV Button
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(EmeraldDarkSurfaceHigh)
-                        .springClickable { showImportCsvDialog = true }
-                        .padding(horizontal = 9.dp, vertical = 6.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Icon(
-                            imageVector = Icons.Default.FileUpload,
-                            contentDescription = null,
-                            tint = EmeraldPrimary,
-                            modifier = Modifier.size(13.dp)
-                        )
-                        Text(
-                            text = strings.contactsImportCsvBtn,
-                            color = EmeraldPrimary,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
-                }
-
-                // Sync Button
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(EmeraldDarkSurfaceHigh)
-                        .springClickable { viewModel.syncContacts() }
-                        .padding(horizontal = 9.dp, vertical = 6.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        if (isSyncing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(13.dp),
-                                color = EmeraldPrimary,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
+                    // Impor CSV Button
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(EmeraldDarkSurfaceHigh)
+                            .springClickable { showImportCsvDialog = true }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Icon(
-                                imageVector = Icons.Default.Sync,
+                                imageVector = Icons.Default.FileUpload,
                                 contentDescription = null,
                                 tint = EmeraldPrimary,
                                 modifier = Modifier.size(13.dp)
                             )
+                            Text(
+                                text = strings.contactsImportCsvBtn,
+                                color = EmeraldPrimary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
                         }
-                        Text(
-                            text = if (isSyncing) "Syncing..." else strings.contactsSyncBtn,
-                            color = EmeraldPrimary,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            softWrap = false
-                        )
+                    }
+
+                    // Sync Button
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(EmeraldDarkSurfaceHigh)
+                            .springClickable { viewModel.syncContacts() }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (isSyncing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(13.dp),
+                                    color = EmeraldPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Sync,
+                                    contentDescription = null,
+                                    tint = EmeraldPrimary,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            }
+                            Text(
+                                text = if (isSyncing) "Menyinkronkan..." else strings.contactsSyncBtn,
+                                color = EmeraldPrimary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
                     }
                 }
             }
+
+            Text(
+                text = lastSyncResult ?: strings.contactsSubtitle,
+                color = TextMutedBody,
+                fontSize = 11.sp
+            )
         }
 
         // Telemetry Shelf
@@ -312,40 +309,57 @@ fun ContactManagerScreen(
             )
         }
 
-        // Select All in Tag
-        if (activeTag != null) {
-            val tagContactCount = contacts.size
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(EmeraldDarkSurfaceContainer)
-                    .springClickable { viewModel.selectAllInTag(true) }
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+        // Select All / Deselect All Bar
+        val isAllSelectedInView = contacts.isNotEmpty() && contacts.all { it.isSelected }
+        val viewCount = contacts.size
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(if (isAllSelectedInView) EmeraldPrimaryContainer.copy(alpha = 0.35f) else EmeraldDarkSurfaceContainer)
+                .springClickable { viewModel.selectAllContacts(!isAllSelectedInView) }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(
                     modifier = Modifier
                         .size(20.dp)
                         .clip(RoundedCornerShape(4.dp))
-                        .border(1.5.dp, EmeraldPrimary, RoundedCornerShape(4.dp)),
+                        .then(
+                            if (isAllSelectedInView) Modifier.background(EmeraldPrimary)
+                            else Modifier.border(1.5.dp, EmeraldPrimary, RoundedCornerShape(4.dp))
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        tint = EmeraldPrimary,
-                        modifier = Modifier.size(14.dp)
-                    )
+                    if (isAllSelectedInView) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Color(0xFF003915),
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
                 }
                 Text(
-                    text = strings.contactsSelectAllInTag(activeTag ?: "", tagContactCount),
+                    text = if (isAllSelectedInView)
+                        "Semua Dipilih ($viewCount Kontak)"
+                    else if (activeTag != null)
+                        strings.contactsSelectAllInTag(activeTag ?: "", viewCount)
+                    else
+                        "Pilih Semua Kontak ($viewCount)",
                     color = TextCrispPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
+            Text(
+                text = if (isAllSelectedInView) "Batalkan Pilihan" else "Pilih Semua",
+                color = EmeraldPrimary,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
 
         // Empty state
@@ -646,21 +660,27 @@ private fun ContactCard(
                             .padding(horizontal = 10.dp, vertical = 8.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {
+                        if (localNickname.isEmpty()) {
+                            Text(
+                                text = "Otomatis 'Kak'",
+                                color = TextSubduedTertiary,
+                                fontSize = 11.sp
+                            )
+                        }
                         innerTextField()
                     }
                 },
-                modifier = Modifier.weight(1f)
-            )
-        }
+                    modifier = Modifier.weight(1f)
+                )
+            }
 
-        // Greeting Preview
-        if (localNickname.isNotBlank()) {
+            // Greeting Preview
+            val effectivePreviewNick = localNickname.ifBlank { "Kak" }
             Text(
-                text = strings.contactsGreetingPreview(localNickname),
-                color = TextMutedBody,
+                text = strings.contactsGreetingPreview(effectivePreviewNick),
+                color = if (localNickname.isNotBlank()) EmeraldPrimary else TextMutedBody,
                 fontSize = 11.sp
             )
-        }
 
         // Quick Format Pills
         Row(

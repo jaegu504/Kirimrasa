@@ -97,6 +97,16 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun selectAllContacts(selected: Boolean) {
+        viewModelScope.launch {
+            if (_activeTag.value != null) {
+                repository.selectAllInTag(_activeTag.value!!, selected)
+            } else {
+                repository.selectAll(selected)
+            }
+        }
+    }
+
     fun updateNickname(contactId: Long, nickname: String) {
         viewModelScope.launch {
             repository.updateNickname(contactId, nickname)
@@ -209,9 +219,12 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
         importContactsFromCsv(sampleCsv)
     }
 
-    // Seed default tags if empty
+    // Seed default tags and sanitize legacy bad nicknames if any
     fun ensureDefaultTags() {
         viewModelScope.launch {
+            try {
+                repository.sanitizeNicknames()
+            } catch (_: Exception) {}
             val existing = tags.value
             if (existing.isEmpty()) {
                 repository.createTag("Keluarga")

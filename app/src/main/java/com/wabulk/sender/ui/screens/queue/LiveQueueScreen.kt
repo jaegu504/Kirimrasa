@@ -97,6 +97,7 @@ fun LiveQueueScreen(
     val sentCount by viewModel.sentCount.collectAsState()
     val percentComplete by viewModel.percentComplete.collectAsState()
     val remainingCount by viewModel.remainingCount.collectAsState()
+    val campaignTitle by viewModel.campaignTitle.collectAsState()
 
     // Infinite transition for spinning radar and typing bouncing dots
     val infiniteTransition = rememberInfiniteTransition(label = "queueAnimTransition")
@@ -206,7 +207,7 @@ fun LiveQueueScreen(
                 modifier = Modifier.padding(top = 4.dp)
             )
             Text(
-                text = strings.queueCampaignName,
+                text = if (campaignTitle.isNotBlank()) campaignTitle else strings.queueCampaignName,
                 color = TextMutedBody,
                 fontSize = 11.sp
             )
@@ -633,9 +634,13 @@ fun LiveQueueScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Tidak ada kontak dalam filter ini",
+                        text = if (totalCount == 0)
+                            "Belum ada antrean broadcast. Susun pesan di tab 'Buat Pesan' dan tekan 'Mulai Kirim Massal' untuk memulai pengiriman."
+                        else
+                            "Tidak ada kontak dalam filter ini",
                         color = TextMutedBody,
-                        fontSize = 12.sp
+                        fontSize = 12.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             } else {

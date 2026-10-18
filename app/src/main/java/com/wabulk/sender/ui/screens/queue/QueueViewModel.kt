@@ -33,6 +33,7 @@ class QueueViewModel(application: Application) : AndroidViewModel(application) {
     val isRunning: StateFlow<Boolean> = queueManager.isRunning
     val jitterCountdown: StateFlow<Int> = queueManager.jitterCountdown
     val currentTypingContact: StateFlow<String?> = queueManager.currentTypingContact
+    val campaignTitle: StateFlow<String> = queueManager.campaignTitle
 
     private val _selectedFilter = MutableStateFlow(QueueStatusFilter.ALL)
     val selectedFilter: StateFlow<QueueStatusFilter> = _selectedFilter.asStateFlow()

@@ -79,6 +79,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wabulk.sender.data.locale.AppLanguage
 import com.wabulk.sender.data.locale.LocalAppStrings
 import com.wabulk.sender.domain.model.AccountNode
+import com.wabulk.sender.engine.model.NodeSession
 import com.wabulk.sender.engine.model.NodeStatus
 import com.wabulk.sender.theme.EmeraldDarkSurfaceContainer
 import com.wabulk.sender.theme.EmeraldDarkSurfaceHigh
@@ -498,6 +499,16 @@ fun SettingsScreen(
                     )
                 }
 
+                if (baileysConfig.isEnabled) {
+                    NodeGatewayPairingCard(
+                        node = AccountNode.PERSONAL,
+                        session = node1Session,
+                        phoneNumber = localNode1Phone,
+                        viewModel = viewModel,
+                        nodeLabel = "WhatsApp Personal"
+                    )
+                }
+
                 // Action Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -669,6 +680,16 @@ fun SettingsScreen(
                                 innerTextField()
                             }
                         }
+                    )
+                }
+
+                if (baileysConfig.isEnabled) {
+                    NodeGatewayPairingCard(
+                        node = AccountNode.BUSINESS,
+                        session = node2Session,
+                        phoneNumber = localNode2Phone,
+                        viewModel = viewModel,
+                        nodeLabel = "WhatsApp Business"
                     )
                 }
 
@@ -1512,5 +1533,118 @@ fun SettingsScreen(
             },
             containerColor = EmeraldDarkSurfaceContainer
         )
+    }
+}
+
+@Composable
+private fun NodeGatewayPairingCard(
+    node: AccountNode,
+    session: NodeSession,
+    phoneNumber: String,
+    viewModel: SettingsViewModel,
+    nodeLabel: String
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var pairingLoading by remember { mutableStateOf(false) }
+    var gatewayCode by remember { mutableStateOf<String?>(null) }
+
+    if (session.status == NodeStatus.CONNECTED) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(EmeraldPrimaryContainer)
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(Icons.Default.Check, contentDescription = null, tint = EmeraldOnPrimaryContainer, modifier = Modifier.size(16.dp))
+                Text("Terhubung via Gateway ($nodeLabel)", color = EmeraldOnPrimaryContainer, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            Text(
+                text = "Putuskan",
+                color = StatusError,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.springClickable { viewModel.disconnectNode(node) }
+            )
+        }
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(38.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(if (phoneNumber.isNotBlank() && !pairingLoading) EmeraldPrimary else EmeraldDarkSurfaceHigh)
+                .springClickable {
+                    if (phoneNumber.isNotBlank() && !pairingLoading) {
+                        pairingLoading = true
+                        viewModel.requestGatewayPairingCode(node, phoneNumber) { result ->
+                            pairingLoading = false
+                            result.onSuccess { code ->
+                                gatewayCode = code
+                            }.onFailure { err ->
+                                android.widget.Toast.makeText(context, "Gagal: ${err.message}", android.widget.Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            if (pairingLoading) {
+                CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(
+                        Icons.Default.QrCodeScanner,
+                        contentDescription = null,
+                        tint = if (phoneNumber.isNotBlank()) Color(0xFF003915) else TextMutedBody,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Minta Kode Pairing 8-Digit Resmi",
+                        color = if (phoneNumber.isNotBlank()) Color(0xFF003915) else TextMutedBody,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+
+        if (!gatewayCode.isNullOrBlank()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(EmeraldDarkSurfaceLow)
+                    .padding(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text("Kode Pairing WhatsApp Anda:", color = TextMutedBody, fontSize = 10.sp)
+                Text(
+                    text = gatewayCode ?: "",
+                    color = EmeraldPrimary,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 3.sp,
+                    fontFamily = FontFamily.Monospace
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(34.dp)
+                        .clip(CircleShape)
+                        .background(EmeraldPrimary)
+                        .springClickable {
+                            viewModel.copyCodeAndOpenWhatsApp(gatewayCode ?: "")
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Salin Kode & Buka WhatsApp", color = Color(0xFF003915), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
     }
 }

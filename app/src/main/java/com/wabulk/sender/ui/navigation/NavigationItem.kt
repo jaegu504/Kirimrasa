@@ -9,11 +9,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class ScreenTab(
     val route: String,
-    val icon: ImageVector,
-    val badgeCount: Int? = null
+    val icon: ImageVector
 ) {
     COMPOSE("compose", Icons.AutoMirrored.Filled.Send),
     CONTACTS("contacts", Icons.Default.Contacts),
-    QUEUE("queue", Icons.AutoMirrored.Filled.ScheduleSend, badgeCount = 4),
+    QUEUE("queue", Icons.AutoMirrored.Filled.ScheduleSend),
     SETTINGS("settings", Icons.Default.Tune)
 }

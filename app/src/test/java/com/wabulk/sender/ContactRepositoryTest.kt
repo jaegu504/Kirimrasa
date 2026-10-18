@@ -132,6 +132,23 @@ class FakeContactDao : ContactDao {
     override suspend fun getAll(): List<ContactEntity> {
         return contactsList.toList()
     }
+
+    override suspend fun selectAll(selected: Boolean) {
+        for (i in contactsList.indices) {
+            contactsList[i] = contactsList[i].copy(isSelected = selected)
+        }
+        updateFlow()
+    }
+
+    override suspend fun sanitizeInvalidNicknames() {
+        for (i in contactsList.indices) {
+            val nick = contactsList[i].customNickname
+            if (nick.startsWith("+") || !nick.any { it.isLetter() }) {
+                contactsList[i] = contactsList[i].copy(customNickname = "")
+            }
+        }
+        updateFlow()
+    }
 }
 
 class FakeTagDao : TagDao {

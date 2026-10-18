@@ -134,22 +134,44 @@ class OnDeviceWhatsAppEngine(
         mediaUrls: List<String>
     ): SendResult = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
         try {
-            val cleanPhone = recipientPhone.replace(Regex("[^0-9]"), "")
-            val encodedText = android.net.Uri.encode(messageText)
-            val uri = android.net.Uri.parse("https://api.whatsapp.com/send?phone=$cleanPhone&text=$encodedText")
-
+            val rawDigits = recipientPhone.replace(Regex("[^0-9]"), "")
+            val cleanPhone = when {
+                rawDigits.startsWith("0") -> "62" + rawDigits.substring(1)
+                rawDigits.startsWith("8") -> "62$rawDigits"
+                else -> rawDigits
+            }
             val isBusiness = node.nodeType == AccountNode.BUSINESS
             val targetPkg = if (isBusiness) "com.whatsapp.w4b" else "com.whatsapp"
 
-            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, uri).apply {
-                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
-                if (isPackageInstalled(context, targetPkg)) {
-                    setPackage(targetPkg)
-                } else if (isPackageInstalled(context, "com.whatsapp")) {
-                    setPackage("com.whatsapp")
-                } else if (isPackageInstalled(context, "com.whatsapp.w4b")) {
-                    setPackage("com.whatsapp.w4b")
+            val firstMedia = mediaUrls.firstOrNull()
+            val intent = if (!firstMedia.isNullOrBlank() && !firstMedia.startsWith("dummy://")) {
+                val mediaUri = android.net.Uri.parse(firstMedia)
+                val mime = try { context.contentResolver.getType(mediaUri) ?: "*/*" } catch (_: Exception) { "*/*" }
+                android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = mime
+                    putExtra(android.content.Intent.EXTRA_STREAM, mediaUri)
+                    if (messageText.isNotBlank()) {
+                        putExtra(android.content.Intent.EXTRA_TEXT, messageText)
+                    }
+                    putExtra("jid", "$cleanPhone@s.whatsapp.net")
+                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or
+                            android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                            android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
                 }
+            } else {
+                val encodedText = android.net.Uri.encode(messageText)
+                val uri = android.net.Uri.parse("https://api.whatsapp.com/send?phone=$cleanPhone&text=$encodedText")
+                android.content.Intent(android.content.Intent.ACTION_VIEW, uri).apply {
+                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+            }
+
+            if (isPackageInstalled(context, targetPkg)) {
+                intent.setPackage(targetPkg)
+            } else if (isPackageInstalled(context, "com.whatsapp")) {
+                intent.setPackage("com.whatsapp")
+            } else if (isPackageInstalled(context, "com.whatsapp.w4b")) {
+                intent.setPackage("com.whatsapp.w4b")
             }
 
             com.wabulk.sender.service.WhatsAppAccessibilityService.isAutomationRunning = true

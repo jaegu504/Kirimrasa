@@ -37,13 +37,29 @@ class WhatsAppSessionManager(
     )
     val node2Session: StateFlow<NodeSession> = _node2Session.asStateFlow()
 
-    fun updateNodePhone(nodeType: AccountNode, phoneNumber: String) {
+    fun initPreferences(context: android.content.Context) {
+        val prefs = context.getSharedPreferences("wa_session_prefs", android.content.Context.MODE_PRIVATE)
+        val p1 = prefs.getString("node1_phone", "") ?: ""
+        val p2 = prefs.getString("node2_phone", "") ?: ""
+        if (p1.isNotEmpty()) {
+            _node1Session.value = _node1Session.value.copy(phoneNumber = p1)
+        }
+        if (p2.isNotEmpty()) {
+            _node2Session.value = _node2Session.value.copy(phoneNumber = p2)
+        }
+    }
+
+    fun updateNodePhone(nodeType: AccountNode, phoneNumber: String, context: android.content.Context? = null) {
         when (nodeType) {
             AccountNode.PERSONAL -> {
                 _node1Session.value = _node1Session.value.copy(phoneNumber = phoneNumber)
+                context?.getSharedPreferences("wa_session_prefs", android.content.Context.MODE_PRIVATE)
+                    ?.edit()?.putString("node1_phone", phoneNumber)?.apply()
             }
             AccountNode.BUSINESS, AccountNode.DUAL_SYNC -> {
                 _node2Session.value = _node2Session.value.copy(phoneNumber = phoneNumber)
+                context?.getSharedPreferences("wa_session_prefs", android.content.Context.MODE_PRIVATE)
+                    ?.edit()?.putString("node2_phone", phoneNumber)?.apply()
             }
         }
     }
@@ -149,12 +165,18 @@ class WhatsAppSessionManager(
         return code
     }
 
-    fun connectNode(nodeType: AccountNode, phoneNumber: String = "+62 812-3456-7890") {
+    fun connectNode(nodeType: AccountNode, phoneNumber: String = "") {
+        val effectivePhone = phoneNumber.ifEmpty {
+            when (nodeType) {
+                AccountNode.PERSONAL -> _node1Session.value.phoneNumber
+                AccountNode.BUSINESS, AccountNode.DUAL_SYNC -> _node2Session.value.phoneNumber
+            }
+        }
         when (nodeType) {
             AccountNode.PERSONAL -> {
                 _node1Session.value = _node1Session.value.copy(
                     status = NodeStatus.CONNECTED,
-                    phoneNumber = phoneNumber,
+                    phoneNumber = effectivePhone,
                     uptimeSeconds = 0,
                     healthPercent = 100f
                 )
@@ -162,7 +184,7 @@ class WhatsAppSessionManager(
             AccountNode.BUSINESS, AccountNode.DUAL_SYNC -> {
                 _node2Session.value = _node2Session.value.copy(
                     status = NodeStatus.CONNECTED,
-                    phoneNumber = phoneNumber,
+                    phoneNumber = effectivePhone,
                     uptimeSeconds = 0,
                     healthPercent = 100f
                 )
@@ -211,9 +233,13 @@ class WhatsAppSessionManager(
         @Volatile
         private var instance: WhatsAppSessionManager? = null
 
-        fun getInstance(): WhatsAppSessionManager {
+        fun getInstance(context: android.content.Context? = null): WhatsAppSessionManager {
             return instance ?: synchronized(this) {
                 instance ?: WhatsAppSessionManager().also { instance = it }
+            }.also { manager ->
+                if (context != null) {
+                    manager.initPreferences(context.applicationContext)
+                }
             }
         }
 

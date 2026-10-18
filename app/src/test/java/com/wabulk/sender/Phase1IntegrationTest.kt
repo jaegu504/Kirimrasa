@@ -21,9 +21,6 @@ class Phase1IntegrationTest {
         assertEquals("contacts", ScreenTab.CONTACTS.route)
         assertEquals("queue", ScreenTab.QUEUE.route)
         assertEquals("settings", ScreenTab.SETTINGS.route)
-
-        // Queue tab has a badge count of 4 as per Stitch design
-        assertEquals(4, ScreenTab.QUEUE.badgeCount)
     }
 
     @Test

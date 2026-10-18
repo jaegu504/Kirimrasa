@@ -98,31 +98,10 @@ fun ComposerScreen(
     val uiState by viewModel.uiState.collectAsState()
     val attachments by viewModel.attachments.collectAsState()
     val context = LocalContext.current
+    val sessionManager = remember { com.wabulk.sender.engine.WhatsAppSessionManager.getInstance() }
+    val node1Session by sessionManager.node1Session.collectAsState()
+    val node2Session by sessionManager.node2Session.collectAsState()
     var showHelpDialog by remember { mutableStateOf(false) }
-
-    var sampleMediaIndex by remember { mutableIntStateOf(0) }
-    val sampleMediaPool = remember {
-        listOf(
-            MediaAttachment(
-                uriString = "dummy://promo.jpg",
-                fileName = "PROMO-2026.JPG",
-                mimeType = "image/jpeg",
-                sizeBytes = 1258291L
-            ),
-            MediaAttachment(
-                uriString = "dummy://demo.mp4",
-                fileName = "DEMO-CLIP.MP4",
-                mimeType = "video/mp4",
-                sizeBytes = 4194304L
-            ),
-            MediaAttachment(
-                uriString = "dummy://catalog.pdf",
-                fileName = "Catalog_v2.pdf",
-                mimeType = "application/pdf",
-                sizeBytes = 348160L
-            )
-        )
-    }
 
     val mediaPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -165,14 +144,6 @@ fun ComposerScreen(
             } catch (_: Exception) {
                 // If resolving selected URI fails, do not add attachment
             }
-        }
-    }
-
-    // Seed default sample attachments on initial composition
-    LaunchedEffect(Unit) {
-        if (attachments.isEmpty()) {
-            viewModel.addAttachment(sampleMediaPool[0])
-            viewModel.addAttachment(sampleMediaPool[2])
         }
     }
 
@@ -339,15 +310,20 @@ fun ComposerScreen(
                         tint = EmeraldPrimary,
                         modifier = Modifier.size(14.dp)
                     )
+                    val activePhone = when (uiState.selectedAccount) {
+                        AccountNode.PERSONAL -> node1Session.phoneNumber.ifEmpty { "WhatsApp Personal" }
+                        AccountNode.BUSINESS -> node2Session.phoneNumber.ifEmpty { "WhatsApp Business" }
+                        AccountNode.DUAL_SYNC -> "Sinkron Ganda"
+                    }
                     Text(
-                        text = "+1 (555) 019-2834",
+                        text = activePhone,
                         color = TextCrispPrimary,
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = strings.composerPrimaryNode,
+                        text = if (uiState.selectedAccount == AccountNode.BUSINESS) "(Node 2)" else strings.composerPrimaryNode,
                         color = EmeraldTertiary,
                         fontSize = 10.sp
                     )
@@ -383,10 +359,8 @@ fun ComposerScreen(
             onAddAttachment = {
                 try {
                     mediaPickerLauncher.launch("*/*")
-                } catch (_: Exception) {
-                    val nextAttachment = sampleMediaPool[sampleMediaIndex % sampleMediaPool.size]
-                    sampleMediaIndex++
-                    viewModel.addAttachment(nextAttachment.copy(id = java.util.UUID.randomUUID().toString()))
+                } catch (e: Exception) {
+                    android.widget.Toast.makeText(context, "Gagal membuka pemilih berkas: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
                 }
             },
             onRemoveAttachment = { viewModel.removeAttachment(it) }
@@ -1003,7 +977,7 @@ fun ComposerScreen(
                             modifier = Modifier.size(13.dp)
                         )
                         Text(
-                            text = strings.composerLaunchContactsCount(if (selectedContactCount > 0) selectedContactCount else 42),
+                            text = if (selectedContactCount > 0) strings.composerLaunchContactsCount(selectedContactCount) else "Semua Kontak",
                             color = EmeraldPrimary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
