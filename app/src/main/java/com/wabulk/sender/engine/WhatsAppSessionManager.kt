@@ -83,6 +83,7 @@ class WhatsAppSessionManager(
                 cachedNode1Engine ?: BaileysBridgeClient(
                     node = _node1Session.value,
                     configProvider = { BaileysConfigManager.config.value },
+                    autoBackupSession = true,
                     onStatusChanged = { newStatus ->
                         _node1Session.value = _node1Session.value.copy(status = newStatus)
                     }
@@ -92,6 +93,7 @@ class WhatsAppSessionManager(
                 cachedNode2Engine ?: BaileysBridgeClient(
                     node = _node2Session.value,
                     configProvider = { BaileysConfigManager.config.value },
+                    autoBackupSession = true,
                     onStatusChanged = { newStatus ->
                         _node2Session.value = _node2Session.value.copy(status = newStatus)
                     }

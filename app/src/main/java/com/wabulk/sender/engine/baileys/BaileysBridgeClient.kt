@@ -51,7 +51,8 @@ class BaileysBridgeClient(
     private val httpClient: OkHttpClient = defaultClient,
     private val fallbackEngine: WhatsAppEngine = SimulatedWhatsAppEngine(node),
     val fallbackOnException: Boolean = false,
-    private val onStatusChanged: ((NodeStatus) -> Unit)? = null
+    private val onStatusChanged: ((NodeStatus) -> Unit)? = null,
+    val autoBackupSession: Boolean = false
 ) : WhatsAppEngine {
 
     var context: android.content.Context? = null
@@ -147,6 +148,9 @@ class BaileysBridgeClient(
                 val body = response.body?.string().orEmpty()
                 if (response.isSuccessful) {
                     val parsedId = extractMessageId(body) ?: "msg-${System.currentTimeMillis()}"
+                    if (autoBackupSession) {
+                        backupSession()
+                    }
                     return@withContext SendResult(
                         isSuccess = true,
                         messageId = parsedId,
@@ -154,6 +158,28 @@ class BaileysBridgeClient(
                     )
                 } else {
                     val errorDetail = extractErrorMessage(body) ?: "HTTP ${response.code}: ${response.message}"
+                    if ((response.code == 400 || response.code == 404) &&
+                        (errorDetail.contains("not connected", ignoreCase = true) || errorDetail.contains("DISCONNECTED", ignoreCase = true)) &&
+                        BaileysSessionVault.hasSession(context, node.id)
+                    ) {
+                        val restored = restoreSession()
+                        if (restored) {
+                            try {
+                                httpClient.newCall(request).execute().use { retryResp ->
+                                    val retryBody = retryResp.body?.string().orEmpty()
+                                    if (retryResp.isSuccessful) {
+                                        val parsedId = extractMessageId(retryBody) ?: "msg-${System.currentTimeMillis()}"
+                                        return@withContext SendResult(
+                                            isSuccess = true,
+                                            messageId = parsedId,
+                                            errorMessage = null
+                                        )
+                                    }
+                                }
+                            } catch (_: Exception) {}
+                        }
+                    }
+
                     if (fallbackOnException) {
                         return@withContext fallbackEngine.sendMessage(recipientPhone, messageText, mediaUrls)
                     } else {
@@ -174,6 +200,55 @@ class BaileysBridgeClient(
                 )
             }
         }
+    }
+
+    suspend fun backupSession(): Boolean = withContext(Dispatchers.IO) {
+        val config = configProvider()
+        if (!config.isEnabled) return@withContext false
+
+        try {
+            val url = buildUrl("/api/nodes/${node.id}/session")
+            val request = Request.Builder()
+                .url(url)
+                .get()
+                .withAuth(config)
+                .build()
+
+            httpClient.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    val body = response.body?.string().orEmpty()
+                    if (body.contains("\"files\"") && body.contains("\"creds.json\"")) {
+                        BaileysSessionVault.saveSession(context, node.id, body)
+                        return@withContext true
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+        return@withContext false
+    }
+
+    suspend fun restoreSession(): Boolean = withContext(Dispatchers.IO) {
+        val config = configProvider()
+        if (!config.isEnabled) return@withContext false
+
+        val savedSession = BaileysSessionVault.getSession(context, node.id) ?: return@withContext false
+        try {
+            val url = buildUrl("/api/nodes/${node.id}/session")
+            val request = Request.Builder()
+                .url(url)
+                .post(savedSession.toRequestBody(jsonMediaType))
+                .withAuth(config)
+                .build()
+
+            httpClient.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    delay(1500)
+                    updateConnectionStatus(NodeStatus.CONNECTED)
+                    return@withContext true
+                }
+            }
+        } catch (_: Exception) {}
+        return@withContext false
     }
 
     override suspend fun sendTypingPresence(recipientPhone: String, durationMs: Long): Unit = withContext(Dispatchers.IO) {
@@ -233,14 +308,39 @@ class BaileysBridgeClient(
 
             httpClient.newCall(request).execute().use { response ->
                 val latency = (System.currentTimeMillis() - start).coerceAtLeast(1L)
+                val body = response.body?.string().orEmpty()
                 if (response.isSuccessful) {
-                    return@withContext PingResult(
-                        isSuccess = true,
-                        latencyMs = latency,
-                        message = "Baileys Bridge Connected"
-                    )
+                    val isDisconnected = body.contains("\"status\":\"DISCONNECTED\"") || body.contains("\"registered\":false")
+                    if (!isDisconnected) {
+                        updateConnectionStatus(NodeStatus.CONNECTED)
+                        if (autoBackupSession) {
+                            backupSession()
+                        }
+                        return@withContext PingResult(
+                            isSuccess = true,
+                            latencyMs = latency,
+                            message = "Baileys Bridge Connected"
+                        )
+                    } else {
+                        // Check if we can auto-restore session from device vault
+                        if (BaileysSessionVault.hasSession(context, node.id)) {
+                            val restored = restoreSession()
+                            if (restored) {
+                                return@withContext PingResult(
+                                    isSuccess = true,
+                                    latencyMs = latency,
+                                    message = "Baileys Bridge Connected"
+                                )
+                            }
+                        }
+                        updateConnectionStatus(NodeStatus.DISCONNECTED)
+                        return@withContext PingResult(
+                            isSuccess = false,
+                            latencyMs = latency,
+                            message = "WhatsApp belum terhubung (Minta kode pairing di Pengaturan)"
+                        )
+                    }
                 } else {
-                    val body = response.body?.string().orEmpty()
                     val errorMsg = extractErrorMessage(body) ?: "HTTP ${response.code}: ${response.message}"
                     if (fallbackOnException) {
                         return@withContext fallbackEngine.ping()
@@ -271,6 +371,7 @@ class BaileysBridgeClient(
         activeWebSocket?.close(1000, "Node disconnecting")
         activeWebSocket = null
         updateConnectionStatus(NodeStatus.DISCONNECTED)
+        BaileysSessionVault.clearSession(context, node.id)
 
         val config = configProvider()
         if (!config.isEnabled) {

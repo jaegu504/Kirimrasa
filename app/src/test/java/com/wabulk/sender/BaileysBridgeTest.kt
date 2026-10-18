@@ -9,6 +9,7 @@ import com.wabulk.sender.engine.WhatsAppSessionManager
 import com.wabulk.sender.engine.baileys.BaileysBridgeClient
 import com.wabulk.sender.engine.baileys.BaileysConfig
 import com.wabulk.sender.engine.baileys.BaileysConfigManager
+import com.wabulk.sender.engine.baileys.BaileysSessionVault
 import com.wabulk.sender.engine.model.NodeSession
 import com.wabulk.sender.engine.model.NodeStatus
 import kotlinx.coroutines.runBlocking
@@ -496,5 +497,95 @@ class BaileysBridgeTest {
         // Disconnect updates session status to DISCONNECTED via status callback
         engine.disconnect()
         assertEquals(NodeStatus.DISCONNECTED, sessionManager.node1Session.value.status)
+    }
+
+    @Test
+    fun `backupSession stores credentials into BaileysSessionVault when export succeeds`() = runBlocking {
+        val testHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request()
+                if (request.url.encodedPath.endsWith("/session") && request.method == "GET") {
+                    Response.Builder()
+                        .request(request)
+                        .protocol(Protocol.HTTP_1_1)
+                        .code(200)
+                        .message("OK")
+                        .body("""{"success":true,"nodeId":"node-personal-01","phoneNumber":"628123","files":{"creds.json":"{\"registered\":true}"}}""".toResponseBody("application/json".toMediaType()))
+                        .build()
+                } else {
+                    Response.Builder()
+                        .request(request)
+                        .protocol(Protocol.HTTP_1_1)
+                        .code(404)
+                        .message("Not Found")
+                        .body("{}".toResponseBody("application/json".toMediaType()))
+                        .build()
+                }
+            }
+            .build()
+
+        val config = BaileysConfig(gatewayUrl = "http://10.0.2.2:3000", isEnabled = true)
+        val client = BaileysBridgeClient(
+            node = testNode,
+            configProvider = { config },
+            httpClient = testHttpClient,
+            autoBackupSession = false
+        )
+
+        val backedUp = client.backupSession()
+        assertTrue("backupSession must return true when creds.json is returned", backedUp)
+        assertTrue("Vault must have session for testNode", BaileysSessionVault.hasSession(null, testNode.id))
+        val saved = BaileysSessionVault.getSession(null, testNode.id)
+        assertNotNull(saved)
+        assertTrue(saved!!.contains("creds.json"))
+    }
+
+    @Test
+    fun `restoreSession auto-restores session from BaileysSessionVault when node is disconnected`() = runBlocking {
+        BaileysSessionVault.saveSession(
+            null,
+            testNode.id,
+            """{"success":true,"phoneNumber":"628123","files":{"creds.json":"{}"}}"""
+        )
+
+        var restoredPayload: String? = null
+        val testHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request()
+                if (request.url.encodedPath.endsWith("/session") && request.method == "POST") {
+                    val buffer = okio.Buffer()
+                    request.body?.writeTo(buffer)
+                    restoredPayload = buffer.readUtf8()
+                    Response.Builder()
+                        .request(request)
+                        .protocol(Protocol.HTTP_1_1)
+                        .code(200)
+                        .message("OK")
+                        .body("""{"success":true,"status":"CONNECTED"}""".toResponseBody("application/json".toMediaType()))
+                        .build()
+                } else {
+                    Response.Builder()
+                        .request(request)
+                        .protocol(Protocol.HTTP_1_1)
+                        .code(200)
+                        .message("OK")
+                        .body("""{"status":"DISCONNECTED","registered":false}""".toResponseBody("application/json".toMediaType()))
+                        .build()
+                }
+            }
+            .build()
+
+        val config = BaileysConfig(gatewayUrl = "http://10.0.2.2:3000", isEnabled = true)
+        val client = BaileysBridgeClient(
+            node = testNode,
+            configProvider = { config },
+            httpClient = testHttpClient,
+            autoBackupSession = false
+        )
+
+        val pingResult = client.ping()
+        assertTrue("ping must succeed when session is auto-restored", pingResult.isSuccess)
+        assertNotNull("restore payload must have been sent to POST /api/nodes/:nodeId/session", restoredPayload)
+        assertTrue(restoredPayload!!.contains("creds.json"))
     }
 }

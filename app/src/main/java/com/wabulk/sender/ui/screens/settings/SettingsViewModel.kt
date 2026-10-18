@@ -108,7 +108,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                     node = node1Session.value,
                     configProvider = { BaileysConfigManager.config.value.copy(isEnabled = true) },
                     fallbackOnException = false
-                )
+                ).apply {
+                    context = getApplication()
+                }
                 val result = client.ping()
                 _gatewayTestResult.value = result
             } catch (e: Exception) {
@@ -132,6 +134,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             try {
                 val code = sessionManager.requestPairingCodeRemote(node, phoneNumber)
                 onResult(Result.success(code))
+                // Poll in background to detect when pairing is accepted in WhatsApp
+                launch {
+                    var attempts = 0
+                    while (attempts < 40) { // 40 * 3s = 2 minutes
+                        kotlinx.coroutines.delay(3000)
+                        attempts++
+                        val isConnected = sessionManager.pingNode(node, getApplication())
+                        if (isConnected) {
+                            sessionManager.connectNode(node, phoneNumber)
+                            break
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 onResult(Result.failure(e))
             }

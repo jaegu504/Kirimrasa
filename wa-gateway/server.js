@@ -278,8 +278,73 @@ app.get('/api/nodes/:nodeId/status', authMiddleware, async (req, res) => {
         nodeId,
         status,
         phoneNumber: node?.phoneNumber || '',
-        registered: node?.sock?.user ? true : false
+        registered: (node?.sock?.user || node?.sock?.authState?.creds?.registered) ? true : false
     });
+});
+
+// Export Session for client-side persistence (survives Render ephemeral restarts)
+app.get('/api/nodes/:nodeId/session', authMiddleware, async (req, res) => {
+    const { nodeId } = req.params;
+    const sessionPath = path.join(SESSIONS_DIR, `node_${nodeId}`);
+    const credsPath = path.join(sessionPath, 'creds.json');
+    if (!fs.existsSync(sessionPath) || !fs.existsSync(credsPath)) {
+        return res.status(404).json({ error: 'No active session credentials found' });
+    }
+    try {
+        const fileNames = fs.readdirSync(sessionPath);
+        const files = {};
+        for (const fname of fileNames) {
+            if (fname.endsWith('.json')) {
+                files[fname] = fs.readFileSync(path.join(sessionPath, fname), 'utf-8');
+            }
+        }
+        const node = nodeMap.get(nodeId);
+        return res.json({
+            success: true,
+            nodeId,
+            phoneNumber: node?.phoneNumber || '',
+            registered: node?.sock?.authState?.creds?.registered || true,
+            files
+        });
+    } catch (err) {
+        return res.status(500).json({ error: 'Failed to export session: ' + err.message });
+    }
+});
+
+// Import Session to restore credentials after server restart
+app.post('/api/nodes/:nodeId/session', authMiddleware, async (req, res) => {
+    const { nodeId } = req.params;
+    const { files, phoneNumber } = req.body;
+    if (!files || typeof files !== 'object' || Object.keys(files).length === 0) {
+        return res.status(400).json({ error: 'files map is required and cannot be empty' });
+    }
+    const sessionPath = path.join(SESSIONS_DIR, `node_${nodeId}`);
+    if (!fs.existsSync(sessionPath)) {
+        fs.mkdirSync(sessionPath, { recursive: true });
+    }
+    try {
+        const existingNode = nodeMap.get(nodeId);
+        if (existingNode && existingNode.sock) {
+            try { existingNode.sock.end(undefined); } catch (_) {}
+            nodeMap.delete(nodeId);
+        }
+
+        for (const [fname, content] of Object.entries(files)) {
+            const safeName = path.basename(fname);
+            if (safeName.endsWith('.json')) {
+                fs.writeFileSync(path.join(sessionPath, safeName), content, 'utf-8');
+            }
+        }
+        const node = await getOrCreateSocket(nodeId, phoneNumber);
+        return res.json({
+            success: true,
+            status: node.status,
+            phoneNumber: node.phoneNumber,
+            registered: node.sock?.authState?.creds?.registered || false
+        });
+    } catch (err) {
+        return res.status(500).json({ error: 'Failed to restore session: ' + err.message });
+    }
 });
 
 // 4. Send Message (Split Message Text or Media)
