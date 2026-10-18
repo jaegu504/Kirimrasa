@@ -54,6 +54,8 @@ class BaileysBridgeClient(
     private val onStatusChanged: ((NodeStatus) -> Unit)? = null
 ) : WhatsAppEngine {
 
+    var context: android.content.Context? = null
+
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
@@ -126,12 +128,13 @@ class BaileysBridgeClient(
         }
 
         try {
+            val preparedMedia = prepareMediaForGateway(mediaUrls)
             val url = buildUrl("/api/nodes/${node.id}/send")
             val payload = json.encodeToString(
                 BaileysSendRequest(
                     recipient = recipientPhone,
                     message = messageText,
-                    media = mediaUrls
+                    media = preparedMedia
                 )
             )
             val request = Request.Builder()
@@ -394,12 +397,76 @@ class BaileysBridgeClient(
         }
     }
 
+    private fun prepareMediaForGateway(mediaUrls: List<String>): List<String> {
+        val ctx = context
+        return mediaUrls.mapNotNull { mediaStr ->
+            if (mediaStr.isBlank() || mediaStr.startsWith("dummy://")) {
+                null
+            } else if (mediaStr.startsWith("http://") || mediaStr.startsWith("https://") || mediaStr.startsWith("data:")) {
+                mediaStr
+            } else if (ctx != null && (mediaStr.startsWith("content://") || mediaStr.startsWith("file://"))) {
+                convertUriToDataUrl(ctx, mediaStr) ?: mediaStr
+            } else {
+                mediaStr
+            }
+        }
+    }
+
+    private fun convertUriToDataUrl(ctx: android.content.Context, uriString: String): String? {
+        return try {
+            val uri = android.net.Uri.parse(uriString)
+            val resolver = ctx.contentResolver
+            val mime = resolver.getType(uri) ?: getMimeFromPath(uriString)
+            val fileName = getFileName(ctx, uri) ?: "file_${System.currentTimeMillis()}"
+
+            val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+            if (bytes != null && bytes.isNotEmpty()) {
+                val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                "data:$mime;name=${android.net.Uri.encode(fileName)};base64,$base64"
+            } else {
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun getFileName(ctx: android.content.Context, uri: android.net.Uri): String? {
+        if (uri.scheme == "content") {
+            try {
+                ctx.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (nameIndex != -1 && cursor.moveToFirst()) {
+                        return cursor.getString(nameIndex)
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+        return uri.lastPathSegment
+    }
+
+    private fun getMimeFromPath(path: String): String {
+        val lower = path.lowercase()
+        return when {
+            lower.endsWith(".jpg") || lower.endsWith(".jpeg") -> "image/jpeg"
+            lower.endsWith(".png") -> "image/png"
+            lower.endsWith(".webp") -> "image/webp"
+            lower.endsWith(".gif") -> "image/gif"
+            lower.endsWith(".mp4") -> "video/mp4"
+            lower.endsWith(".mov") -> "video/quicktime"
+            lower.endsWith(".pdf") -> "application/pdf"
+            lower.endsWith(".doc") || lower.endsWith(".docx") -> "application/msword"
+            lower.endsWith(".xls") || lower.endsWith(".xlsx") -> "application/vnd.ms-excel"
+            else -> "application/octet-stream"
+        }
+    }
+
     companion object {
         val defaultClient: OkHttpClient by lazy {
             OkHttpClient.Builder()
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(15, TimeUnit.SECONDS)
-                .writeTimeout(15, TimeUnit.SECONDS)
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
                 .build()
         }
     }

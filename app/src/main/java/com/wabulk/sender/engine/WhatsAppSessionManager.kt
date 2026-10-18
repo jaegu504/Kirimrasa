@@ -37,7 +37,10 @@ class WhatsAppSessionManager(
     )
     val node2Session: StateFlow<NodeSession> = _node2Session.asStateFlow()
 
+    private var appContext: android.content.Context? = null
+
     fun initPreferences(context: android.content.Context) {
+        appContext = context.applicationContext
         val prefs = context.getSharedPreferences("wa_session_prefs", android.content.Context.MODE_PRIVATE)
         val p1 = prefs.getString("node1_phone", "") ?: ""
         val p2 = prefs.getString("node2_phone", "") ?: ""
@@ -50,6 +53,9 @@ class WhatsAppSessionManager(
     }
 
     fun updateNodePhone(nodeType: AccountNode, phoneNumber: String, context: android.content.Context? = null) {
+        if (context != null) {
+            appContext = context.applicationContext
+        }
         when (nodeType) {
             AccountNode.PERSONAL -> {
                 _node1Session.value = _node1Session.value.copy(phoneNumber = phoneNumber)
@@ -72,7 +78,7 @@ class WhatsAppSessionManager(
 
     @Synchronized
     fun getOrCreateBaileysEngine(nodeType: AccountNode): BaileysBridgeClient {
-        return when (nodeType) {
+        val client = when (nodeType) {
             AccountNode.PERSONAL -> {
                 cachedNode1Engine ?: BaileysBridgeClient(
                     node = _node1Session.value,
@@ -92,6 +98,10 @@ class WhatsAppSessionManager(
                 ).also { cachedNode2Engine = it }
             }
         }
+        if (client.context == null && appContext != null) {
+            client.context = appContext
+        }
+        return client
     }
 
     fun resetBaileysEngines() {
@@ -100,6 +110,9 @@ class WhatsAppSessionManager(
     }
 
     fun getEngineForNode(nodeType: AccountNode, context: android.content.Context? = null): WhatsAppEngine {
+        if (context != null) {
+            appContext = context.applicationContext
+        }
         val session = when (nodeType) {
             AccountNode.PERSONAL -> _node1Session.value
             AccountNode.BUSINESS, AccountNode.DUAL_SYNC -> _node2Session.value
@@ -108,7 +121,11 @@ class WhatsAppSessionManager(
         return if (engine !is SimulatedWhatsAppEngine) {
             engine
         } else if (config.isEnabled) {
-            getOrCreateBaileysEngine(nodeType)
+            val client = getOrCreateBaileysEngine(nodeType)
+            if (context != null) {
+                client.context = context.applicationContext
+            }
+            client
         } else if (context != null) {
             OnDeviceWhatsAppEngine(context.applicationContext, session)
         } else {

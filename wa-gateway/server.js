@@ -33,6 +33,20 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // Logger
 const logger = pino({ level: process.env.LOG_LEVEL || 'warn' });
 
+// Health & Uptime Ping Endpoints
+app.get('/', (req, res) => {
+    res.json({
+        service: 'Kirimrasa WhatsApp Gateway',
+        status: 'UP',
+        uptime: process.uptime(),
+        activeNodes: Array.from(nodeMap.keys())
+    });
+});
+
+app.get('/health', (req, res) => {
+    res.json({ status: 'OK', uptime: process.uptime() });
+});
+
 // In-memory active nodes map
 // nodeMap: nodeId -> { sock, state, saveCreds, status, phoneNumber, wsClients: Set }
 const nodeMap = new Map();
@@ -263,44 +277,85 @@ app.post('/api/nodes/:nodeId/send', authMiddleware, async (req, res) => {
         let sentMessage;
 
         // Check if media is present
-        const mediaList = Array.isArray(media) ? media.filter(m => m && !m.startsWith('dummy://')) : [];
+        const mediaList = Array.isArray(media) ? media.filter(m => m && (typeof m === 'object' || !m.startsWith('dummy://'))) : [];
 
         if (mediaList.length > 0) {
             const firstMedia = mediaList[0];
-            let mediaBuffer;
+            let mediaBuffer = null;
+            let mimeType = 'application/octet-stream';
+            let fileName = 'file_' + Date.now();
 
-            if (firstMedia.startsWith('http://') || firstMedia.startsWith('https://')) {
-                // Fetch from remote URL
-                const fetchRes = await fetch(firstMedia);
-                mediaBuffer = Buffer.from(await fetchRes.arrayBuffer());
-            } else if (firstMedia.startsWith('data:')) {
-                // Data URL base64
-                const base64Data = firstMedia.split(',')[1];
-                mediaBuffer = Buffer.from(base64Data, 'base64');
-            } else if (fs.existsSync(firstMedia)) {
-                mediaBuffer = fs.readFileSync(firstMedia);
+            if (typeof firstMedia === 'string') {
+                if (firstMedia.startsWith('http://') || firstMedia.startsWith('https://')) {
+                    const fetchRes = await fetch(firstMedia);
+                    mediaBuffer = Buffer.from(await fetchRes.arrayBuffer());
+                    mimeType = fetchRes.headers.get('content-type') || mimeType;
+                    try {
+                        const parsedUrl = new URL(firstMedia);
+                        fileName = path.basename(parsedUrl.pathname) || fileName;
+                    } catch (_) {}
+                } else if (firstMedia.startsWith('data:')) {
+                    const commaIdx = firstMedia.indexOf(',');
+                    if (commaIdx !== -1) {
+                        const metaPart = firstMedia.substring(5, commaIdx);
+                        const base64Data = firstMedia.substring(commaIdx + 1);
+                        mediaBuffer = Buffer.from(base64Data, 'base64');
+
+                        const metaTokens = metaPart.split(';');
+                        if (metaTokens[0] && !metaTokens[0].includes('=')) {
+                            mimeType = metaTokens[0].trim();
+                        }
+                        for (const tok of metaTokens) {
+                            if (tok.startsWith('name=')) {
+                                try {
+                                    fileName = decodeURIComponent(tok.substring(5));
+                                } catch (_) {
+                                    fileName = tok.substring(5);
+                                }
+                            }
+                        }
+                    }
+                } else if (fs.existsSync(firstMedia)) {
+                    mediaBuffer = fs.readFileSync(firstMedia);
+                    fileName = path.basename(firstMedia);
+                }
+            } else if (typeof firstMedia === 'object' && firstMedia !== null) {
+                const rawB64 = (firstMedia.data || firstMedia.base64 || '').replace(/^data:.*?;base64,/, '');
+                if (rawB64) {
+                    mediaBuffer = Buffer.from(rawB64, 'base64');
+                }
+                if (firstMedia.mimetype) mimeType = firstMedia.mimetype;
+                if (firstMedia.fileName || firstMedia.name) fileName = firstMedia.fileName || firstMedia.name;
             }
 
-            if (mediaBuffer) {
-                // Determine media type
-                const isImage = /\.(jpe?g|png|webp)$/i.test(firstMedia) || firstMedia.includes('image/');
-                const isVideo = /\.(mp4|mov|avi)$/i.test(firstMedia) || firstMedia.includes('video/');
+            if (mediaBuffer && mediaBuffer.length > 0) {
+                const isImage = mimeType.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(fileName);
+                const isVideo = mimeType.startsWith('video/') || /\.(mp4|mov|avi|mkv|3gp)$/i.test(fileName);
+                const isAudio = mimeType.startsWith('audio/') || /\.(mp3|ogg|wav|m4a|aac)$/i.test(fileName);
 
                 if (isImage) {
                     sentMessage = await node.sock.sendMessage(jid, {
                         image: mediaBuffer,
-                        caption: message || undefined
+                        caption: message || undefined,
+                        mimetype: mimeType
                     });
                 } else if (isVideo) {
                     sentMessage = await node.sock.sendMessage(jid, {
                         video: mediaBuffer,
-                        caption: message || undefined
+                        caption: message || undefined,
+                        mimetype: mimeType
+                    });
+                } else if (isAudio) {
+                    sentMessage = await node.sock.sendMessage(jid, {
+                        audio: mediaBuffer,
+                        mimetype: mimeType,
+                        ptt: false
                     });
                 } else {
                     sentMessage = await node.sock.sendMessage(jid, {
                         document: mediaBuffer,
-                        mimetype: 'application/octet-stream',
-                        fileName: path.basename(firstMedia) || 'document',
+                        mimetype: mimeType,
+                        fileName: fileName,
                         caption: message || undefined
                     });
                 }
