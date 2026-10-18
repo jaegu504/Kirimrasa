@@ -5,6 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 
 // Dark Emerald Cybernetic Palette (Primary App Theme)
@@ -42,30 +44,30 @@ private val DarkEmeraldColorScheme = darkColorScheme(
     onErrorContainer = Color(0xFFFFDAD6)
 )
 
-// Light Palette option matching Stitch DESIGN.md
+// Light Palette option matching Neumorphic Light Design
 private val LightEmeraldColorScheme = lightColorScheme(
-    primary = Color(0xFF016D2F),
+    primary = Color(0xFF059669),
     onPrimary = Color.White,
-    primaryContainer = EmeraldPrimaryContainer,
-    onPrimaryContainer = EmeraldOnPrimaryContainer,
+    primaryContainer = Color(0xFF10B981),
+    onPrimaryContainer = Color.White,
 
-    secondary = Color(0xFF006C49),
+    secondary = Color(0xFF0D9488),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFF9AF2C5),
-    onSecondaryContainer = Color(0xFF0C714D),
+    secondaryContainer = Color(0xFFCCFBF1),
+    onSecondaryContainer = Color(0xFF115E59),
 
-    tertiary = Color(0xFF006C4A),
+    tertiary = Color(0xFF0284C7),
     onTertiary = Color.White,
 
-    background = LightCanvasBg,
-    onBackground = LightTextPrimary,
-    surface = LightSurface1,
-    onSurface = LightTextPrimary,
-    surfaceVariant = LightSurfaceHigh,
-    onSurfaceVariant = LightTextMuted,
+    background = Color(0xFFE6EDF5),
+    onBackground = Color(0xFF1E293B),
+    surface = Color(0xFFE6EDF5),
+    onSurface = Color(0xFF1E293B),
+    surfaceVariant = Color(0xFFEDF3FA),
+    onSurfaceVariant = Color(0xFF475569),
 
-    outline = Color(0xFF6C7B6B),
-    outlineVariant = Color(0xFFBBCBB9),
+    outline = Color(0xFF94A3B8),
+    outlineVariant = Color(0xFFCBD5E1),
 
     error = Color(0xFFBA1A1A),
     onError = Color.White,
@@ -74,15 +76,40 @@ private val LightEmeraldColorScheme = lightColorScheme(
 )
 
 @Composable
-fun WhatsAppBulkTheme(
-    darkTheme: Boolean = true, // Default to cybernetic dark theme as shown in Stitch screens
+fun KirimrasaTheme(
+    themeMode: ThemeMode? = null,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkEmeraldColorScheme else LightEmeraldColorScheme
+    val currentMode by ThemeManager.themeMode.collectAsState()
+    val activeMode = themeMode ?: currentMode
+    val isSystemDark = isSystemInDarkTheme()
+    val isDark = when (activeMode) {
+        ThemeMode.DARK -> true
+        ThemeMode.LIGHT -> false
+        ThemeMode.SYSTEM -> isSystemDark
+    }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = EmeraldTypography,
+    val colorScheme = if (isDark) DarkEmeraldColorScheme else LightEmeraldColorScheme
+    val neumorphicColors = if (isDark) DarkNeumorphicColors else LightNeumorphicColors
+
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalNeumorphicColors provides neumorphicColors
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = EmeraldTypography,
+            content = content
+        )
+    }
+}
+
+@Composable
+fun WhatsAppBulkTheme(
+    darkTheme: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    KirimrasaTheme(
+        themeMode = if (darkTheme) ThemeMode.DARK else ThemeMode.LIGHT,
         content = content
     )
 }

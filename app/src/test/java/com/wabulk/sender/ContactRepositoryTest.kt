@@ -34,6 +34,16 @@ class FakeContactDao : ContactDao {
         }
     }
 
+    override fun searchSelected(query: String): Flow<List<ContactEntity>> = flow.map { list ->
+        list.filter {
+            it.isSelected && (
+                it.rawName.contains(query, ignoreCase = true) ||
+                        it.phoneNumber.contains(query, ignoreCase = true) ||
+                        it.customNickname.contains(query, ignoreCase = true)
+            )
+        }
+    }
+
     override fun filterByTag(tag: String): Flow<List<ContactEntity>> = flow.map { list ->
         list.filter { it.tagsJson.contains(tag) }
     }

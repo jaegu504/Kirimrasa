@@ -36,6 +36,9 @@ import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.SimCard
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Mood
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VerifiedUser
@@ -84,6 +87,9 @@ import com.wabulk.sender.theme.StatusError
 import com.wabulk.sender.theme.TextCrispPrimary
 import com.wabulk.sender.theme.TextMutedBody
 import com.wabulk.sender.theme.TextSubduedTertiary
+import com.wabulk.sender.theme.LocalNeumorphicColors
+import com.wabulk.sender.theme.NeumorphicCard
+import com.wabulk.sender.theme.neumorphic
 import com.wabulk.sender.theme.pulseGlow
 import com.wabulk.sender.theme.springClickable
 
@@ -95,6 +101,7 @@ fun ComposerScreen(
     onLaunchCampaign: () -> Unit = {}
 ) {
     val strings = LocalAppStrings.current
+    val neuColors = LocalNeumorphicColors.current
     val uiState by viewModel.uiState.collectAsState()
     val attachments by viewModel.attachments.collectAsState()
     val context = LocalContext.current
@@ -453,8 +460,8 @@ fun ComposerScreen(
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
-                        text = "Atur Nilai {Company} & {Custom_1}",
-                        color = EmeraldPrimary,
+                        text = strings.composerSetVariablesBtn,
+                        color = neuColors.accentPrimary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -462,7 +469,7 @@ fun ComposerScreen(
                 Icon(
                     imageVector = if (showVariableConfig) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     contentDescription = null,
-                    tint = TextMutedBody,
+                    tint = neuColors.textSecondary,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -472,15 +479,16 @@ fun ComposerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(EmeraldDarkSurfaceLowest)
+                        .background(neuColors.surfaceContainer)
+                        .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(12.dp))
                         .padding(10.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Variable Company input
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
-                            text = "Nilai {Company} (Nama Bisnis / Brand):",
-                            color = TextCrispPrimary,
+                            text = strings.composerCompanyVariableTitle,
+                            color = neuColors.textPrimary,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -489,8 +497,8 @@ fun ComposerScreen(
                             onValueChange = { viewModel.updateCustomVariable("Company", it) },
                             placeholder = {
                                 Text(
-                                    text = "Misal: KirimRasa / Toko Berkah",
-                                    color = TextSubduedTertiary,
+                                    text = strings.composerCompanyPlaceholder,
+                                    color = neuColors.textTertiary,
                                     fontSize = 12.sp
                                 )
                             },
@@ -499,12 +507,12 @@ fun ComposerScreen(
                                 .fillMaxWidth()
                                 .height(46.dp),
                             colors = TextFieldDefaults.colors(
-                                focusedContainerColor = EmeraldDarkSurfaceHigh,
-                                unfocusedContainerColor = EmeraldDarkSurfaceHigh,
-                                focusedIndicatorColor = EmeraldPrimary,
-                                unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                                focusedTextColor = TextCrispPrimary,
-                                unfocusedTextColor = TextCrispPrimary
+                                focusedContainerColor = neuColors.surface,
+                                unfocusedContainerColor = neuColors.surface,
+                                focusedIndicatorColor = neuColors.accentPrimary,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedTextColor = neuColors.textPrimary,
+                                unfocusedTextColor = neuColors.textPrimary
                             ),
                             shape = RoundedCornerShape(8.dp)
                         )
@@ -513,8 +521,8 @@ fun ComposerScreen(
                     // Variable Custom_1 input
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
-                            text = "Nilai {Custom_1} (Kode Promo / Link / Info Bebas):",
-                            color = TextCrispPrimary,
+                            text = strings.composerCustom1VariableTitle,
+                            color = neuColors.textPrimary,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -523,8 +531,8 @@ fun ComposerScreen(
                             onValueChange = { viewModel.updateCustomVariable("Custom_1", it) },
                             placeholder = {
                                 Text(
-                                    text = "Misal: PROMO30 / https://wa.me/...",
-                                    color = TextSubduedTertiary,
+                                    text = strings.composerCustom1Placeholder,
+                                    color = neuColors.textTertiary,
                                     fontSize = 12.sp
                                 )
                             },
@@ -533,12 +541,12 @@ fun ComposerScreen(
                                 .fillMaxWidth()
                                 .height(46.dp),
                             colors = TextFieldDefaults.colors(
-                                focusedContainerColor = EmeraldDarkSurfaceHigh,
-                                unfocusedContainerColor = EmeraldDarkSurfaceHigh,
-                                focusedIndicatorColor = EmeraldPrimary,
-                                unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                                focusedTextColor = TextCrispPrimary,
-                                unfocusedTextColor = TextCrispPrimary
+                                focusedContainerColor = neuColors.surface,
+                                unfocusedContainerColor = neuColors.surface,
+                                focusedIndicatorColor = neuColors.accentPrimary,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedTextColor = neuColors.textPrimary,
+                                unfocusedTextColor = neuColors.textPrimary
                             ),
                             shape = RoundedCornerShape(8.dp)
                         )
@@ -553,12 +561,12 @@ fun ComposerScreen(
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = EmeraldTertiary,
+                            tint = neuColors.accentPrimary,
                             modifier = Modifier.size(13.dp)
                         )
                         Text(
-                            text = "{Nickname} diambil otomatis dari nama panggilan kontak masing-masing di Tab Kontak.",
-                            color = TextMutedBody,
+                            text = strings.composerCustomVariablesDesc,
+                            color = neuColors.textSecondary,
                             fontSize = 10.sp
                         )
                     }
@@ -675,12 +683,12 @@ fun ComposerScreen(
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = null,
-                            tint = EmeraldPrimary,
+                            tint = neuColors.accentPrimary,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = "+ Tambah Balon Pesan (Maks 3)",
-                            color = EmeraldPrimary,
+                            text = strings.composerAddBubbleBtn,
+                            color = neuColors.accentPrimary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -721,11 +729,7 @@ fun ComposerScreen(
                         .fillMaxWidth()
                         .height(44.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(EmeraldSecondaryFixedVariant, EmeraldSecondaryContainer, EmeraldSecondaryFixedVariant)
-                            )
-                        )
+                        .background(neuColors.accentPrimary)
                         .then(
                             if (!uiState.isAiRewriting) Modifier.springClickable { viewModel.triggerAiRewrite() }
                             else Modifier
@@ -739,11 +743,11 @@ fun ComposerScreen(
                         if (uiState.isAiRewriting) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(18.dp),
-                                color = EmeraldPrimary,
+                                color = Color.White,
                                 strokeWidth = 2.dp
                             )
                             Text(
-                                text = "Menghasilkan variasi AI & Spintax...",
+                                text = strings.composerAiGenerating,
                                 color = Color.White,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
@@ -752,7 +756,7 @@ fun ComposerScreen(
                             Icon(
                                 imageVector = Icons.Default.AutoFixHigh,
                                 contentDescription = null,
-                                tint = EmeraldPrimary,
+                                tint = Color.White,
                                 modifier = Modifier
                                     .size(18.dp)
                                     .pulseGlow()
@@ -767,66 +771,48 @@ fun ComposerScreen(
                     }
                 }
 
-                // Tone Selector Chips
+                // Tone Selector Chips with Vector Icons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    // Tone 1: Friendly
-                    val friendlySelected = uiState.selectedTone == "friendly"
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (friendlySelected) EmeraldPrimaryContainer else EmeraldDarkSurfaceHigh)
-                            .springClickable { viewModel.selectTone("friendly") }
-                            .padding(vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = strings.composerToneFriendly,
-                            color = if (friendlySelected) EmeraldOnPrimaryContainer else TextMutedBody,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    val toneList = listOf(
+                        Triple("friendly", Icons.Default.Mood, strings.composerToneFriendly),
+                        Triple("shorter", Icons.Default.Bolt, strings.composerToneShorter),
+                        Triple("max_variance", Icons.Default.Shuffle, strings.composerToneMaxVariance)
+                    )
 
-                    // Tone 2: Shorter
-                    val shorterSelected = uiState.selectedTone == "shorter"
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (shorterSelected) EmeraldPrimaryContainer else EmeraldDarkSurfaceHigh)
-                            .springClickable { viewModel.selectTone("shorter") }
-                            .padding(vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = strings.composerToneShorter,
-                            color = if (shorterSelected) EmeraldOnPrimaryContainer else TextMutedBody,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    // Tone 3: Max Variance
-                    val maxVarianceSelected = uiState.selectedTone == "max_variance"
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (maxVarianceSelected) EmeraldPrimaryContainer else EmeraldDarkSurfaceHigh)
-                            .springClickable { viewModel.selectTone("max_variance") }
-                            .padding(vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = strings.composerToneMaxVariance,
-                            color = if (maxVarianceSelected) EmeraldOnPrimaryContainer else TextMutedBody,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                    toneList.forEach { (toneKey, icon, label) ->
+                        val isSelected = uiState.selectedTone == toneKey
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSelected) neuColors.accentPrimary else neuColors.surfaceContainer)
+                                .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(10.dp))
+                                .springClickable { viewModel.selectTone(toneKey) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    tint = if (isSelected) Color.White else neuColors.textSecondary,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Text(
+                                    text = label,
+                                    color = if (isSelected) Color.White else neuColors.textPrimary,
+                                    fontSize = 10.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    maxLines = 1
+                                )
+                            }
+                        }
                     }
                 }
             }

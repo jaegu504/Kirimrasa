@@ -25,6 +25,8 @@ class ContactRepository(
 
     fun searchWithTag(query: String, tag: String): Flow<List<ContactEntity>> = contactDao.searchWithTag(query, tag)
 
+    fun searchSelected(query: String): Flow<List<ContactEntity>> = contactDao.searchSelected(query)
+
     suspend fun upsertContact(contact: ContactEntity): Long = contactDao.upsert(contact)
 
     suspend fun updateNickname(contactId: Long, nickname: String) {
@@ -47,6 +49,18 @@ class ContactRepository(
         if (tagName !in currentTags) {
             currentTags.add(tagName)
             contactDao.updateTags(contactId, Json.encodeToString(currentTags))
+        }
+    }
+
+    suspend fun addTagToContacts(contactIds: List<Long>, tagName: String) {
+        val all = contactDao.getAll()
+        for (id in contactIds) {
+            val contact = all.find { it.id == id } ?: continue
+            val currentTags = parseTagsJson(contact.tagsJson).toMutableList()
+            if (tagName !in currentTags) {
+                currentTags.add(tagName)
+                contactDao.updateTags(id, Json.encodeToString(currentTags))
+            }
         }
     }
 

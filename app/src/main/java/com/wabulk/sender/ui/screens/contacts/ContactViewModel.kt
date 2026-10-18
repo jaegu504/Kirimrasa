@@ -69,6 +69,8 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
         Pair(query, tag)
     }.flatMapLatest { (query, tag) ->
         when {
+            tag == SELECTED_FILTER_TAG && query.isBlank() -> repository.observeSelectedContacts()
+            tag == SELECTED_FILTER_TAG && query.isNotBlank() -> repository.searchSelected(query)
             query.isBlank() && tag == null -> repository.allContacts
             query.isBlank() && tag != null -> repository.filterByTag(tag)
             query.isNotBlank() && tag == null -> repository.searchContacts(query)
@@ -93,17 +95,30 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
     fun selectAllInTag(selected: Boolean) {
         val tag = _activeTag.value ?: return
         viewModelScope.launch {
-            repository.selectAllInTag(tag, selected)
+            if (tag == SELECTED_FILTER_TAG) {
+                repository.selectAll(selected)
+            } else {
+                repository.selectAllInTag(tag, selected)
+            }
         }
     }
 
     fun selectAllContacts(selected: Boolean) {
         viewModelScope.launch {
-            if (_activeTag.value != null) {
+            if (_activeTag.value != null && _activeTag.value != SELECTED_FILTER_TAG) {
                 repository.selectAllInTag(_activeTag.value!!, selected)
             } else {
                 repository.selectAll(selected)
             }
+        }
+    }
+
+    fun addTagToSelectedContacts(tagName: String) {
+        viewModelScope.launch {
+            val selected = repository.getSelectedContacts()
+            if (selected.isEmpty()) return@launch
+            repository.createTag(tagName)
+            repository.addTagToContacts(selected.map { it.id }, tagName)
         }
     }
 
@@ -241,5 +256,9 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
                 repository.createTag("Bisnis")
             }
         }
+    }
+
+    companion object {
+        const val SELECTED_FILTER_TAG = "__SELECTED__"
     }
 }

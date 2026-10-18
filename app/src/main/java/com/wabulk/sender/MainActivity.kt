@@ -18,14 +18,15 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
 
     val localizationManager = LocalizationManager(applicationContext)
+    com.wabulk.sender.theme.ThemeManager.init(applicationContext)
     com.wabulk.sender.engine.baileys.BaileysConfigManager.init(applicationContext)
     com.wabulk.sender.engine.WhatsAppSessionManager.getInstance(applicationContext)
 
     setContent {
-      WhatsAppBulkTheme {
+      com.wabulk.sender.theme.KirimrasaTheme {
         Surface(
           modifier = Modifier.fillMaxSize(),
-          color = EmeraldDarkSurface
+          color = androidx.compose.material3.MaterialTheme.colorScheme.background
         ) {
           MainScreen(localizationManager = localizationManager)
         }

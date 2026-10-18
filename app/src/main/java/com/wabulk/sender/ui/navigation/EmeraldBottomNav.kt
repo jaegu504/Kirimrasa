@@ -36,6 +36,9 @@ import com.wabulk.sender.theme.TextMutedBody
 import com.wabulk.sender.theme.pulseGlow
 import com.wabulk.sender.theme.springClickable
 
+import androidx.compose.foundation.border
+import com.wabulk.sender.theme.LocalNeumorphicColors
+
 @Composable
 fun EmeraldBottomNav(
     currentTab: ScreenTab,
@@ -44,11 +47,13 @@ fun EmeraldBottomNav(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val neuColors = LocalNeumorphicColors.current
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(EmeraldDarkSurfaceLow.copy(alpha = 0.95f))
+            .background(neuColors.surface.copy(alpha = 0.95f))
+            .border(width = 0.5.dp, brush = neuColors.borderBevel, shape = androidx.compose.ui.graphics.RectangleShape)
             .navigationBarsPadding()
     ) {
         Row(
@@ -83,7 +88,7 @@ fun EmeraldBottomNav(
                             Icon(
                                 imageVector = tab.icon,
                                 contentDescription = label,
-                                tint = if (isSelected) EmeraldPrimary else TextMutedBody,
+                                tint = if (isSelected) neuColors.accentPrimary else neuColors.textSecondary,
                                 modifier = Modifier.size(24.dp)
                             )
 
@@ -94,12 +99,12 @@ fun EmeraldBottomNav(
                                     modifier = Modifier
                                         .size(16.dp)
                                         .clip(CircleShape)
-                                        .background(EmeraldPrimaryContainer),
+                                        .background(neuColors.accentPrimary),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = if (badge > 99) "99+" else badge.toString(),
-                                        color = EmeraldOnPrimaryContainer,
+                                        color = Color.White,
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -109,7 +114,7 @@ fun EmeraldBottomNav(
 
                         Text(
                             text = label,
-                            color = if (isSelected) EmeraldPrimary else TextMutedBody,
+                            color = if (isSelected) neuColors.accentPrimary else neuColors.textSecondary,
                             fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             modifier = Modifier.padding(top = 2.dp)
@@ -128,7 +133,7 @@ fun EmeraldBottomNav(
                                 .height(2.5.dp)
                                 .width(indicatorWidth)
                                 .clip(CircleShape)
-                                .background(if (isSelected) EmeraldPrimary else Color.Transparent)
+                                .background(if (isSelected) neuColors.accentPrimary else Color.Transparent)
                         )
                     }
                 }

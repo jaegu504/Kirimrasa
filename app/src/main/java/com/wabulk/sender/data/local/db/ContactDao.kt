@@ -65,6 +65,9 @@ interface ContactDao {
     @Query("SELECT * FROM contacts WHERE is_selected = 1 ORDER BY raw_name ASC")
     fun observeSelected(): Flow<List<ContactEntity>>
 
+    @Query("SELECT * FROM contacts WHERE is_selected = 1 AND (raw_name LIKE '%' || :query || '%' OR phone_number LIKE '%' || :query || '%' OR custom_nickname LIKE '%' || :query || '%') ORDER BY raw_name ASC")
+    fun searchSelected(query: String): Flow<List<ContactEntity>>
+
     @Query("SELECT * FROM contacts WHERE is_selected = 1")
     suspend fun getSelected(): List<ContactEntity>
 

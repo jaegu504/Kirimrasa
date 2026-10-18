@@ -20,10 +20,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.border
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Translate
+import com.wabulk.sender.theme.LocalNeumorphicColors
+import com.wabulk.sender.theme.ThemeManager
+import com.wabulk.sender.theme.ThemeMode
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -89,18 +98,21 @@ fun MainScreen(
     val pendingQueueCount = queueItems.count { it.status == QueueTaskStatus.PENDING || it.status == QueueTaskStatus.TYPING }
     val scope = rememberCoroutineScope()
 
+    val neuColors = LocalNeumorphicColors.current
+    val currentThemeMode by ThemeManager.themeMode.collectAsState()
+
     CompositionLocalProvider(LocalAppStrings provides strings) {
         Scaffold(
             modifier = modifier
                 .fillMaxSize()
-                .background(EmeraldDarkSurface),
-            containerColor = EmeraldDarkSurface,
+                .background(neuColors.background),
+            containerColor = neuColors.background,
             topBar = {
-                // Top App Header conforming to Stitch DESIGN.md
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(EmeraldDarkSurfaceLow.copy(alpha = 0.95f))
+                        .background(neuColors.surface.copy(alpha = 0.95f))
+                        .border(width = 0.5.dp, brush = neuColors.borderBevel, shape = androidx.compose.ui.graphics.RectangleShape)
                         .statusBarsPadding()
                 ) {
                     Row(
@@ -120,7 +132,7 @@ fun MainScreen(
                                 modifier = Modifier
                                     .size(10.dp)
                                     .clip(CircleShape)
-                                    .background(EmeraldPrimary)
+                                    .background(neuColors.accentPrimary)
                                     .pulseGlow()
                             )
 
@@ -131,23 +143,53 @@ fun MainScreen(
                                     ScreenTab.QUEUE -> strings.navQueue.uppercase()
                                     ScreenTab.SETTINGS -> strings.navSettings.uppercase()
                                 },
-                                color = TextCrispPrimary,
+                                color = neuColors.textPrimary,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.5.sp
                             )
                         }
 
-                        // Right: Quick Language Toggle Pill + Shield Icon + Avatar Monogram
+                        // Right: Quick Theme Toggle + Quick Language Toggle Pill + Shield Icon + Avatar Monogram
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // Quick Language Switcher pill in Top Bar
+                            // Quick Theme Toggle Button
                             Box(
                                 modifier = Modifier
+                                    .size(32.dp)
                                     .clip(CircleShape)
-                                    .background(EmeraldDarkSurfaceHigh)
+                                    .background(neuColors.surfaceContainer)
+                                    .border(0.8.dp, neuColors.borderBevel, CircleShape)
+                                    .springClickable {
+                                        val nextMode = when (currentThemeMode) {
+                                            ThemeMode.DARK -> ThemeMode.LIGHT
+                                            ThemeMode.LIGHT -> ThemeMode.SYSTEM
+                                            ThemeMode.SYSTEM -> ThemeMode.DARK
+                                        }
+                                        ThemeManager.setThemeMode(nextMode)
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = when (currentThemeMode) {
+                                        ThemeMode.DARK -> Icons.Default.DarkMode
+                                        ThemeMode.LIGHT -> Icons.Default.LightMode
+                                        ThemeMode.SYSTEM -> Icons.Default.BrightnessAuto
+                                    },
+                                    contentDescription = "Toggle Theme",
+                                    tint = neuColors.accentPrimary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+
+                            // Quick Language Switcher pill in Top Bar (Vector Icon only, no emoji flags)
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(neuColors.surfaceContainer)
+                                    .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(12.dp))
                                     .springClickable {
                                         val nextLang = if (currentLanguage == AppLanguage.INDONESIAN) {
                                             AppLanguage.TURKISH
@@ -156,16 +198,21 @@ fun MainScreen(
                                         }
                                         localizationManager.setLanguage(nextLang)
                                     }
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    .padding(horizontal = 8.dp, vertical = 5.dp)
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    Text(text = currentLanguage.flagEmoji, fontSize = 12.sp)
+                                    Icon(
+                                        imageVector = Icons.Default.Language,
+                                        contentDescription = null,
+                                        tint = neuColors.accentPrimary,
+                                        modifier = Modifier.size(14.dp)
+                                    )
                                     Text(
                                         text = currentLanguage.code.uppercase(),
-                                        color = EmeraldPrimary,
+                                        color = neuColors.accentPrimary,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -175,16 +222,18 @@ fun MainScreen(
                             // Shield (Quick link to Security Settings)
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(32.dp)
                                     .clip(CircleShape)
+                                    .background(neuColors.surfaceContainer)
+                                    .border(0.8.dp, neuColors.borderBevel, CircleShape)
                                     .springClickable { currentTab = ScreenTab.SETTINGS },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Shield,
                                     contentDescription = "Shield",
-                                    tint = TextMutedBody,
-                                    modifier = Modifier.size(20.dp)
+                                    tint = neuColors.textSecondary,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
 
@@ -193,14 +242,14 @@ fun MainScreen(
                                 modifier = Modifier
                                     .size(32.dp)
                                     .clip(CircleShape)
-                                    .background(EmeraldPrimary)
+                                    .background(neuColors.accentPrimary)
                                     .springClickable { currentTab = ScreenTab.SETTINGS },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Person,
                                     contentDescription = "Profile",
-                                    tint = Color(0xFF003915),
+                                    tint = Color.White,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }

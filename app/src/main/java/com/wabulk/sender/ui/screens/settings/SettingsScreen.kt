@@ -47,6 +47,13 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.Timelapse
+import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Mood
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.AlertDialog
@@ -97,6 +104,11 @@ import com.wabulk.sender.theme.StatusErrorContainer
 import com.wabulk.sender.theme.TextCrispPrimary
 import com.wabulk.sender.theme.TextMutedBody
 import com.wabulk.sender.theme.TextSubduedTertiary
+import com.wabulk.sender.theme.ThemeManager
+import com.wabulk.sender.theme.ThemeMode
+import com.wabulk.sender.theme.LocalNeumorphicColors
+import com.wabulk.sender.theme.NeumorphicCard
+import com.wabulk.sender.theme.neumorphic
 import com.wabulk.sender.theme.pulseGlow
 import com.wabulk.sender.theme.springClickable
 import kotlinx.coroutines.delay
@@ -110,6 +122,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val neuColors = LocalNeumorphicColors.current
+    val currentThemeMode by ThemeManager.themeMode.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
     val node1Session by viewModel.node1Session.collectAsState()
@@ -224,122 +238,245 @@ fun SettingsScreen(
             )
         }
 
-        // LANGUAGE SELECTOR CARD (Indonesian & Turkish)
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(EmeraldDarkSurfaceLowest)
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+        // THEME SELECTOR CARD (Neumorphic Dark, Light, System)
+        NeumorphicCard(
+            modifier = Modifier.fillMaxWidth(),
+            cornerRadius = 16.dp,
+            elevation = 2.dp
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Icon(
-                        imageVector = Icons.Default.Translate,
-                        contentDescription = null,
-                        tint = EmeraldPrimary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Text(
-                        text = strings.settingsLanguageTitle,
-                        color = TextCrispPrimary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(EmeraldPrimary.copy(alpha = 0.15f))
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = currentLanguage.displayName,
-                        color = EmeraldPrimary,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Text(
-                text = strings.settingsLanguageSubtitle,
-                color = TextMutedBody,
-                fontSize = 11.sp
-            )
-
-            // Language Switcher Pills
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Indonesian Button
-                val isIndonesian = currentLanguage == AppLanguage.INDONESIAN
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (isIndonesian) EmeraldPrimaryContainer else EmeraldDarkSurfaceHigh)
-                        .springClickable { onLanguageSelected(AppLanguage.INDONESIAN) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(text = "🇮🇩", fontSize = 16.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(
+                            imageVector = when (currentThemeMode) {
+                                ThemeMode.DARK -> Icons.Default.DarkMode
+                                ThemeMode.LIGHT -> Icons.Default.LightMode
+                                ThemeMode.SYSTEM -> Icons.Default.BrightnessAuto
+                            },
+                            contentDescription = null,
+                            tint = neuColors.accentPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Text(
-                            text = strings.settingsSelectIndonesian,
-                            color = if (isIndonesian) EmeraldOnPrimaryContainer else TextCrispPrimary,
-                            fontSize = 12.sp,
+                            text = strings.settingsThemeTitle,
+                            color = neuColors.textPrimary,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        if (isIndonesian) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Active",
-                                tint = EmeraldOnPrimaryContainer,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(neuColors.accentPrimary.copy(alpha = 0.15f))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = when (currentThemeMode) {
+                                ThemeMode.DARK -> "DARK"
+                                ThemeMode.LIGHT -> "LIGHT"
+                                ThemeMode.SYSTEM -> "AUTO"
+                            },
+                            color = neuColors.accentPrimary,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
 
-                // Turkish Button
-                val isTurkish = currentLanguage == AppLanguage.TURKISH
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (isTurkish) EmeraldPrimaryContainer else EmeraldDarkSurfaceHigh)
-                        .springClickable { onLanguageSelected(AppLanguage.TURKISH) },
-                    contentAlignment = Alignment.Center
+                Text(
+                    text = strings.settingsThemeSubtitle,
+                    color = neuColors.textSecondary,
+                    fontSize = 11.sp
+                )
+
+                // 3-Way Theme Switcher Pills
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(text = "🇹🇷", fontSize = 16.sp)
+                    val themeOptions = listOf(
+                        Triple(ThemeMode.DARK, Icons.Default.DarkMode, strings.settingsThemeDark.replace(" (Neumorphic)", "")),
+                        Triple(ThemeMode.LIGHT, Icons.Default.LightMode, strings.settingsThemeLight.replace(" (Neumorphic)", "")),
+                        Triple(ThemeMode.SYSTEM, Icons.Default.BrightnessAuto, strings.settingsThemeSystem)
+                    )
+
+                    themeOptions.forEach { (mode, icon, label) ->
+                        val isSelected = currentThemeMode == mode
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSelected) neuColors.accentPrimary else neuColors.surfaceContainer)
+                                .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(10.dp))
+                                .springClickable { ThemeManager.setThemeMode(mode) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    tint = if (isSelected) Color.White else neuColors.textSecondary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = label,
+                                    color = if (isSelected) Color.White else neuColors.textPrimary,
+                                    fontSize = 10.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // LANGUAGE SELECTOR CARD (Indonesian & Turkish - Vector Icons only, no emoji flags)
+        NeumorphicCard(
+            modifier = Modifier.fillMaxWidth(),
+            cornerRadius = 16.dp,
+            elevation = 2.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Translate,
+                            contentDescription = null,
+                            tint = neuColors.accentPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Text(
-                            text = strings.settingsSelectTurkish,
-                            color = if (isTurkish) EmeraldOnPrimaryContainer else TextCrispPrimary,
-                            fontSize = 12.sp,
+                            text = strings.settingsLanguageTitle,
+                            color = neuColors.textPrimary,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        if (isTurkish) {
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(neuColors.accentPrimary.copy(alpha = 0.15f))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = currentLanguage.displayName,
+                            color = neuColors.accentPrimary,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Text(
+                    text = strings.settingsLanguageSubtitle,
+                    color = neuColors.textSecondary,
+                    fontSize = 11.sp
+                )
+
+                // Language Switcher Pills
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Indonesian Button
+                    val isIndonesian = currentLanguage == AppLanguage.INDONESIAN
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isIndonesian) neuColors.accentPrimary else neuColors.surfaceContainer)
+                            .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(12.dp))
+                            .springClickable { onLanguageSelected(AppLanguage.INDONESIAN) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
                             Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Active",
-                                tint = EmeraldOnPrimaryContainer,
-                                modifier = Modifier.size(14.dp)
+                                imageVector = Icons.Default.Language,
+                                contentDescription = null,
+                                tint = if (isIndonesian) Color.White else neuColors.textSecondary,
+                                modifier = Modifier.size(15.dp)
                             )
+                            Text(
+                                text = strings.settingsSelectIndonesian,
+                                color = if (isIndonesian) Color.White else neuColors.textPrimary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (isIndonesian) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Active",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Turkish Button
+                    val isTurkish = currentLanguage == AppLanguage.TURKISH
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isTurkish) neuColors.accentPrimary else neuColors.surfaceContainer)
+                            .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(12.dp))
+                            .springClickable { onLanguageSelected(AppLanguage.TURKISH) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = null,
+                                tint = if (isTurkish) Color.White else neuColors.textSecondary,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Text(
+                                text = strings.settingsSelectTurkish,
+                                color = if (isTurkish) Color.White else neuColors.textPrimary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (isTurkish) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Active",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -1462,9 +1599,9 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 val tones = listOf(
-                    Triple(0, "😊", strings.settingsToneCasual),
-                    Triple(1, "✨", strings.settingsToneFriendlyPicker),
-                    Triple(2, "💼", strings.settingsToneFormal)
+                    Triple(0, Icons.Default.Mood, strings.settingsToneCasual),
+                    Triple(1, Icons.Default.AutoAwesome, strings.settingsToneFriendlyPicker),
+                    Triple(2, Icons.Default.Work, strings.settingsToneFormal)
                 )
 
                 tones.forEach { (idx, icon, label) ->
@@ -1474,7 +1611,7 @@ fun SettingsScreen(
                             .weight(1f)
                             .height(36.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) EmeraldPrimary else Color.Transparent)
+                            .background(if (isSelected) neuColors.accentPrimary else Color.Transparent)
                             .springClickable { viewModel.selectAiTone(idx) },
                         contentAlignment = Alignment.Center
                     ) {
@@ -1482,10 +1619,15 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text(text = icon, fontSize = 12.sp)
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = if (isSelected) Color.White else neuColors.textSecondary,
+                                modifier = Modifier.size(14.dp)
+                            )
                             Text(
                                 text = label,
-                                color = if (isSelected) Color(0xFF003915) else TextMutedBody,
+                                color = if (isSelected) Color.White else neuColors.textPrimary,
                                 fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                             )
