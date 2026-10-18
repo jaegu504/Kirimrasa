@@ -107,6 +107,15 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    suspend fun getTargetContactsForCampaign(): List<ContactEntity> = withContext(Dispatchers.IO) {
+        val selected = repository.getSelectedContacts()
+        if (selected.isNotEmpty()) {
+            selected
+        } else {
+            repository.getAllContactsList()
+        }
+    }
+
     fun updateNickname(contactId: Long, nickname: String) {
         viewModelScope.launch {
             repository.updateNickname(contactId, nickname)

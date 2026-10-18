@@ -33,7 +33,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -85,6 +87,7 @@ fun MainScreen(
     val selectedCount by contactViewModel.selectedCount.collectAsState()
     val queueItems by DispatchQueueManager.getInstance().queueItems.collectAsState()
     val pendingQueueCount = queueItems.count { it.status == QueueTaskStatus.PENDING || it.status == QueueTaskStatus.TYPING }
+    val scope = rememberCoroutineScope()
 
     CompositionLocalProvider(LocalAppStrings provides strings) {
         Scaffold(
@@ -240,40 +243,40 @@ fun MainScreen(
                         viewModel = composerViewModel,
                         selectedContactCount = selectedCount,
                         onLaunchCampaign = {
-                            val targetContacts = if (contacts.any { it.isSelected }) {
-                                contacts.filter { it.isSelected }
-                            } else {
-                                contacts
-                            }
-                            val companyVal = composerViewModel.uiState.value.customVariables["Company"] ?: "KirimRasa"
-                            val custom1Val = composerViewModel.uiState.value.customVariables["Custom_1"] ?: "PROMO30"
-                            val bubbles = composerViewModel.uiState.value.bubbles.filter { it.text.isNotBlank() }.ifEmpty {
-                                listOf(MessageBubble(text = "Halo {Nickname}, penawaran spesial minggu ini dari {Company}! Gunakan kode {Custom_1}."))
-                            }
-                            val mediaUris = composerViewModel.attachments.value.map { it.uriString }
-                            val selectedAccount = composerViewModel.uiState.value.selectedAccount
-                            val queueItems = targetContacts.mapIndexed { idx, c ->
-                                val chosenNode = when (selectedAccount) {
-                                    AccountNode.PERSONAL -> AccountNode.PERSONAL
-                                    AccountNode.BUSINESS -> AccountNode.BUSINESS
-                                    AccountNode.DUAL_SYNC -> if (idx % 2 == 0) AccountNode.PERSONAL else AccountNode.BUSINESS
+                            scope.launch {
+                                val targetContacts = contactViewModel.getTargetContactsForCampaign()
+                                if (targetContacts.isEmpty()) return@launch
+
+                                val companyVal = composerViewModel.uiState.value.customVariables["Company"] ?: "KirimRasa"
+                                val custom1Val = composerViewModel.uiState.value.customVariables["Custom_1"] ?: "PROMO30"
+                                val bubbles = composerViewModel.uiState.value.bubbles.filter { it.text.isNotBlank() }.ifEmpty {
+                                    listOf(MessageBubble(text = "Halo {Nickname}, penawaran spesial minggu ini dari {Company}! Gunakan kode {Custom_1}."))
                                 }
-                                DispatchQueueManager.buildQueueItem(
-                                    contact = c,
-                                    bubbles = bubbles,
-                                    defaultCompany = companyVal,
-                                    defaultCustom1 = custom1Val,
-                                    nodeUsed = chosenNode,
-                                    mediaUris = mediaUris
+                                val mediaUris = composerViewModel.attachments.value.map { it.uriString }
+                                val selectedAccount = composerViewModel.uiState.value.selectedAccount
+                                val queueItems = targetContacts.mapIndexed { idx, c ->
+                                    val chosenNode = when (selectedAccount) {
+                                        AccountNode.PERSONAL -> AccountNode.PERSONAL
+                                        AccountNode.BUSINESS -> AccountNode.BUSINESS
+                                        AccountNode.DUAL_SYNC -> if (idx % 2 == 0) AccountNode.PERSONAL else AccountNode.BUSINESS
+                                    }
+                                    DispatchQueueManager.buildQueueItem(
+                                        contact = c,
+                                        bubbles = bubbles,
+                                        defaultCompany = companyVal,
+                                        defaultCustom1 = custom1Val,
+                                        nodeUsed = chosenNode,
+                                        mediaUris = mediaUris
+                                    )
+                                }
+                                val formattedDate = java.text.SimpleDateFormat("dd MMM HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+                                DispatchQueueManager.getInstance().enqueueBroadcast(
+                                    items = queueItems,
+                                    context = context,
+                                    campaignTitle = "Broadcast $formattedDate"
                                 )
+                                currentTab = ScreenTab.QUEUE
                             }
-                            val formattedDate = java.text.SimpleDateFormat("dd MMM HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
-                            DispatchQueueManager.getInstance().enqueueBroadcast(
-                                items = queueItems,
-                                context = context,
-                                campaignTitle = "Broadcast $formattedDate"
-                            )
-                            currentTab = ScreenTab.QUEUE
                         }
                     )
                     ScreenTab.CONTACTS -> ContactManagerScreen(viewModel = contactViewModel)

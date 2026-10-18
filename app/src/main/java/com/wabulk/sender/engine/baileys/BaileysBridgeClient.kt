@@ -397,6 +397,8 @@ class BaileysBridgeClient(
         }
     }
 
+    private val mediaDataUrlCache = java.util.concurrent.ConcurrentHashMap<String, String>()
+
     private fun prepareMediaForGateway(mediaUrls: List<String>): List<String> {
         val ctx = context
         return mediaUrls.mapNotNull { mediaStr ->
@@ -405,7 +407,9 @@ class BaileysBridgeClient(
             } else if (mediaStr.startsWith("http://") || mediaStr.startsWith("https://") || mediaStr.startsWith("data:")) {
                 mediaStr
             } else if (ctx != null && (mediaStr.startsWith("content://") || mediaStr.startsWith("file://"))) {
-                convertUriToDataUrl(ctx, mediaStr) ?: mediaStr
+                mediaDataUrlCache.getOrPut(mediaStr) {
+                    convertUriToDataUrl(ctx, mediaStr) ?: mediaStr
+                }
             } else {
                 mediaStr
             }
@@ -416,17 +420,71 @@ class BaileysBridgeClient(
         return try {
             val uri = android.net.Uri.parse(uriString)
             val resolver = ctx.contentResolver
-            val mime = resolver.getType(uri) ?: getMimeFromPath(uriString)
+            val detectedMime = resolver.getType(uri) ?: getMimeFromPath(uriString)
             val fileName = getFileName(ctx, uri) ?: "file_${System.currentTimeMillis()}"
 
-            val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
-            if (bytes != null && bytes.isNotEmpty()) {
-                val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
-                "data:$mime;name=${android.net.Uri.encode(fileName)};base64,$base64"
+            val (finalBytes, effectiveMime) = if (detectedMime.startsWith("image/")) {
+                compressImage(ctx, uri) ?: run {
+                    val raw = resolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+                    Pair(raw, detectedMime)
+                }
+            } else {
+                val raw = resolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+                Pair(raw, detectedMime)
+            }
+
+            if (finalBytes.isNotEmpty()) {
+                val base64 = android.util.Base64.encodeToString(finalBytes, android.util.Base64.NO_WRAP)
+                "data:$effectiveMime;name=${android.net.Uri.encode(fileName)};base64,$base64"
             } else {
                 null
             }
         } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun compressImage(ctx: android.content.Context, uri: android.net.Uri): Pair<ByteArray, String>? {
+        return try {
+            val boundsOptions = android.graphics.BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            ctx.contentResolver.openInputStream(uri)?.use {
+                android.graphics.BitmapFactory.decodeStream(it, null, boundsOptions)
+            }
+            val origW = boundsOptions.outWidth
+            val origH = boundsOptions.outHeight
+            if (origW <= 0 || origH <= 0) return null
+
+            val maxDim = 1920
+            var sampleSize = 1
+            val maxSide = maxOf(origW, origH)
+            if (maxSide > maxDim) {
+                sampleSize = (maxSide / maxDim).coerceAtLeast(1)
+            }
+
+            val decodeOptions = android.graphics.BitmapFactory.Options().apply {
+                inSampleSize = sampleSize
+            }
+            val sampledBitmap = ctx.contentResolver.openInputStream(uri)?.use {
+                android.graphics.BitmapFactory.decodeStream(it, null, decodeOptions)
+            } ?: return null
+
+            val w = sampledBitmap.width
+            val h = sampledBitmap.height
+            val finalBitmap = if (w > maxDim || h > maxDim) {
+                val ratio = minOf(maxDim.toFloat() / w, maxDim.toFloat() / h)
+                val targetW = (w * ratio).toInt().coerceAtLeast(1)
+                val targetH = (h * ratio).toInt().coerceAtLeast(1)
+                android.graphics.Bitmap.createScaledBitmap(sampledBitmap, targetW, targetH, true)
+            } else {
+                sampledBitmap
+            }
+
+            val baos = java.io.ByteArrayOutputStream()
+            finalBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, baos)
+            Pair(baos.toByteArray(), "image/jpeg")
+        } catch (_: Throwable) {
             null
         }
     }
