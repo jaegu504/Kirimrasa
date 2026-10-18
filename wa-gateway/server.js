@@ -51,6 +51,20 @@ app.get('/health', (req, res) => {
 // nodeMap: nodeId -> { sock, state, saveCreds, status, phoneNumber, wsClients: Set }
 const nodeMap = new Map();
 
+// Message Store to resolve E2EE Signal protocol retry requests ("Waiting for this message")
+const messageStore = new Map();
+
+function saveMessageToStore(messageId, messageContent) {
+    if (!messageId || !messageContent) return;
+    if (messageStore.size > 2000) {
+        const iter = messageStore.keys();
+        for (let i = 0; i < 500; i++) {
+            messageStore.delete(iter.next().value);
+        }
+    }
+    messageStore.set(messageId, messageContent);
+}
+
 // Helper: Normalize Indonesian & international phone numbers
 function normalizePhone(phone) {
     let clean = phone.replace(/[^0-9]/g, '');
@@ -112,7 +126,13 @@ async function getOrCreateSocket(nodeId, phoneNumber = null) {
         connectTimeoutMs: 60000,
         keepAliveIntervalMs: 25000,
         emitOwnEvents: false,
-        retryRequestDelayMs: 250
+        retryRequestDelayMs: 250,
+        getMessage: async (key) => {
+            if (key?.id) {
+                return messageStore.get(key.id) || undefined;
+            }
+            return undefined;
+        }
     });
 
     if (!node) {
@@ -133,6 +153,14 @@ async function getOrCreateSocket(nodeId, phoneNumber = null) {
     }
 
     sock.ev.on('creds.update', saveCreds);
+
+    sock.ev.on('messages.upsert', async ({ messages }) => {
+        for (const msg of messages) {
+            if (msg.key?.id && msg.message) {
+                saveMessageToStore(msg.key.id, msg.message);
+            }
+        }
+    });
 
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
@@ -365,6 +393,10 @@ app.post('/api/nodes/:nodeId/send', authMiddleware, async (req, res) => {
         // If no media was sent, send as text
         if (!sentMessage) {
             sentMessage = await node.sock.sendMessage(jid, { text: message || '' });
+        }
+
+        if (sentMessage?.key?.id && sentMessage?.message) {
+            saveMessageToStore(sentMessage.key.id, sentMessage.message);
         }
 
         return res.json({
