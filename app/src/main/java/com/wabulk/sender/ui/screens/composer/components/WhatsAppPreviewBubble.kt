@@ -35,14 +35,10 @@ import com.wabulk.sender.domain.model.MediaAttachment
 import com.wabulk.sender.domain.model.MediaType
 import com.wabulk.sender.domain.model.MessageBubble
 import com.wabulk.sender.domain.spintax.SpintaxParser
-import com.wabulk.sender.theme.EmeraldDarkSurfaceHigh
-import com.wabulk.sender.theme.EmeraldDarkSurfaceLow
-import com.wabulk.sender.theme.EmeraldDarkSurfaceLowest
 import com.wabulk.sender.theme.EmeraldPrimary
 import com.wabulk.sender.theme.EmeraldSecondaryContainer
+import com.wabulk.sender.theme.LocalNeumorphicColors
 import com.wabulk.sender.theme.StatusError
-import com.wabulk.sender.theme.TextCrispPrimary
-import com.wabulk.sender.theme.TextMutedBody
 import com.wabulk.sender.theme.WhatsAppBlueTicks
 import com.wabulk.sender.theme.WhatsAppChatBubbleGreen
 import com.wabulk.sender.theme.WhatsAppChatBubbleText
@@ -57,18 +53,19 @@ fun WhatsAppPreviewBubble(
     customVariables: Map<String, String> = emptyMap()
 ) {
     val strings = LocalAppStrings.current
+    val neuColors = LocalNeumorphicColors.current
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(EmeraldDarkSurfaceLow)
+            .background(neuColors.surface)
     ) {
         // WhatsApp Top Recipient Header Bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(EmeraldDarkSurfaceHigh)
+                .background(neuColors.surfaceRaised)
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -86,7 +83,7 @@ fun WhatsAppPreviewBubble(
                 ) {
                     Text(
                         text = contactInitials,
-                        color = TextCrispPrimary,
+                        color = Color.White,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -94,13 +91,13 @@ fun WhatsAppPreviewBubble(
                 Column {
                     Text(
                         text = contactName,
-                        color = TextCrispPrimary,
+                        color = neuColors.textPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = strings.composerOnlinePreview,
-                        color = EmeraldPrimary,
+                        color = neuColors.primary,
                         fontSize = 9.sp
                     )
                 }
@@ -109,7 +106,7 @@ fun WhatsAppPreviewBubble(
             Row(
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(EmeraldDarkSurfaceLowest)
+                    .background(neuColors.surfaceInset)
                     .padding(horizontal = 8.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -117,12 +114,12 @@ fun WhatsAppPreviewBubble(
                 Icon(
                     imageVector = Icons.Default.Visibility,
                     contentDescription = null,
-                    tint = EmeraldPrimary,
+                    tint = neuColors.primary,
                     modifier = Modifier.size(11.dp)
                 )
                 Text(
                     text = strings.composerLivePreviewTitle,
-                    color = TextMutedBody,
+                    color = neuColors.textSecondary,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold
                 )

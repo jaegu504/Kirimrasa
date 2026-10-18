@@ -36,15 +36,11 @@ import coil.compose.AsyncImage
 import com.wabulk.sender.data.locale.LocalAppStrings
 import com.wabulk.sender.domain.model.MediaAttachment
 import com.wabulk.sender.domain.model.MediaType
-import com.wabulk.sender.theme.EmeraldDarkSurfaceContainer
-import com.wabulk.sender.theme.EmeraldDarkSurfaceHigh
-import com.wabulk.sender.theme.EmeraldDarkSurfaceLow
 import com.wabulk.sender.theme.EmeraldPrimary
 import com.wabulk.sender.theme.EmeraldPrimaryContainer
 import com.wabulk.sender.theme.EmeraldSecondaryFixedVariant
+import com.wabulk.sender.theme.LocalNeumorphicColors
 import com.wabulk.sender.theme.StatusError
-import com.wabulk.sender.theme.TextCrispPrimary
-import com.wabulk.sender.theme.TextMutedBody
 import com.wabulk.sender.theme.springClickable
 
 @Composable
@@ -55,6 +51,7 @@ fun MediaCarousel(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val neuColors = LocalNeumorphicColors.current
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -72,19 +69,19 @@ fun MediaCarousel(
             ) {
                 Text(
                     text = strings.composerMediaQueue,
-                    color = TextCrispPrimary,
+                    color = neuColors.textPrimary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = strings.composerAutoCompressed,
-                    color = TextMutedBody,
+                    color = neuColors.textSecondary,
                     fontSize = 11.sp
                 )
             }
             Text(
                 text = strings.composerAttachedCount(attachments.size),
-                color = EmeraldPrimary,
+                color = neuColors.primary,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -103,8 +100,8 @@ fun MediaCarousel(
                 modifier = Modifier
                     .size(width = 96.dp, height = 108.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(if (canAttach) EmeraldDarkSurfaceLow else EmeraldDarkSurfaceLow.copy(alpha = 0.5f))
-                    .border(1.dp, EmeraldDarkSurfaceHigh, RoundedCornerShape(16.dp))
+                    .background(if (canAttach) neuColors.surface else neuColors.surface.copy(alpha = 0.5f))
+                    .border(1.dp, neuColors.surfaceRaised, RoundedCornerShape(16.dp))
                     .then(
                         if (canAttach) Modifier.springClickable { onAddAttachment() }
                         else Modifier
@@ -119,19 +116,19 @@ fun MediaCarousel(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(EmeraldDarkSurfaceContainer),
+                            .background(neuColors.surfaceInset),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.AddPhotoAlternate,
                             contentDescription = null,
-                            tint = if (canAttach) EmeraldPrimary else TextMutedBody,
+                            tint = if (canAttach) neuColors.primary else neuColors.textSecondary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
                     Text(
                         text = strings.composerAttachButton,
-                        color = if (canAttach) TextMutedBody else TextMutedBody.copy(alpha = 0.5f),
+                        color = if (canAttach) neuColors.textSecondary else neuColors.textSecondary.copy(alpha = 0.5f),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -154,11 +151,13 @@ private fun MediaAttachmentCard(
     attachment: MediaAttachment,
     onRemove: () -> Unit
 ) {
+    val neuColors = LocalNeumorphicColors.current
+
     Box(
         modifier = Modifier
             .size(width = 96.dp, height = 108.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(EmeraldDarkSurfaceHigh)
+            .background(neuColors.surfaceRaised)
     ) {
         when (attachment.mediaType) {
             MediaType.IMAGE -> {
@@ -191,7 +190,7 @@ private fun MediaAttachmentCard(
                 // File size badge at bottom
                 Text(
                     text = attachment.formattedSize,
-                    color = TextCrispPrimary,
+                    color = Color.White,
                     fontSize = 9.sp,
                     fontFamily = FontFamily.Monospace,
                     modifier = Modifier
@@ -239,7 +238,7 @@ private fun MediaAttachmentCard(
                 ) {
                     Text(
                         text = attachment.formattedSize,
-                        color = TextCrispPrimary,
+                        color = Color.White,
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace,
                         modifier = Modifier
@@ -285,14 +284,14 @@ private fun MediaAttachmentCard(
                     Column {
                         Text(
                             text = attachment.fileName,
-                            color = TextCrispPrimary,
+                            color = neuColors.textPrimary,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1
                         )
                         Text(
                             text = "${attachment.formattedSize} • Doc",
-                            color = TextMutedBody,
+                            color = neuColors.textSecondary,
                             fontSize = 9.sp
                         )
                     }

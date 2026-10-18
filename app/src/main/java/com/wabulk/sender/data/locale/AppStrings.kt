@@ -225,6 +225,20 @@ interface AppStrings {
     val settingsNode1PhoneLabel: String
     val settingsNode2PhoneLabel: String
     val settingsPairingCodeBtn: String
+
+    val tutorialTitle: String
+    val tutorialStep1Title: String
+    val tutorialStep1Desc: String
+    val tutorialStep2Title: String
+    val tutorialStep2Desc: String
+    val tutorialStep3Title: String
+    val tutorialStep3Desc: String
+    val tutorialStep4Title: String
+    val tutorialStep4Desc: String
+    val tutorialNextBtn: String
+    val tutorialStartBtn: String
+    val tutorialSkipBtn: String
+    val settingsReopenTutorialBtn: String
 }
 
 object IndonesianStrings : AppStrings {
@@ -307,7 +321,7 @@ object IndonesianStrings : AppStrings {
     override val contactsImportResult = { imported: Int, total: Int -> "Berhasil mengimpor $imported dari $total kontak" }
     override val contactsSyncing = "Menyinkronkan..."
     override val contactsSelectAllInView = "Pilih Semua"
-    override val contactsDeselectAllInView = "Batalkan Pilihan"
+    override val contactsDeselectAllInView = "Batal"
     override val contactsAllSelectedInViewCount = { count: Int -> "Semua Dipilih ($count Kontak)" }
     override val contactsSelectAllInViewCount = { count: Int -> "Pilih Semua Kontak ($count)" }
     override val contactsClearSearch = "Hapus pencarian"
@@ -323,8 +337,8 @@ object IndonesianStrings : AppStrings {
     override val contactsAddNewTagOption = "+ Buat tag baru..."
     override val contactsAddBtn = "Tambah"
     override val contactsDoneBtn = "Selesai"
-    override val contactsBatchSelectedCount = { count: Int -> "$count Kontak Terpilih" }
-    override val contactsBatchAssignTagBtn = "+ Beri Label Bersamaan"
+    override val contactsBatchSelectedCount = { count: Int -> "$count Terpilih" }
+    override val contactsBatchAssignTagBtn = "+ Label"
     override val contactsBatchTagDialogTitle = { count: Int -> "Beri Label ke $count Kontak Terpilih" }
     override val contactsBatchTagAppliedToast = { count: Int, tag: String -> "$count kontak berhasil diberi label '$tag'" }
     override val contactsViewSelectedOnly = "Lihat Terpilih"
@@ -437,13 +451,27 @@ object IndonesianStrings : AppStrings {
     override val settingsStatusInactive = "NONAKTIF"
     override val settingsBaileysExplanation = "Gunakan gateway server Node.js Baileys lokal atau remote untuk pengiriman pesan massal berkecepatan tinggi dengan multi-device protocol."
     override val settingsThemeTitle = "Gaya Tema & Tampilan"
-    override val settingsThemeSubtitle = "Pilih tampilan Neumorphic terang atau gelap"
-    override val settingsThemeDark = "Mode Gelap (Neumorphic)"
-    override val settingsThemeLight = "Mode Terang (Neumorphic)"
+    override val settingsThemeSubtitle = "Pilih tampilan Glassmorphism Apple terang atau gelap"
+    override val settingsThemeDark = "Mode Gelap (Apple Glass)"
+    override val settingsThemeLight = "Mode Terang (Apple Glass)"
     override val settingsThemeSystem = "Ikuti Sistem"
     override val settingsNode1PhoneLabel = "WhatsApp Personal"
     override val settingsNode2PhoneLabel = "WhatsApp Business"
     override val settingsPairingCodeBtn = "Minta Kode Pairing 8-Digit"
+
+    override val tutorialTitle = "Panduan & Tutorial Kirimrasa"
+    override val tutorialStep1Title = "Selamat Datang di Kirimrasa"
+    override val tutorialStep1Desc = "Aplikasi broadcast WhatsApp personal dengan gaya Glassmorphism modern, menjaga kehangatan pesan tanpa terkesan seperti bot."
+    override val tutorialStep2Title = "Dua Mode Pengiriman Fleksibel"
+    override val tutorialStep2Desc = "Pilih 'Gateway Multi-Device' untuk pengiriman massal di latar belakang tanpa scan ulang, atau gunakan 'Layanan Aksesibilitas' untuk otomatisasi langsung di HP tanpa server."
+    override val tutorialStep3Title = "Variabel Personal & Anti-Spam"
+    override val tutorialStep3Desc = "Gunakan tag {Nickname} untuk menyapa nama panggilan kontak, aktifkan Spintax untuk variasi kalimat otomatis, serta jeda aman agar nomor Anda tetap terlindungi."
+    override val tutorialStep4Title = "Pengelolaan Kontak Cerdas"
+    override val tutorialStep4Desc = "Pilih kontak cukup dengan sekali ketuk, gunakan segmen 'Terpilih', dan terapkan label secara serentak hanya dengan satu tombol."
+    override val tutorialNextBtn = "Lanjut"
+    override val tutorialStartBtn = "Mulai Gunakan Kirimrasa"
+    override val tutorialSkipBtn = "Lewati"
+    override val settingsReopenTutorialBtn = "Buka Panduan Tutorial"
 }
 
 object TurkishStrings : AppStrings {
@@ -526,7 +554,7 @@ object TurkishStrings : AppStrings {
     override val contactsImportResult = { imported: Int, total: Int -> "$total satırdan $imported kişi başarıyla içe aktarıldı" }
     override val contactsSyncing = "Senkronize ediliyor..."
     override val contactsSelectAllInView = "Tümünü Seç"
-    override val contactsDeselectAllInView = "Seçimi Kaldır"
+    override val contactsDeselectAllInView = "İptal"
     override val contactsAllSelectedInViewCount = { count: Int -> "Tümü Seçildi ($count Kişi)" }
     override val contactsSelectAllInViewCount = { count: Int -> "Tüm Kişileri Seç ($count)" }
     override val contactsClearSearch = "Aramayı temizle"
@@ -534,7 +562,7 @@ object TurkishStrings : AppStrings {
     override val contactsManageTagsTitle = "Kişi Etiketlerini Yönet"
     override val contactsManageTagsDesc = "Bu kişiye eklenecek etiket kategorilerini seçin:"
     override val contactsAddNewTagTitle = "Yeni Etiket Kategorisi Ekle"
-    override val contactsAddNewTagDesc = "Kişileri gruplandırmak için yeni bir etiket kategorisi oluşturun (ör: VIP, Müşteri, Bayi, Aile)."
+    override val contactsAddNewTagDesc = "Bu kişileri gruplandırmak için yeni bir etiket kategorisi oluşturun (ör: VIP, Müşteri, Bayi, Aile)."
     override val contactsTagNamePlaceholder = "Etiket adı (ör: VIP)"
     override val contactsCancelBtn = "İptal"
     override val contactsSaveBtn = "Kaydet"
@@ -542,8 +570,8 @@ object TurkishStrings : AppStrings {
     override val contactsAddNewTagOption = "+ Yeni etiket oluştur..."
     override val contactsAddBtn = "Ekle"
     override val contactsDoneBtn = "Tamam"
-    override val contactsBatchSelectedCount = { count: Int -> "$count Kişi Seçildi" }
-    override val contactsBatchAssignTagBtn = "+ Toplu Etiket Ekle"
+    override val contactsBatchSelectedCount = { count: Int -> "$count Seçildi" }
+    override val contactsBatchAssignTagBtn = "+ Etiket"
     override val contactsBatchTagDialogTitle = { count: Int -> "Seçilen $count Kişiye Etiket Ekle" }
     override val contactsBatchTagAppliedToast = { count: Int, tag: String -> "$count kişiye '$tag' etiketi uygulandı" }
     override val contactsViewSelectedOnly = "Sadece Seçilenler"
@@ -655,14 +683,28 @@ object TurkishStrings : AppStrings {
     override val settingsStatusActive = "AKTİF"
     override val settingsStatusInactive = "PASİF"
     override val settingsBaileysExplanation = "Çoklu cihaz protokolüyle yüksek hızlı toplu mesaj gönderimi için yerel veya uzak Baileys Node.js ağ geçidini kullanın."
-    override val settingsThemeTitle = "Tema & Görünüm"
-    override val settingsThemeSubtitle = "Açık veya koyu Neumorphic temayı seçin"
-    override val settingsThemeDark = "Koyu Mod (Neumorphic)"
-    override val settingsThemeLight = "Açık Mod (Neumorphic)"
+    override val settingsThemeTitle = "Uygulama Teması (Görünüm)"
+    override val settingsThemeSubtitle = "Açık veya koyu Apple Glassmorphism temasını seçin"
+    override val settingsThemeDark = "Koyu Mod (Apple Glass)"
+    override val settingsThemeLight = "Açık Mod (Apple Glass)"
     override val settingsThemeSystem = "Sistem Varsayılanı"
     override val settingsNode1PhoneLabel = "WhatsApp Bireysel"
     override val settingsNode2PhoneLabel = "WhatsApp İşletme"
     override val settingsPairingCodeBtn = "8 Haneli Eşleşme Kodu İste"
+
+    override val tutorialTitle = "Kirimrasa Rehber & Eğitici"
+    override val tutorialStep1Title = "Kirimrasa'ya Hoş Geldiniz"
+    override val tutorialStep1Desc = "Modern Apple Glassmorphic tarzıyla, mesajlarınızın bot gibi değil sıcak ve samimi hissettirmesini sağlayan kişisel WhatsApp toplu mesajlaşma uygulaması."
+    override val tutorialStep2Title = "İki Esnek Gönderim Modu"
+    override val tutorialStep2Desc = "Tekrar tarama yapmadan arka planda toplu gönderim için 'Çoklu Cihaz Ağ Geçidi'ni seçin veya sunucu olmadan doğrudan cihaz içi otomasyon için 'Erişilebilirlik Hizmeti'ni kullanın."
+    override val tutorialStep3Title = "Kişisel Değişkenler & Anti-Spam"
+    override val tutorialStep3Desc = "Kişilere adlarıyla hitap etmek için {Nickname} etiketini kullanın, cümle varyasyonları için Spintax'ı açın ve numaranızı korumak için doğal insansı gecikmeler ekleyin."
+    override val tutorialStep4Title = "Akıllı Kişi Yönetimi"
+    override val tutorialStep4Desc = "Kişileri tek dokunuşla seçin, 'Seçilenler' sekmesinde görüntüleyin ve tek bir düğmeyle aynı anda etiketleyin."
+    override val tutorialNextBtn = "İleri"
+    override val tutorialStartBtn = "Kirimrasa'yı Başlat"
+    override val tutorialSkipBtn = "Geç"
+    override val settingsReopenTutorialBtn = "Kullanım Rehberini Aç"
 }
 
 val LocalAppStrings = compositionLocalOf<AppStrings> { IndonesianStrings }

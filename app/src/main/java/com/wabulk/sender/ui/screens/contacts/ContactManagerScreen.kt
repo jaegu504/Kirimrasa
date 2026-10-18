@@ -26,16 +26,22 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoFixHigh
+import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.UploadFile
+import com.wabulk.sender.theme.PlusJakartaSansFamily
+import com.wabulk.sender.theme.glassDepth
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -54,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -213,7 +220,7 @@ fun ContactManagerScreen(
             )
         }
 
-        // Telemetry Shelf (Neumorphic Pills)
+        // Telemetry Shelf (Apple Glass Metrics)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -221,18 +228,21 @@ fun ContactManagerScreen(
             TelemetryPill(
                 label = strings.contactsTotalMetric,
                 value = totalCount.toString(),
+                icon = Icons.Default.Group,
                 modifier = Modifier.weight(1f)
             )
             Spacer(modifier = Modifier.width(8.dp))
             TelemetryPill(
                 label = strings.contactsSelectedMetric,
                 value = selectedCount.toString(),
+                icon = Icons.Default.CheckCircle,
                 modifier = Modifier.weight(1f)
             )
             Spacer(modifier = Modifier.width(8.dp))
             TelemetryPill(
                 label = strings.contactsNicknamesMetric,
-                value = "$nicknameCount/$selectedCount",
+                value = nicknameCount.toString(),
+                icon = Icons.Default.Badge,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -414,9 +424,6 @@ fun ContactManagerScreen(
                 selectedCount = selectedCount,
                 strings = strings,
                 onBatchTag = { showBatchTagDialog = true },
-                onViewSelected = {
-                    viewModel.onTagFilterChange(ContactViewModel.SELECTED_FILTER_TAG)
-                },
                 onClearSelection = {
                     viewModel.selectAllContacts(false)
                 }
@@ -556,26 +563,28 @@ private fun BatchActionBar(
     selectedCount: Int,
     strings: AppStrings,
     onBatchTag: () -> Unit,
-    onViewSelected: () -> Unit,
     onClearSelection: () -> Unit
 ) {
     val neuColors = LocalNeumorphicColors.current
 
-    NeumorphicCard(
-        modifier = Modifier.fillMaxWidth(),
-        cornerRadius = 14.dp,
-        elevation = 4.dp
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(neuColors.surfaceRaised.copy(alpha = 0.95f))
+            .border(1.dp, neuColors.borderBevel, RoundedCornerShape(20.dp))
+            .glassDepth(cornerRadius = 20.dp, elevation = 4.dp, isDark = neuColors.isDark)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            // Left: Selection count pill
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -595,18 +604,20 @@ private fun BatchActionBar(
                     text = strings.contactsBatchSelectedCount(selectedCount),
                     color = neuColors.textPrimary,
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = PlusJakartaSansFamily
                 )
             }
 
+            // Right: Tag + Cancel Buttons
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                // "+ Label Bersamaan" Button
+                // "+ Label" Button
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(neuColors.accentPrimary)
                         .springClickable { onBatchTag() }
                         .padding(horizontal = 10.dp, vertical = 6.dp)
@@ -624,43 +635,42 @@ private fun BatchActionBar(
                         Text(
                             text = strings.contactsBatchAssignTagBtn,
                             color = Color.White,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = PlusJakartaSansFamily,
+                            maxLines = 1
                         )
                     }
                 }
 
-                // "Lihat Terpilih" Filter Shortcut
+                // "Batal" Button
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .neumorphic(elevation = 2.dp, cornerRadius = 8.dp)
-                        .springClickable { onViewSelected() }
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(neuColors.surfaceInset)
+                        .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(12.dp))
+                        .springClickable { onClearSelection() }
                         .padding(horizontal = 8.dp, vertical = 6.dp)
                 ) {
-                    Text(
-                        text = strings.contactsViewSelectedOnly,
-                        color = neuColors.accentPrimary,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                // Deselect Button
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .neumorphic(elevation = 2.dp, cornerRadius = 14.dp)
-                        .springClickable { onClearSelection() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Cancel,
-                        contentDescription = strings.contactsDeselectAllInView,
-                        tint = neuColors.textSecondary,
-                        modifier = Modifier.size(14.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = strings.contactsDeselectAllInView,
+                            tint = neuColors.textSecondary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = strings.contactsDeselectAllInView,
+                            color = neuColors.textSecondary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = PlusJakartaSansFamily,
+                            maxLines = 1
+                        )
+                    }
                 }
             }
         }
@@ -849,33 +859,48 @@ private fun BatchTagDialog(
 private fun TelemetryPill(
     label: String,
     value: String,
+    icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
     val neuColors = LocalNeumorphicColors.current
 
     NeumorphicCard(
         modifier = modifier,
-        cornerRadius = 14.dp,
+        cornerRadius = 16.dp,
         elevation = 2.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 10.dp, horizontal = 12.dp),
+                .padding(vertical = 12.dp, horizontal = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = value,
-                color = neuColors.accentPrimary,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.ExtraBold,
-                fontFamily = FontFamily.Monospace
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = neuColors.accentPrimary,
+                    modifier = Modifier.size(15.dp)
+                )
+                Text(
+                    text = value,
+                    color = neuColors.textPrimary,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = PlusJakartaSansFamily
+                )
+            }
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = label,
                 color = neuColors.textSecondary,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                fontFamily = PlusJakartaSansFamily,
                 maxLines = 1
             )
         }

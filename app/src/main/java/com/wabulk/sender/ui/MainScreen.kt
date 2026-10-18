@@ -25,6 +25,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.border
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Language
@@ -33,8 +34,12 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Translate
 import com.wabulk.sender.theme.LocalNeumorphicColors
+import com.wabulk.sender.theme.PlusJakartaSansFamily
 import com.wabulk.sender.theme.ThemeManager
 import com.wabulk.sender.theme.ThemeMode
+import com.wabulk.sender.theme.appleGlassBackground
+import com.wabulk.sender.ui.tutorial.OnboardingTutorialDialog
+import com.wabulk.sender.ui.tutorial.TutorialManager
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -57,12 +62,7 @@ import androidx.compose.ui.unit.sp
 import com.wabulk.sender.data.locale.AppLanguage
 import com.wabulk.sender.data.locale.LocalAppStrings
 import com.wabulk.sender.data.locale.LocalizationManager
-import com.wabulk.sender.theme.EmeraldDarkSurface
-import com.wabulk.sender.theme.EmeraldDarkSurfaceHigh
-import com.wabulk.sender.theme.EmeraldDarkSurfaceLow
 import com.wabulk.sender.theme.EmeraldPrimary
-import com.wabulk.sender.theme.TextCrispPrimary
-import com.wabulk.sender.theme.TextMutedBody
 import com.wabulk.sender.theme.pulseGlow
 import com.wabulk.sender.theme.springClickable
 import androidx.compose.ui.platform.LocalContext
@@ -102,18 +102,19 @@ fun MainScreen(
 
     val neuColors = LocalNeumorphicColors.current
     val currentThemeMode by ThemeManager.themeMode.collectAsState()
+    var showTutorial by remember { mutableStateOf(!TutorialManager.hasSeenTutorial(context)) }
 
     CompositionLocalProvider(LocalAppStrings provides strings) {
         Scaffold(
             modifier = modifier
                 .fillMaxSize()
-                .background(neuColors.background),
-            containerColor = neuColors.background,
+                .appleGlassBackground(neuColors.isDark),
+            containerColor = Color.Transparent,
             topBar = {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(neuColors.surface.copy(alpha = 0.95f))
+                        .background(neuColors.surface.copy(alpha = 0.85f))
                         .border(width = 0.5.dp, brush = neuColors.borderBevel, shape = androidx.compose.ui.graphics.RectangleShape)
                         .statusBarsPadding()
                 ) {
@@ -125,54 +126,56 @@ fun MainScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Left: Kirimrasa Logo Badge + Title
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(34.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(neuColors.surfaceContainer)
-                                    .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(10.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Image(
-                                    painter = painterResource(id = com.wabulk.sender.R.drawable.ic_kirimrasa_logo),
-                                    contentDescription = "Kirimrasa Logo",
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-
-                            Column {
-                                Text(
-                                    text = "KIRIMRASA",
-                                    color = neuColors.accentPrimary,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = 1.sp
-                                )
-                                Text(
-                                    text = when (currentTab) {
-                                        ScreenTab.COMPOSE -> strings.navCompose
-                                        ScreenTab.CONTACTS -> strings.navContacts
-                                        ScreenTab.QUEUE -> strings.navQueue
-                                        ScreenTab.SETTINGS -> strings.navSettings
-                                    },
-                                    color = neuColors.textPrimary,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.2.sp
-                                )
-                            }
-                        }
-
-                        // Right: Quick Theme Toggle + Quick Language Toggle Pill + Shield Icon + Avatar Monogram
+                        // Left: Clean Apple iOS Title with status dot (No logo)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(neuColors.accentPrimary)
+                                    .pulseGlow()
+                            )
+
+                            Text(
+                                text = when (currentTab) {
+                                    ScreenTab.COMPOSE -> strings.navCompose
+                                    ScreenTab.CONTACTS -> strings.navContacts
+                                    ScreenTab.QUEUE -> strings.navQueue
+                                    ScreenTab.SETTINGS -> strings.navSettings
+                                },
+                                color = neuColors.textPrimary,
+                                fontSize = 19.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = PlusJakartaSansFamily,
+                                letterSpacing = (-0.3).sp
+                            )
+                        }
+
+                        // Right: Quick Tutorial + Quick Theme Toggle + Quick Language Toggle Pill
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Quick Tutorial / Guide Button
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(neuColors.surfaceContainer)
+                                    .border(0.8.dp, neuColors.borderBevel, CircleShape)
+                                    .springClickable { showTutorial = true },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                                    contentDescription = "Panduan & Tutorial",
+                                    tint = neuColors.accentPrimary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                             // Quick Theme Toggle Button
                             Box(
                                 modifier = Modifier
@@ -353,6 +356,12 @@ fun MainScreen(
                         onLanguageSelected = { localizationManager.setLanguage(it) }
                     )
                 }
+            }
+
+            if (showTutorial) {
+                OnboardingTutorialDialog(
+                    onDismiss = { showTutorial = false }
+                )
             }
         }
     }

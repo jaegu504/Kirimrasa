@@ -90,11 +90,6 @@ import com.wabulk.sender.data.locale.LocalAppStrings
 import com.wabulk.sender.domain.model.AccountNode
 import com.wabulk.sender.engine.model.NodeSession
 import com.wabulk.sender.engine.model.NodeStatus
-import com.wabulk.sender.theme.EmeraldDarkSurfaceContainer
-import com.wabulk.sender.theme.EmeraldDarkSurfaceHigh
-import com.wabulk.sender.theme.EmeraldDarkSurfaceHighest
-import com.wabulk.sender.theme.EmeraldDarkSurfaceLow
-import com.wabulk.sender.theme.EmeraldDarkSurfaceLowest
 import com.wabulk.sender.theme.EmeraldOnPrimaryContainer
 import com.wabulk.sender.theme.EmeraldPrimary
 import com.wabulk.sender.theme.EmeraldPrimaryContainer
@@ -103,8 +98,6 @@ import com.wabulk.sender.theme.EmeraldSecondaryContainer
 import com.wabulk.sender.theme.EmeraldTertiary
 import com.wabulk.sender.theme.StatusError
 import com.wabulk.sender.theme.StatusErrorContainer
-import com.wabulk.sender.theme.TextCrispPrimary
-import com.wabulk.sender.theme.TextMutedBody
 import com.wabulk.sender.theme.TextSubduedTertiary
 import com.wabulk.sender.theme.ThemeManager
 import com.wabulk.sender.theme.ThemeMode
@@ -206,7 +199,7 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(EmeraldDarkSurfaceHigh)
+                        .background(neuColors.surfaceRaised)
                         .padding(horizontal = 8.dp, vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -220,7 +213,7 @@ fun SettingsScreen(
                     )
                     Text(
                         text = strings.settingsGuardrailVersion,
-                        color = TextMutedBody,
+                        color = neuColors.textSecondary,
                         fontSize = 10.sp
                     )
                 }
@@ -525,7 +518,7 @@ fun SettingsScreen(
                     )
                     Text(
                         text = strings.settingsEnginesTitle,
-                        color = TextCrispPrimary,
+                        color = neuColors.textPrimary,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -533,12 +526,12 @@ fun SettingsScreen(
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(EmeraldDarkSurfaceHighest)
+                        .background(neuColors.surfaceRaised)
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(
                         text = strings.settingsEnginesCount,
-                        color = TextMutedBody,
+                        color = neuColors.textSecondary,
                         fontSize = 10.sp
                     )
                 }
@@ -550,7 +543,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(EmeraldDarkSurfaceLowest)
+                    .background(neuColors.surface)
                     .padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -579,19 +572,19 @@ fun SettingsScreen(
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text(
                                     text = strings.settingsNode1Title,
-                                    color = TextCrispPrimary,
+                                    color = neuColors.textPrimary,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(4.dp))
-                                        .background(EmeraldDarkSurfaceHigh)
+                                        .background(neuColors.surfaceRaised)
                                         .padding(horizontal = 4.dp, vertical = 1.dp)
                                 ) {
                                     Text(
                                         text = strings.settingsNode1NodeNum,
-                                        color = TextCrispPrimary,
+                                        color = neuColors.textPrimary,
                                         fontSize = 9.sp
                                     )
                                 }
@@ -623,7 +616,7 @@ fun SettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         text = "Nomor WhatsApp Anda:",
-                        color = TextMutedBody,
+                        color = neuColors.textSecondary,
                         fontSize = 10.sp
                     )
                     BasicTextField(
@@ -645,7 +638,7 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(EmeraldDarkSurfaceLow)
+                                    .background(neuColors.surfaceInset)
                                     .padding(horizontal = 10.dp, vertical = 8.dp),
                                 contentAlignment = Alignment.CenterStart
                             ) {
@@ -682,7 +675,7 @@ fun SettingsScreen(
                             .weight(1f)
                             .height(36.dp)
                             .clip(CircleShape)
-                            .background(EmeraldDarkSurfaceHigh)
+                            .background(neuColors.surfaceRaised)
                             .springClickable {
                                 try {
                                     val launchIntent = context.packageManager.getLaunchIntentForPackage("com.whatsapp")
@@ -706,7 +699,7 @@ fun SettingsScreen(
                             .weight(1f)
                             .height(36.dp)
                             .clip(CircleShape)
-                            .background(EmeraldDarkSurfaceHigh)
+                            .background(neuColors.surfaceRaised)
                             .springClickable {
                                 coroutineScope.launch {
                                     pingState = "Memeriksa..."
@@ -734,7 +727,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(EmeraldDarkSurfaceLowest)
+                    .background(neuColors.surface)
                     .padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -763,19 +756,19 @@ fun SettingsScreen(
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text(
                                     text = strings.settingsNode2Title,
-                                    color = TextCrispPrimary,
+                                    color = neuColors.textPrimary,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(4.dp))
-                                        .background(EmeraldDarkSurfaceHigh)
+                                        .background(neuColors.surfaceRaised)
                                         .padding(horizontal = 4.dp, vertical = 1.dp)
                                 ) {
                                     Text(
                                         text = strings.settingsNode2NodeNum,
-                                        color = TextCrispPrimary,
+                                        color = neuColors.textPrimary,
                                         fontSize = 9.sp
                                     )
                                 }
@@ -807,7 +800,7 @@ fun SettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         text = "Nomor WhatsApp Business Anda:",
-                        color = TextMutedBody,
+                        color = neuColors.textSecondary,
                         fontSize = 10.sp
                     )
                     BasicTextField(
@@ -829,7 +822,7 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(EmeraldDarkSurfaceLow)
+                                    .background(neuColors.surfaceInset)
                                     .padding(horizontal = 10.dp, vertical = 8.dp),
                                 contentAlignment = Alignment.CenterStart
                             ) {
@@ -866,7 +859,7 @@ fun SettingsScreen(
                             .weight(1f)
                             .height(36.dp)
                             .clip(CircleShape)
-                            .background(EmeraldDarkSurfaceHigh)
+                            .background(neuColors.surfaceRaised)
                             .springClickable {
                                 try {
                                     val launchIntent = context.packageManager.getLaunchIntentForPackage("com.whatsapp.w4b")
@@ -890,7 +883,7 @@ fun SettingsScreen(
                             .weight(1f)
                             .height(36.dp)
                             .clip(CircleShape)
-                            .background(EmeraldDarkSurfaceHigh)
+                            .background(neuColors.surfaceRaised)
                             .springClickable {
                                 coroutineScope.launch {
                                     pingStateBusiness = "Memeriksa..."
@@ -916,7 +909,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(EmeraldDarkSurfaceLowest)
+                    .background(neuColors.surface)
                     .padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -943,13 +936,13 @@ fun SettingsScreen(
                         Column {
                             Text(
                                 text = "Layanan Aksesibilitas HP",
-                                color = TextCrispPrimary,
+                                color = neuColors.textPrimary,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = "Otomatisasi Klik Kirim Tanpa Server",
-                                color = TextMutedBody,
+                                color = neuColors.textSecondary,
                                 fontSize = 11.sp
                             )
                         }
@@ -975,7 +968,7 @@ fun SettingsScreen(
                         "Layanan Aksesibilitas aktif! Pesan antrean akan terbuka di WhatsApp dan tombol 'Kirim' akan ditekan otomatis tanpa Anda perlu mengetuk manual."
                     else
                         "Agar pesan bulk dapat terkirim secara otomatis tanpa perlu server Baileys, aktifkan Layanan Aksesibilitas 'WhatsApp Bulk Sender' di pengaturan HP Anda.",
-                    color = TextMutedBody,
+                    color = neuColors.textSecondary,
                     fontSize = 11.sp,
                     lineHeight = 15.sp
                 )
@@ -985,7 +978,7 @@ fun SettingsScreen(
                         .fillMaxWidth()
                         .height(40.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (isA11yActive) EmeraldDarkSurfaceHigh else EmeraldPrimary)
+                        .background(if (isA11yActive) neuColors.surfaceRaised else EmeraldPrimary)
                         .springClickable {
                             com.wabulk.sender.service.WhatsAppAccessibilityService.openAccessibilitySettings(context)
                         },
@@ -1014,7 +1007,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(EmeraldDarkSurfaceLowest)
+                .background(neuColors.surface)
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -1032,13 +1025,13 @@ fun SettingsScreen(
                         modifier = Modifier
                             .size(34.dp)
                             .clip(CircleShape)
-                            .background(if (baileysConfig.isEnabled) EmeraldPrimary.copy(alpha = 0.15f) else EmeraldDarkSurfaceHigh),
+                            .background(if (baileysConfig.isEnabled) EmeraldPrimary.copy(alpha = 0.15f) else neuColors.surfaceRaised),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Dns,
                             contentDescription = null,
-                            tint = if (baileysConfig.isEnabled) EmeraldPrimary else TextMutedBody,
+                            tint = if (baileysConfig.isEnabled) EmeraldPrimary else neuColors.textSecondary,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -1046,19 +1039,19 @@ fun SettingsScreen(
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(
                                 text = strings.settingsBaileysTitle,
-                                color = TextCrispPrimary,
+                                color = neuColors.textPrimary,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(4.dp))
-                                    .background(if (baileysConfig.isEnabled) EmeraldSecondaryContainer.copy(alpha = 0.4f) else EmeraldDarkSurfaceHigh)
+                                    .background(if (baileysConfig.isEnabled) EmeraldSecondaryContainer.copy(alpha = 0.4f) else neuColors.surfaceRaised)
                                     .padding(horizontal = 4.dp, vertical = 1.dp)
                             ) {
                                 Text(
                                     text = if (baileysConfig.isEnabled) "AKTIF" else "NONAKTIF",
-                                    color = if (baileysConfig.isEnabled) EmeraldSecondary else TextMutedBody,
+                                    color = if (baileysConfig.isEnabled) EmeraldSecondary else neuColors.textSecondary,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -1066,7 +1059,7 @@ fun SettingsScreen(
                         }
                         Text(
                             text = strings.settingsBaileysSubtitle,
-                            color = TextMutedBody,
+                            color = neuColors.textSecondary,
                             fontSize = 10.sp
                         )
                     }
@@ -1078,8 +1071,8 @@ fun SettingsScreen(
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
                         checkedTrackColor = EmeraldPrimary,
-                        uncheckedThumbColor = TextMutedBody,
-                        uncheckedTrackColor = EmeraldDarkSurfaceHigh
+                        uncheckedThumbColor = neuColors.textSecondary,
+                        uncheckedTrackColor = neuColors.surfaceRaised
                     )
                 )
             }
@@ -1087,7 +1080,7 @@ fun SettingsScreen(
             // Description text
             Text(
                 text = "Gunakan gateway server Node.js Baileys lokal atau remote untuk pengiriman pesan massal berkecepatan tinggi dengan multi-device protocol.",
-                color = TextMutedBody,
+                color = neuColors.textSecondary,
                 fontSize = 11.sp,
                 lineHeight = 15.sp
             )
@@ -1096,7 +1089,7 @@ fun SettingsScreen(
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = strings.settingsBaileysUrlLabel,
-                    color = TextCrispPrimary,
+                    color = neuColors.textPrimary,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp
@@ -1106,7 +1099,7 @@ fun SettingsScreen(
                     onValueChange = { viewModel.updateGatewayUrl(it) },
                     singleLine = true,
                     textStyle = TextStyle(
-                        color = TextCrispPrimary,
+                        color = neuColors.textPrimary,
                         fontSize = 12.sp,
                         fontFamily = FontFamily.Monospace
                     ),
@@ -1116,7 +1109,7 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(EmeraldDarkSurfaceLow)
+                                .background(neuColors.surfaceInset)
                                 .padding(horizontal = 12.dp, vertical = 10.dp),
                             contentAlignment = Alignment.CenterStart
                         ) {
@@ -1138,7 +1131,7 @@ fun SettingsScreen(
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = strings.settingsBaileysKeyLabel,
-                    color = TextCrispPrimary,
+                    color = neuColors.textPrimary,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp
@@ -1148,7 +1141,7 @@ fun SettingsScreen(
                     onValueChange = { viewModel.updateApiKey(it) },
                     singleLine = true,
                     textStyle = TextStyle(
-                        color = TextCrispPrimary,
+                        color = neuColors.textPrimary,
                         fontSize = 12.sp,
                         fontFamily = FontFamily.Monospace
                     ),
@@ -1158,7 +1151,7 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(EmeraldDarkSurfaceLow)
+                                .background(neuColors.surfaceInset)
                                 .padding(horizontal = 12.dp, vertical = 10.dp),
                             contentAlignment = Alignment.CenterStart
                         ) {
@@ -1184,7 +1177,7 @@ fun SettingsScreen(
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(EmeraldDarkSurfaceHigh)
+                        .background(neuColors.surfaceRaised)
                         .springClickable { viewModel.testGatewayConnection() }
                         .padding(horizontal = 14.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
@@ -1209,7 +1202,7 @@ fun SettingsScreen(
                         }
                         Text(
                             text = if (isTestingGateway) "Menguji..." else strings.settingsBaileysTestBtn,
-                            color = TextCrispPrimary,
+                            color = neuColors.textPrimary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -1256,7 +1249,7 @@ fun SettingsScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon(imageVector = Icons.Default.Security, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(18.dp))
-                    Text(text = strings.settingsAntiBanTitle, color = TextCrispPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(text = strings.settingsAntiBanTitle, color = neuColors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
                 Box(
                     modifier = Modifier
@@ -1276,7 +1269,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(EmeraldDarkSurfaceLowest)
+                    .background(neuColors.surface)
                     .padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -1286,8 +1279,8 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(text = strings.settingsJitterTitle, color = TextCrispPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        Text(text = strings.settingsJitterSubtitle, color = TextMutedBody, fontSize = 10.sp)
+                        Text(text = strings.settingsJitterTitle, color = neuColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(text = strings.settingsJitterSubtitle, color = neuColors.textSecondary, fontSize = 10.sp)
                     }
                     Box(
                         modifier = Modifier
@@ -1320,7 +1313,7 @@ fun SettingsScreen(
                         .fillMaxWidth()
                         .height(8.dp)
                         .clip(CircleShape)
-                        .background(EmeraldDarkSurfaceHigh)
+                        .background(neuColors.surfaceRaised)
                 ) {
                     Box(
                         modifier = Modifier
@@ -1337,11 +1330,11 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Min: 10s", color = TextMutedBody, fontSize = 10.sp)
+                    Text(text = "Min: 10s", color = neuColors.textSecondary, fontSize = 10.sp)
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
-                            .background(EmeraldDarkSurfaceLow)
+                            .background(neuColors.surfaceRaised)
                             .padding(horizontal = 6.dp, vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(3.dp)
@@ -1349,7 +1342,7 @@ fun SettingsScreen(
                         Icon(imageVector = Icons.Default.StackedLineChart, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(11.dp))
                         Text(text = "Gaussian Distribution", color = EmeraldPrimary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                     }
-                    Text(text = "Max: 120s", color = TextMutedBody, fontSize = 10.sp)
+                    Text(text = "Max: 120s", color = neuColors.textSecondary, fontSize = 10.sp)
                 }
 
                 // Preset Pills
@@ -1369,13 +1362,13 @@ fun SettingsScreen(
                         Box(
                             modifier = Modifier
                                 .clip(CircleShape)
-                                .background(if (isSelected) EmeraldPrimary else EmeraldDarkSurfaceHigh)
+                                .background(if (isSelected) neuColors.accentPrimary else neuColors.surfaceRaised)
                                 .springClickable { viewModel.selectPreset(idx) }
                                 .padding(horizontal = 12.dp, vertical = 5.dp)
                         ) {
                             Text(
                                 text = label,
-                                color = if (isSelected) Color(0xFF003915) else TextMutedBody,
+                                color = if (isSelected) Color.White else neuColors.textSecondary,
                                 fontSize = 10.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                             )
@@ -1389,24 +1382,24 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(EmeraldDarkSurfaceLowest)
+                    .background(neuColors.surface)
                     .padding(14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(text = strings.settingsTypingSimTitle, color = TextCrispPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(text = strings.settingsTypingSimTitle, color = neuColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(EmeraldDarkSurfaceHigh)
+                                .background(neuColors.surfaceRaised)
                                 .padding(horizontal = 4.dp, vertical = 1.dp)
                         ) {
-                            Text(text = "3s - 5s", color = TextMutedBody, fontSize = 9.sp)
+                            Text(text = "3s - 5s", color = neuColors.textSecondary, fontSize = 9.sp)
                         }
                     }
-                    Text(text = strings.settingsTypingSimSubtitle, color = TextMutedBody, fontSize = 10.sp)
+                    Text(text = strings.settingsTypingSimSubtitle, color = neuColors.textSecondary, fontSize = 10.sp)
                 }
 
                 Switch(
@@ -1415,8 +1408,8 @@ fun SettingsScreen(
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
                         checkedTrackColor = EmeraldPrimary,
-                        uncheckedThumbColor = TextMutedBody,
-                        uncheckedTrackColor = EmeraldDarkSurfaceHigh
+                        uncheckedThumbColor = neuColors.textSecondary,
+                        uncheckedTrackColor = neuColors.surfaceRaised
                     )
                 )
             }
@@ -1426,7 +1419,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(EmeraldDarkSurfaceLowest)
+                    .background(neuColors.surface)
                     .padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
@@ -1437,7 +1430,7 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(text = strings.settingsAutoRotateTitle, color = TextCrispPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(text = strings.settingsAutoRotateTitle, color = neuColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(4.dp))
@@ -1447,7 +1440,7 @@ fun SettingsScreen(
                                 Text(text = "Round-Robin", color = EmeraldSecondary, fontSize = 9.sp)
                             }
                         }
-                        Text(text = strings.settingsAutoRotateSubtitle, color = TextMutedBody, fontSize = 10.sp)
+                        Text(text = strings.settingsAutoRotateSubtitle, color = neuColors.textSecondary, fontSize = 10.sp)
                     }
 
                     Switch(
@@ -1456,8 +1449,8 @@ fun SettingsScreen(
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
                             checkedTrackColor = EmeraldPrimary,
-                            uncheckedThumbColor = TextMutedBody,
-                            uncheckedTrackColor = EmeraldDarkSurfaceHigh
+                            uncheckedThumbColor = neuColors.textSecondary,
+                            uncheckedTrackColor = neuColors.surfaceRaised
                         )
                     )
                 }
@@ -1473,7 +1466,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(EmeraldDarkSurfaceLowest)
+                    .background(neuColors.surface)
                     .padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -1483,8 +1476,8 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(text = strings.settingsCooldownTitle, color = TextCrispPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        Text(text = strings.settingsCooldownSubtitle, color = TextMutedBody, fontSize = 10.sp)
+                        Text(text = strings.settingsCooldownTitle, color = neuColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(text = strings.settingsCooldownSubtitle, color = neuColors.textSecondary, fontSize = 10.sp)
                     }
                     Icon(imageVector = Icons.Default.Snooze, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(18.dp))
                 }
@@ -1498,11 +1491,11 @@ fun SettingsScreen(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(EmeraldDarkSurfaceLow)
+                            .background(neuColors.surfaceRaised)
                             .padding(10.dp)
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(text = strings.settingsPauseDuration, color = TextMutedBody, fontSize = 10.sp)
+                            Text(text = strings.settingsPauseDuration, color = neuColors.textSecondary, fontSize = 10.sp)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1512,24 +1505,24 @@ fun SettingsScreen(
                                     modifier = Modifier
                                         .size(24.dp)
                                         .clip(CircleShape)
-                                        .background(EmeraldDarkSurfaceHighest)
+                                        .background(neuColors.surface)
                                         .springClickable { viewModel.decrementPauseDuration() },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(imageVector = Icons.Default.Remove, contentDescription = null, tint = TextCrispPrimary, modifier = Modifier.size(14.dp))
+                                    Icon(imageVector = Icons.Default.Remove, contentDescription = null, tint = neuColors.textPrimary, modifier = Modifier.size(14.dp))
                                 }
 
-                                Text(text = "$pauseDurationMin min", color = TextCrispPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "$pauseDurationMin min", color = neuColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
 
                                 Box(
                                     modifier = Modifier
                                         .size(24.dp)
                                         .clip(CircleShape)
-                                        .background(EmeraldDarkSurfaceHighest)
+                                        .background(neuColors.surface)
                                         .springClickable { viewModel.incrementPauseDuration() },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = TextCrispPrimary, modifier = Modifier.size(14.dp))
+                                    Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = neuColors.textPrimary, modifier = Modifier.size(14.dp))
                                 }
                             }
                         }
@@ -1540,11 +1533,11 @@ fun SettingsScreen(
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(EmeraldDarkSurfaceLow)
+                            .background(neuColors.surfaceRaised)
                             .padding(10.dp)
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(text = strings.settingsBatchSize, color = TextMutedBody, fontSize = 10.sp)
+                            Text(text = strings.settingsBatchSize, color = neuColors.textSecondary, fontSize = 10.sp)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1554,24 +1547,24 @@ fun SettingsScreen(
                                     modifier = Modifier
                                         .size(24.dp)
                                         .clip(CircleShape)
-                                        .background(EmeraldDarkSurfaceHighest)
+                                        .background(neuColors.surface)
                                         .springClickable { viewModel.decrementBatchSize() },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(imageVector = Icons.Default.Remove, contentDescription = null, tint = TextCrispPrimary, modifier = Modifier.size(14.dp))
+                                    Icon(imageVector = Icons.Default.Remove, contentDescription = null, tint = neuColors.textPrimary, modifier = Modifier.size(14.dp))
                                 }
 
-                                Text(text = "$batchSizeMsgs msgs", color = TextCrispPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "$batchSizeMsgs msgs", color = neuColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
 
                                 Box(
                                     modifier = Modifier
                                         .size(24.dp)
                                         .clip(CircleShape)
-                                        .background(EmeraldDarkSurfaceHighest)
+                                        .background(neuColors.surface)
                                         .springClickable { viewModel.incrementBatchSize() },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = TextCrispPrimary, modifier = Modifier.size(14.dp))
+                                    Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = neuColors.textPrimary, modifier = Modifier.size(14.dp))
                                 }
                             }
                         }
@@ -1580,7 +1573,7 @@ fun SettingsScreen(
 
                 Text(
                     text = strings.settingsCooldownNotice(batchSizeMsgs),
-                    color = TextMutedBody,
+                    color = neuColors.textSecondary,
                     fontSize = 10.sp,
                     modifier = Modifier.padding(top = 2.dp)
                 )
@@ -1592,7 +1585,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(EmeraldDarkSurfaceLowest)
+                .background(neuColors.surface)
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -1603,7 +1596,7 @@ fun SettingsScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon(imageVector = Icons.Default.Psychology, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(18.dp))
-                    Text(text = strings.settingsAiToneTitle, color = TextCrispPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(text = strings.settingsAiToneTitle, color = neuColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 Box(
                     modifier = Modifier
@@ -1620,7 +1613,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(EmeraldDarkSurfaceHigh)
+                    .background(neuColors.surfaceRaised)
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
@@ -1664,7 +1657,7 @@ fun SettingsScreen(
 
             Text(
                 text = strings.settingsAiToneDesc,
-                color = TextMutedBody,
+                color = neuColors.textSecondary,
                 fontSize = 10.sp,
                 lineHeight = 14.sp
             )
@@ -1678,13 +1671,13 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { showQrDialog = false },
             title = {
-                Text("Tautkan dengan Kode QR", color = TextCrispPrimary, fontWeight = FontWeight.Bold)
+                Text("Tautkan dengan Kode QR", color = neuColors.textPrimary, fontWeight = FontWeight.Bold)
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         "Mode 8-Digit Pairing Code lebih direkomendasikan karena dapat dilakukan langsung di HP yang sama tanpa perlu kamera ponsel lain.",
-                        color = TextMutedBody,
+                        color = neuColors.textSecondary,
                         fontSize = 12.sp
                     )
                     Text(
@@ -1699,7 +1692,7 @@ fun SettingsScreen(
                     Text("Mengerti", color = EmeraldPrimary, fontWeight = FontWeight.Bold)
                 }
             },
-            containerColor = EmeraldDarkSurfaceContainer
+            containerColor = neuColors.surface
         )
     }
 }
@@ -1712,6 +1705,7 @@ private fun NodeGatewayPairingCard(
     viewModel: SettingsViewModel,
     nodeLabel: String
 ) {
+    val neuColors = LocalNeumorphicColors.current
     val context = androidx.compose.ui.platform.LocalContext.current
     var pairingLoading by remember { mutableStateOf(false) }
     var gatewayCode by remember { mutableStateOf<String?>(null) }
@@ -1744,7 +1738,7 @@ private fun NodeGatewayPairingCard(
                 .fillMaxWidth()
                 .height(38.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(if (phoneNumber.isNotBlank() && !pairingLoading) EmeraldPrimary else EmeraldDarkSurfaceHigh)
+                .background(if (phoneNumber.isNotBlank() && !pairingLoading) neuColors.accentPrimary else neuColors.surfaceRaised)
                 .springClickable {
                     if (phoneNumber.isNotBlank() && !pairingLoading) {
                         pairingLoading = true
@@ -1767,12 +1761,12 @@ private fun NodeGatewayPairingCard(
                     Icon(
                         Icons.Default.QrCodeScanner,
                         contentDescription = null,
-                        tint = if (phoneNumber.isNotBlank()) Color(0xFF003915) else TextMutedBody,
+                        tint = if (phoneNumber.isNotBlank()) Color.White else neuColors.textSecondary,
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
                         text = "Minta Kode Pairing 8-Digit Resmi",
-                        color = if (phoneNumber.isNotBlank()) Color(0xFF003915) else TextMutedBody,
+                        color = if (phoneNumber.isNotBlank()) Color.White else neuColors.textSecondary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -1785,12 +1779,12 @@ private fun NodeGatewayPairingCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(10.dp))
-                    .background(EmeraldDarkSurfaceLow)
+                    .background(neuColors.surfaceRaised)
                     .padding(10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text("Kode Pairing WhatsApp Anda:", color = TextMutedBody, fontSize = 10.sp)
+                Text("Kode Pairing WhatsApp Anda:", color = neuColors.textSecondary, fontSize = 10.sp)
                 Text(
                     text = gatewayCode ?: "",
                     color = EmeraldPrimary,
@@ -1804,13 +1798,13 @@ private fun NodeGatewayPairingCard(
                         .fillMaxWidth()
                         .height(34.dp)
                         .clip(CircleShape)
-                        .background(EmeraldPrimary)
+                        .background(neuColors.accentPrimary)
                         .springClickable {
                             viewModel.copyCodeAndOpenWhatsApp(gatewayCode ?: "")
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Salin Kode & Buka WhatsApp", color = Color(0xFF003915), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text("Salin Kode & Buka WhatsApp", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

@@ -1,42 +1,45 @@
 package com.wabulk.sender.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 
-// Dark Emerald Cybernetic Palette (Primary App Theme)
+// Dark Apple Glassmorphism Cybernetic Palette
 private val DarkEmeraldColorScheme = darkColorScheme(
-    primary = EmeraldPrimary,
+    primary = Color(0xFF10B981),
     onPrimary = Color(0xFF003915),
-    primaryContainer = EmeraldPrimaryContainer,
-    onPrimaryContainer = EmeraldOnPrimaryContainer,
+    primaryContainer = Color(0xFF047857),
+    onPrimaryContainer = Color(0xFFD1FAE5),
     inversePrimary = Color(0xFF006D2F),
 
-    secondary = EmeraldSecondary,
+    secondary = Color(0xFF2DD4BF),
     onSecondary = Color(0xFF003824),
-    secondaryContainer = EmeraldSecondaryContainer,
-    onSecondaryContainer = EmeraldOnSecondaryContainer,
+    secondaryContainer = Color(0xFF115E59),
+    onSecondaryContainer = Color(0xFFCCFBF1),
 
-    tertiary = EmeraldTertiary,
+    tertiary = Color(0xFF38BDF8),
     onTertiary = Color(0xFF003825),
-    tertiaryContainer = EmeraldTertiaryContainer,
-    onTertiaryContainer = EmeraldOnTertiaryContainer,
+    tertiaryContainer = Color(0xFF0369A1),
+    onTertiaryContainer = Color(0xFFE0F2FE),
 
-    background = EmeraldDarkSurface,
-    onBackground = TextCrispPrimary,
-    surface = EmeraldDarkSurface,
-    onSurface = TextCrispPrimary,
-    surfaceVariant = EmeraldDarkSurfaceHighest,
-    onSurfaceVariant = TextMutedBody,
-    surfaceTint = EmeraldPrimary,
+    background = Color(0xFF0B0F17),
+    onBackground = Color(0xFFF8FAFC),
+    surface = Color(0xFF131B26),
+    onSurface = Color(0xFFF8FAFC),
+    surfaceVariant = Color(0xFF1E293B),
+    onSurfaceVariant = Color(0xFF94A3B8),
+    surfaceTint = Color(0xFF10B981),
 
-    outline = OutlineColor,
-    outlineVariant = OutlineVariantColor,
+    outline = Color(0xFF475569),
+    outlineVariant = Color(0xFF334155),
 
     error = StatusError,
     onError = StatusOnError,
@@ -44,12 +47,12 @@ private val DarkEmeraldColorScheme = darkColorScheme(
     onErrorContainer = Color(0xFFFFDAD6)
 )
 
-// Light Palette option matching Neumorphic Light Design
+// Light Apple Glassmorphism Palette (Ultra clean, high contrast)
 private val LightEmeraldColorScheme = lightColorScheme(
     primary = Color(0xFF059669),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFF10B981),
-    onPrimaryContainer = Color.White,
+    primaryContainer = Color(0xFFD1FAE5),
+    onPrimaryContainer = Color(0xFF065F46),
 
     secondary = Color(0xFF0D9488),
     onSecondary = Color.White,
@@ -59,15 +62,15 @@ private val LightEmeraldColorScheme = lightColorScheme(
     tertiary = Color(0xFF0284C7),
     onTertiary = Color.White,
 
-    background = Color(0xFFE6EDF5),
-    onBackground = Color(0xFF1E293B),
-    surface = Color(0xFFE6EDF5),
-    onSurface = Color(0xFF1E293B),
-    surfaceVariant = Color(0xFFEDF3FA),
+    background = Color(0xFFF4F7FB),
+    onBackground = Color(0xFF0F172A),
+    surface = Color.White,
+    onSurface = Color(0xFF0F172A),
+    surfaceVariant = Color(0xFFF1F5F9),
     onSurfaceVariant = Color(0xFF475569),
 
-    outline = Color(0xFF94A3B8),
-    outlineVariant = Color(0xFFCBD5E1),
+    outline = Color(0xFFCBD5E1),
+    outlineVariant = Color(0xFFE2E8F0),
 
     error = Color(0xFFBA1A1A),
     onError = Color.White,
@@ -92,8 +95,9 @@ fun KirimrasaTheme(
     val colorScheme = if (isDark) DarkEmeraldColorScheme else LightEmeraldColorScheme
     val neumorphicColors = if (isDark) DarkNeumorphicColors else LightNeumorphicColors
 
-    androidx.compose.runtime.CompositionLocalProvider(
-        LocalNeumorphicColors provides neumorphicColors
+    CompositionLocalProvider(
+        LocalNeumorphicColors provides neumorphicColors,
+        LocalTextStyle provides TextStyle(fontFamily = PlusJakartaSansFamily)
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

@@ -59,19 +59,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wabulk.sender.data.locale.LocalAppStrings
 import com.wabulk.sender.engine.queue.model.QueueItem
 import com.wabulk.sender.engine.queue.model.QueueTaskStatus
-import com.wabulk.sender.theme.EmeraldDarkSurfaceContainer
-import com.wabulk.sender.theme.EmeraldDarkSurfaceHigh
-import com.wabulk.sender.theme.EmeraldDarkSurfaceLow
-import com.wabulk.sender.theme.EmeraldDarkSurfaceLowest
 import com.wabulk.sender.theme.EmeraldOnPrimaryContainer
 import com.wabulk.sender.theme.EmeraldPrimary
 import com.wabulk.sender.theme.EmeraldPrimaryContainer
 import com.wabulk.sender.theme.EmeraldSecondary
 import com.wabulk.sender.theme.EmeraldSecondaryContainer
+import com.wabulk.sender.theme.LocalNeumorphicColors
 import com.wabulk.sender.theme.StatusError
 import com.wabulk.sender.theme.StatusErrorContainer
-import com.wabulk.sender.theme.TextCrispPrimary
-import com.wabulk.sender.theme.TextMutedBody
 import com.wabulk.sender.theme.pulseGlow
 import com.wabulk.sender.theme.springClickable
 import java.text.SimpleDateFormat
@@ -86,6 +81,7 @@ fun LiveQueueScreen(
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
+    val neuColors = LocalNeumorphicColors.current
     val context = LocalContext.current
     val items by viewModel.filteredItems.collectAsState()
     val isPaused by viewModel.isPaused.collectAsState()
@@ -178,7 +174,7 @@ fun LiveQueueScreen(
                 Row(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(EmeraldDarkSurfaceHigh)
+                        .background(neuColors.surfaceRaised)
                         .padding(horizontal = 8.dp, vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -187,12 +183,12 @@ fun LiveQueueScreen(
                         modifier = Modifier
                             .size(6.dp)
                             .clip(CircleShape)
-                            .background(if (isRunning) EmeraldPrimary else TextMutedBody)
+                            .background(if (isRunning) neuColors.primary else neuColors.textSecondary)
                             .then(if (isRunning) Modifier.pulseGlow() else Modifier)
                     )
                     Text(
                         text = if (isPaused) "DIPERJEDA" else if (isRunning) "DISPATCHING" else "STANDBY",
-                        color = if (isRunning) EmeraldPrimary else TextMutedBody,
+                        color = if (isRunning) neuColors.primary else neuColors.textSecondary,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -201,14 +197,14 @@ fun LiveQueueScreen(
 
             Text(
                 text = strings.queueTitle,
-                color = TextCrispPrimary,
+                color = neuColors.textPrimary,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 4.dp)
             )
             Text(
                 text = if (campaignTitle.isNotBlank()) campaignTitle else strings.queueCampaignName,
-                color = TextMutedBody,
+                color = neuColors.textSecondary,
                 fontSize = 11.sp
             )
         }
@@ -226,7 +222,7 @@ fun LiveQueueScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(if (a11yActive) EmeraldDarkSurfaceLowest else EmeraldSecondaryContainer.copy(alpha = 0.35f))
+                .background(if (a11yActive) neuColors.surfaceInset else EmeraldSecondaryContainer.copy(alpha = 0.35f))
                 .springClickable {
                     if (!a11yActive) {
                         com.wabulk.sender.service.WhatsAppAccessibilityService.openAccessibilitySettings(context)
@@ -241,7 +237,7 @@ fun LiveQueueScreen(
                 Icon(
                     imageVector = if (a11yActive) Icons.Default.CheckCircle else Icons.Default.AccessibilityNew,
                     contentDescription = null,
-                    tint = if (a11yActive) EmeraldPrimary else EmeraldSecondary,
+                    tint = if (a11yActive) neuColors.primary else EmeraldSecondary,
                     modifier = Modifier.size(16.dp)
                 )
                 Text(
@@ -249,7 +245,7 @@ fun LiveQueueScreen(
                         "Mode Otomatis Aktif — Tombol kirim WhatsApp akan ditekan otomatis"
                     else
                         "Layanan Aksesibilitas nonaktif — Ketuk untuk aktifkan pengiriman otomatis",
-                    color = if (a11yActive) EmeraldPrimary else TextCrispPrimary,
+                    color = if (a11yActive) neuColors.primary else neuColors.textPrimary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -261,7 +257,7 @@ fun LiveQueueScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
-                .background(EmeraldDarkSurfaceLowest)
+                .background(neuColors.surface)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -274,14 +270,14 @@ fun LiveQueueScreen(
                 Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         text = "$sentCount",
-                        color = TextCrispPrimary,
+                        color = neuColors.textPrimary,
                         fontSize = 30.sp,
                         fontWeight = FontWeight.ExtraBold,
                         fontFamily = FontFamily.Monospace
                     )
                     Text(
                         text = "/ $totalCount",
-                        color = TextMutedBody,
+                        color = neuColors.textSecondary,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(bottom = 3.dp)
@@ -296,7 +292,7 @@ fun LiveQueueScreen(
                 ) {
                     Text(
                         text = "$percentComplete%",
-                        color = TextCrispPrimary,
+                        color = Color.White,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -310,7 +306,7 @@ fun LiveQueueScreen(
                     .fillMaxWidth()
                     .height(10.dp)
                     .clip(CircleShape)
-                    .background(EmeraldDarkSurfaceHigh)
+                    .background(neuColors.surfaceInset)
             ) {
                 Box(
                     modifier = Modifier
@@ -339,12 +335,12 @@ fun LiveQueueScreen(
             ) {
                 Text(
                     text = strings.queueRecipientsRemaining(remainingCount),
-                    color = TextMutedBody,
+                    color = neuColors.textSecondary,
                     fontSize = 11.sp
                 )
                 Text(
                     text = if (remainingCount > 0) "~${remainingCount * 30}s" else "Selesai",
-                    color = TextMutedBody,
+                    color = neuColors.textSecondary,
                     fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace
                 )
@@ -355,7 +351,7 @@ fun LiveQueueScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(EmeraldDarkSurfaceContainer)
+                    .background(neuColors.surfaceInset)
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -380,13 +376,13 @@ fun LiveQueueScreen(
                         }
                         Text(
                             text = headerLabel,
-                            color = TextCrispPrimary,
+                            color = neuColors.textPrimary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
                             text = if (isRunning) strings.queueTypingCadenceActive else "Siap mengirim",
-                            color = TextMutedBody,
+                            color = neuColors.textSecondary,
                             fontSize = 10.sp
                         )
                     }
@@ -397,7 +393,7 @@ fun LiveQueueScreen(
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
-                            .background(EmeraldDarkSurfaceHigh)
+                            .background(neuColors.surfaceRaised)
                             .padding(horizontal = 6.dp, vertical = 6.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -437,12 +433,12 @@ fun LiveQueueScreen(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(EmeraldDarkSurfaceLow)
+                        .background(neuColors.surfaceRaised)
                         .padding(8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = strings.queueMetricSuccess, color = TextMutedBody, fontSize = 9.sp)
+                        Text(text = strings.queueMetricSuccess, color = neuColors.textSecondary, fontSize = 9.sp)
                         Text(text = "100%", color = EmeraldPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -452,13 +448,13 @@ fun LiveQueueScreen(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(EmeraldDarkSurfaceLow)
+                        .background(neuColors.surfaceRaised)
                         .padding(8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = strings.queueMetricAvgDelay, color = TextMutedBody, fontSize = 9.sp)
-                        Text(text = "34.0s", color = TextCrispPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(text = strings.queueMetricAvgDelay, color = neuColors.textSecondary, fontSize = 9.sp)
+                        Text(text = "34.0s", color = neuColors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -467,12 +463,12 @@ fun LiveQueueScreen(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(EmeraldDarkSurfaceLow)
+                        .background(neuColors.surfaceRaised)
                         .padding(8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = strings.queueMetricFlagAlert, color = TextMutedBody, fontSize = 9.sp)
+                        Text(text = strings.queueMetricFlagAlert, color = neuColors.textSecondary, fontSize = 9.sp)
                         Text(text = "0 Aman", color = EmeraldSecondary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -489,7 +485,7 @@ fun LiveQueueScreen(
                         .weight(1f)
                         .height(44.dp)
                         .clip(CircleShape)
-                        .background(EmeraldDarkSurfaceHigh)
+                        .background(neuColors.surfaceRaised)
                         .springClickable { viewModel.togglePause() },
                     contentAlignment = Alignment.Center
                 ) {
@@ -505,7 +501,7 @@ fun LiveQueueScreen(
                         )
                         Text(
                             text = if (isPaused) "Lanjutkan" else strings.queuePauseBtn,
-                            color = TextCrispPrimary,
+                            color = neuColors.textPrimary,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -548,7 +544,7 @@ fun LiveQueueScreen(
                     .fillMaxWidth()
                     .height(42.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(EmeraldDarkSurfaceHigh)
+                    .background(neuColors.surfaceRaised)
                     .springClickable {
                         viewModel.exportCampaignReport(context) { count ->
                             strings.queueExportSuccessToast(count)
@@ -595,7 +591,7 @@ fun LiveQueueScreen(
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(if (isSelected) EmeraldPrimary else EmeraldDarkSurfaceContainer)
+                        .background(if (isSelected) EmeraldPrimary else neuColors.surfaceRaised)
                         .springClickable { viewModel.setFilter(filter) }
                         .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
@@ -605,7 +601,7 @@ fun LiveQueueScreen(
                     ) {
                         Text(
                             text = label,
-                            color = if (isSelected) Color(0xFF003915) else TextMutedBody,
+                            color = if (isSelected) Color(0xFF003915) else neuColors.textSecondary,
                             fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                         )
@@ -629,7 +625,7 @@ fun LiveQueueScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .background(EmeraldDarkSurfaceLow)
+                        .background(neuColors.surface)
                         .padding(24.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -638,7 +634,7 @@ fun LiveQueueScreen(
                             "Belum ada antrean broadcast. Susun pesan di tab 'Buat Pesan' dan tekan 'Mulai Kirim Massal' untuk memulai pengiriman."
                         else
                             "Tidak ada kontak dalam filter ini",
-                        color = TextMutedBody,
+                        color = neuColors.textSecondary,
                         fontSize = 12.sp,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
@@ -661,11 +657,13 @@ private fun QueueRecipientItem(
     timeFormat: SimpleDateFormat,
     radarRotation: Float
 ) {
+    val neuColors = LocalNeumorphicColors.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(EmeraldDarkSurfaceLow)
+            .background(neuColors.surface)
             .padding(12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -675,7 +673,7 @@ private fun QueueRecipientItem(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(EmeraldDarkSurfaceContainer),
+                    .background(neuColors.surfaceRaised),
                 contentAlignment = Alignment.Center
             ) {
                 when (item.status) {
@@ -701,7 +699,7 @@ private fun QueueRecipientItem(
                         Icon(
                             imageVector = Icons.Default.HourglassTop,
                             contentDescription = null,
-                            tint = TextMutedBody,
+                            tint = neuColors.textSecondary,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -718,13 +716,13 @@ private fun QueueRecipientItem(
             Column {
                 Text(
                     text = item.recipientName,
-                    color = TextCrispPrimary,
+                    color = neuColors.textPrimary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = item.phoneNumber,
-                    color = TextMutedBody,
+                    color = neuColors.textSecondary,
                     fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace
                 )
@@ -760,12 +758,12 @@ private fun QueueRecipientItem(
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(EmeraldDarkSurfaceContainer)
+                        .background(neuColors.surfaceRaised)
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
                         text = "MENUNGGU",
-                        color = TextMutedBody,
+                        color = neuColors.textSecondary,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -775,7 +773,7 @@ private fun QueueRecipientItem(
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(EmeraldDarkSurfaceContainer)
+                        .background(neuColors.surfaceRaised)
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(

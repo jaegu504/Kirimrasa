@@ -26,13 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wabulk.sender.data.locale.LocalAppStrings
-import com.wabulk.sender.theme.EmeraldDarkSurfaceLow
 import com.wabulk.sender.theme.EmeraldOnPrimaryContainer
 import com.wabulk.sender.theme.EmeraldPrimary
 import com.wabulk.sender.theme.EmeraldPrimaryContainer
 import com.wabulk.sender.theme.EmeraldSpring
-import com.wabulk.sender.theme.TextCrispPrimary
-import com.wabulk.sender.theme.TextMutedBody
 import com.wabulk.sender.theme.pulseGlow
 import com.wabulk.sender.theme.springClickable
 

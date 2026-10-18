@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.wabulk.sender.data.locale.LocalizationManager
-import com.wabulk.sender.theme.EmeraldDarkSurface
-import com.wabulk.sender.theme.WhatsAppBulkTheme
 import com.wabulk.sender.ui.MainScreen
 
 class MainActivity : ComponentActivity() {

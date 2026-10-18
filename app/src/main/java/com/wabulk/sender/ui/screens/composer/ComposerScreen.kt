@@ -73,10 +73,6 @@ import com.wabulk.sender.domain.model.AccountNode
 import com.wabulk.sender.domain.model.MediaAttachment
 import com.wabulk.sender.ui.screens.composer.components.MediaCarousel
 import com.wabulk.sender.ui.screens.composer.components.WhatsAppPreviewBubble
-import com.wabulk.sender.theme.EmeraldDarkSurfaceContainer
-import com.wabulk.sender.theme.EmeraldDarkSurfaceHigh
-import com.wabulk.sender.theme.EmeraldDarkSurfaceLow
-import com.wabulk.sender.theme.EmeraldDarkSurfaceLowest
 import com.wabulk.sender.theme.EmeraldOnPrimaryContainer
 import com.wabulk.sender.theme.EmeraldPrimary
 import com.wabulk.sender.theme.EmeraldPrimaryContainer
@@ -84,8 +80,6 @@ import com.wabulk.sender.theme.EmeraldSecondaryContainer
 import com.wabulk.sender.theme.EmeraldSecondaryFixedVariant
 import com.wabulk.sender.theme.EmeraldTertiary
 import com.wabulk.sender.theme.StatusError
-import com.wabulk.sender.theme.TextCrispPrimary
-import com.wabulk.sender.theme.TextMutedBody
 import com.wabulk.sender.theme.TextSubduedTertiary
 import com.wabulk.sender.theme.LocalNeumorphicColors
 import com.wabulk.sender.theme.NeumorphicCard
@@ -174,19 +168,19 @@ fun ComposerScreen(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = strings.composerTitle,
-                        color = TextCrispPrimary,
+                        color = neuColors.textPrimary,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
-                            .background(EmeraldDarkSurfaceHigh)
+                            .background(neuColors.surfaceRaised)
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = strings.campaignTagDraft,
-                            color = TextMutedBody,
+                            color = neuColors.textSecondary,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -197,14 +191,14 @@ fun ComposerScreen(
                     modifier = Modifier
                         .size(32.dp)
                         .clip(CircleShape)
-                        .background(EmeraldDarkSurfaceContainer)
+                        .background(neuColors.surfaceRaised)
                         .springClickable { showHelpDialog = true },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.HelpOutline,
                         contentDescription = "Help",
-                        tint = TextMutedBody,
+                        tint = neuColors.textSecondary,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -215,7 +209,7 @@ fun ComposerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(CircleShape)
-                    .background(EmeraldDarkSurfaceLowest)
+                    .background(neuColors.surfaceInset)
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
@@ -245,7 +239,7 @@ fun ComposerScreen(
                         }
                         Text(
                             text = strings.composerAccountPersonal,
-                            color = if (personalSelected) EmeraldPrimary else TextMutedBody,
+                            color = if (personalSelected) EmeraldPrimary else neuColors.textSecondary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -270,12 +264,12 @@ fun ComposerScreen(
                         Icon(
                             imageVector = Icons.Default.BusinessCenter,
                             contentDescription = null,
-                            tint = if (businessSelected) EmeraldPrimary else TextMutedBody,
+                            tint = if (businessSelected) EmeraldPrimary else neuColors.textSecondary,
                             modifier = Modifier.size(13.dp)
                         )
                         Text(
                             text = strings.composerAccountBusiness,
-                            color = if (businessSelected) EmeraldPrimary else TextMutedBody,
+                            color = if (businessSelected) EmeraldPrimary else neuColors.textSecondary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -295,7 +289,7 @@ fun ComposerScreen(
                 ) {
                     Text(
                         text = strings.composerAccountDual,
-                        color = if (dualSelected) EmeraldPrimary else TextMutedBody,
+                        color = if (dualSelected) EmeraldPrimary else neuColors.textSecondary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -324,7 +318,7 @@ fun ComposerScreen(
                     }
                     Text(
                         text = activePhone,
-                        color = TextCrispPrimary,
+                        color = neuColors.textPrimary,
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Medium
@@ -378,7 +372,7 @@ fun ComposerScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
-                .background(EmeraldDarkSurfaceLow)
+                .background(neuColors.surface)
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -397,7 +391,7 @@ fun ComposerScreen(
                     )
                     Text(
                         text = strings.composerSpintaxTitle,
-                        color = TextCrispPrimary,
+                        color = neuColors.textPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -422,7 +416,7 @@ fun ComposerScreen(
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
-                            .background(if (isPrimary) EmeraldPrimaryContainer else EmeraldDarkSurfaceHigh)
+                            .background(if (isPrimary) EmeraldPrimaryContainer else neuColors.surfaceRaised)
                             .springClickable {
                                 viewModel.insertVariable(token)
                             }
@@ -430,7 +424,7 @@ fun ComposerScreen(
                     ) {
                         Text(
                             text = "+ $token",
-                            color = if (isPrimary) EmeraldOnPrimaryContainer else TextCrispPrimary,
+                            color = if (isPrimary) EmeraldOnPrimaryContainer else neuColors.textPrimary,
                             fontSize = 11.sp,
                             fontWeight = if (isPrimary) FontWeight.Bold else FontWeight.Medium
                         )
@@ -443,7 +437,7 @@ fun ComposerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(10.dp))
-                    .background(EmeraldDarkSurfaceLowest)
+                    .background(neuColors.surfaceInset)
                     .springClickable { showVariableConfig = !showVariableConfig }
                     .padding(horizontal = 10.dp, vertical = 7.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -579,7 +573,7 @@ fun ComposerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .background(EmeraldDarkSurfaceLowest)
+                        .background(neuColors.surfaceInset)
                         .padding(10.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
@@ -613,7 +607,7 @@ fun ComposerScreen(
                         ) {
                             Text(
                                 text = strings.composerCharCount(bubble.text.length, 1),
-                                color = TextMutedBody,
+                                color = neuColors.textSecondary,
                                 fontSize = 10.sp,
                                 fontFamily = FontFamily.Monospace
                             )
@@ -622,7 +616,7 @@ fun ComposerScreen(
                                     modifier = Modifier
                                         .size(22.dp)
                                         .clip(CircleShape)
-                                        .background(EmeraldDarkSurfaceHigh)
+                                        .background(neuColors.surfaceRaised)
                                         .springClickable { viewModel.removeBubble(bubble.id) },
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -657,8 +651,8 @@ fun ComposerScreen(
                             disabledContainerColor = Color.Transparent,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = TextCrispPrimary,
-                            unfocusedTextColor = TextCrispPrimary
+                            focusedTextColor = neuColors.textPrimary,
+                            unfocusedTextColor = neuColors.textPrimary
                         )
                     )
                 }
@@ -670,7 +664,7 @@ fun ComposerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(EmeraldDarkSurfaceLowest)
+                        .background(neuColors.surfaceInset)
                         .border(1.dp, EmeraldPrimary.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
                         .springClickable { viewModel.addBubble("") }
                         .padding(vertical = 10.dp),
@@ -832,7 +826,7 @@ fun ComposerScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
-                .background(EmeraldDarkSurfaceHigh)
+                .background(neuColors.surface)
                 .padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -850,7 +844,7 @@ fun ComposerScreen(
                     )
                     Text(
                         text = strings.composerDynamicJitterTitle,
-                        color = TextCrispPrimary,
+                        color = neuColors.textPrimary,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -885,7 +879,7 @@ fun ComposerScreen(
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(CircleShape)
-                    .background(EmeraldDarkSurfaceLowest)
+                    .background(neuColors.surfaceInset)
             ) {
                 Box(
                     modifier = Modifier
@@ -905,9 +899,9 @@ fun ComposerScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = strings.composerJitterFast, color = TextMutedBody, fontSize = 10.sp)
+                Text(text = strings.composerJitterFast, color = neuColors.textSecondary, fontSize = 10.sp)
                 Text(text = strings.composerJitterMetaCompliant, color = EmeraldTertiary, fontSize = 10.sp)
-                Text(text = strings.composerJitterRelaxed, color = TextMutedBody, fontSize = 10.sp)
+                Text(text = strings.composerJitterRelaxed, color = neuColors.textSecondary, fontSize = 10.sp)
             }
 
             // Primary Launch Bulk Broadcast CTA
@@ -982,23 +976,23 @@ fun ComposerScreen(
         AlertDialog(
             onDismissRequest = { showHelpDialog = false },
             title = {
-                Text("Panduan Pesan & Variabel", color = TextCrispPrimary, fontWeight = FontWeight.Bold)
+                Text("Panduan Pesan & Variabel", color = neuColors.textPrimary, fontWeight = FontWeight.Bold)
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         "1. Spintax {A|B|C}: Memutar variasi kata secara otomatis agar tiap pesan ke penerima berbeda dan tidak terdeteksi bot/spam.",
-                        color = TextMutedBody,
+                        color = neuColors.textSecondary,
                         fontSize = 12.sp
                     )
                     Text(
                         "2. {Nickname}: Nama panggilan unik yang otomatis diambil dari Tab Kontak.",
-                        color = TextMutedBody,
+                        color = neuColors.textSecondary,
                         fontSize = 12.sp
                     )
                     Text(
                         "3. {Company} & {Custom_1}: Variabel pengirim dan promo yang dapat Anda ubah nilainya pada menu 'Atur Nilai {Company}'.",
-                        color = TextMutedBody,
+                        color = neuColors.textSecondary,
                         fontSize = 12.sp
                     )
                     Text(
@@ -1013,7 +1007,7 @@ fun ComposerScreen(
                     Text("Tutup", color = EmeraldPrimary, fontWeight = FontWeight.Bold)
                 }
             },
-            containerColor = EmeraldDarkSurfaceContainer
+            containerColor = neuColors.surface
         )
     }
 }
