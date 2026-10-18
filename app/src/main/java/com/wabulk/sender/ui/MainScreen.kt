@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.border
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessAuto
@@ -123,31 +125,47 @@ fun MainScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Left: Pulsing status dot + Screen Title
+                        // Left: Kirimrasa Logo Badge + Title
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(10.dp)
-                                    .clip(CircleShape)
-                                    .background(neuColors.accentPrimary)
-                                    .pulseGlow()
-                            )
+                                    .size(34.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(neuColors.surfaceContainer)
+                                    .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(10.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = com.wabulk.sender.R.drawable.ic_kirimrasa_logo),
+                                    contentDescription = "Kirimrasa Logo",
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
 
-                            Text(
-                                text = when (currentTab) {
-                                    ScreenTab.COMPOSE -> strings.navCompose.uppercase()
-                                    ScreenTab.CONTACTS -> strings.navContacts.uppercase()
-                                    ScreenTab.QUEUE -> strings.navQueue.uppercase()
-                                    ScreenTab.SETTINGS -> strings.navSettings.uppercase()
-                                },
-                                color = neuColors.textPrimary,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.5.sp
-                            )
+                            Column {
+                                Text(
+                                    text = "KIRIMRASA",
+                                    color = neuColors.accentPrimary,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = 1.sp
+                                )
+                                Text(
+                                    text = when (currentTab) {
+                                        ScreenTab.COMPOSE -> strings.navCompose
+                                        ScreenTab.CONTACTS -> strings.navContacts
+                                        ScreenTab.QUEUE -> strings.navQueue
+                                        ScreenTab.SETTINGS -> strings.navSettings
+                                    },
+                                    color = neuColors.textPrimary,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.2.sp
+                                )
+                            }
                         }
 
                         // Right: Quick Theme Toggle + Quick Language Toggle Pill + Shield Icon + Avatar Monogram

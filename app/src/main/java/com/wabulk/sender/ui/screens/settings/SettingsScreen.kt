@@ -1,5 +1,7 @@
 package com.wabulk.sender.ui.screens.settings
 
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -224,18 +226,42 @@ fun SettingsScreen(
                 }
             }
 
-            Text(
-                text = strings.settingsTitle,
-                color = TextCrispPrimary,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-            Text(
-                text = strings.settingsSubtitle,
-                color = TextMutedBody,
-                fontSize = 11.sp
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(neuColors.surfaceContainer)
+                        .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = com.wabulk.sender.R.drawable.ic_kirimrasa_logo),
+                        contentDescription = "Kirimrasa Logo",
+                        modifier = Modifier.size(38.dp)
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = strings.settingsTitle,
+                        color = neuColors.textPrimary,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = strings.settingsSubtitle,
+                        color = neuColors.textSecondary,
+                        fontSize = 11.sp
+                    )
+                }
+            }
         }
 
         // THEME SELECTOR CARD (Neumorphic Dark, Light, System)
