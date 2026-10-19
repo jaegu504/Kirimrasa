@@ -16,9 +16,15 @@ object NotificationHelper {
     const val CHANNEL_NAME = "Pengiriman Massal WhatsApp"
     const val NOTIFICATION_ID = 1001
 
+    const val UPDATE_CHANNEL_ID = "kirimrasa_update_channel"
+    const val UPDATE_CHANNEL_NAME = "Pembaruan Kirimrasa"
+    const val UPDATE_NOTIFICATION_ID = 2002
+
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            val broadcastChannel = NotificationChannel(
                 CHANNEL_ID,
                 CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_LOW
@@ -26,9 +32,57 @@ object NotificationHelper {
                 description = "Notifikasi status berjalan untuk proses pengiriman pesan massal WhatsApp"
                 setShowBadge(false)
             }
-            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.createNotificationChannel(channel)
+            manager.createNotificationChannel(broadcastChannel)
+
+            val updateChannel = NotificationChannel(
+                UPDATE_CHANNEL_ID,
+                UPDATE_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifikasi ketersediaan versi baru aplikasi Kirimrasa"
+                setShowBadge(true)
+                enableVibration(true)
+            }
+            manager.createNotificationChannel(updateChannel)
         }
+    }
+
+    fun showUpdateAvailableNotification(
+        context: Context,
+        latestVersion: String,
+        changelog: String
+    ) {
+        createNotificationChannel(context)
+
+        val launchIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("EXTRA_OPEN_UPDATE_DIALOG", true)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            UPDATE_NOTIFICATION_ID,
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val snippet = if (changelog.isNotBlank()) {
+            changelog.lines().firstOrNull { it.isNotBlank() } ?: "Pembaruan fitur & peningkatan performa."
+        } else {
+            "Pembaruan fitur & peningkatan performa."
+        }
+
+        val notification = NotificationCompat.Builder(context, UPDATE_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("Pembaruan Kirimrasa $latestVersion Tersedia!")
+            .setContentText(snippet)
+            .setStyle(NotificationCompat.BigTextStyle().bigText("Versi baru ($latestVersion) telah dirilis:\n$snippet\n\nKetuk untuk mengunduh dan memasang langsung."))
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(UPDATE_NOTIFICATION_ID, notification)
     }
 
     fun buildNotification(

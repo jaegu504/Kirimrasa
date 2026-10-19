@@ -45,6 +45,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -103,6 +104,11 @@ fun MainScreen(
     val neuColors = LocalNeumorphicColors.current
     val currentThemeMode by ThemeManager.themeMode.collectAsState()
     var showTutorial by remember { mutableStateOf(!TutorialManager.hasSeenTutorial(context)) }
+    val showUpdateDialog by com.wabulk.sender.update.UpdateManager.showDialog.collectAsState()
+
+    LaunchedEffect(Unit) {
+        com.wabulk.sender.update.UpdateManager.checkForUpdates(context, isManual = false)
+    }
 
     CompositionLocalProvider(LocalAppStrings provides strings) {
         Scaffold(
@@ -362,6 +368,10 @@ fun MainScreen(
                 OnboardingTutorialDialog(
                     onDismiss = { showTutorial = false }
                 )
+            }
+
+            if (showUpdateDialog) {
+                com.wabulk.sender.ui.update.AppUpdateDialog()
             }
         }
     }

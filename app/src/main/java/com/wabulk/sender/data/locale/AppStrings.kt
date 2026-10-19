@@ -231,6 +231,11 @@ interface AppStrings {
     val tutorialStartBtn: String
     val tutorialSkipBtn: String
     val settingsReopenTutorialBtn: String
+    val settingsUpdateTitle: String
+    val settingsUpdateDesc: String
+    val settingsCheckUpdateBtn: String
+    val settingsCheckingUpdates: String
+    val settingsAppUpToDate: String
 }
 
 object IndonesianStrings : AppStrings {
@@ -456,6 +461,11 @@ object IndonesianStrings : AppStrings {
     override val tutorialStartBtn = "Mulai Gunakan Kirimrasa"
     override val tutorialSkipBtn = "Lewati"
     override val settingsReopenTutorialBtn = "Buka Panduan Tutorial"
+    override val settingsUpdateTitle = "Pembaruan Aplikasi"
+    override val settingsUpdateDesc = "Periksa dan pasang versi terbaru Kirimrasa secara instan"
+    override val settingsCheckUpdateBtn = "Periksa Pembaruan"
+    override val settingsCheckingUpdates = "Memeriksa..."
+    override val settingsAppUpToDate = "Aplikasi Anda sudah versi terbaru ✓"
 }
 
 object TurkishStrings : AppStrings {
@@ -681,6 +691,11 @@ object TurkishStrings : AppStrings {
     override val tutorialStartBtn = "Kirimrasa'yı Başlat"
     override val tutorialSkipBtn = "Geç"
     override val settingsReopenTutorialBtn = "Kullanım Rehberini Aç"
+    override val settingsUpdateTitle = "Uygulama Güncellemesi"
+    override val settingsUpdateDesc = "Kirimrasa'nın en son sürümünü kontrol edin ve anında yükleyin"
+    override val settingsCheckUpdateBtn = "Güncellemeleri Denetle"
+    override val settingsCheckingUpdates = "Denetleniyor..."
+    override val settingsAppUpToDate = "Uygulamanız zaten güncel ✓"
 }
 
 val LocalAppStrings = compositionLocalOf<AppStrings> { IndonesianStrings }

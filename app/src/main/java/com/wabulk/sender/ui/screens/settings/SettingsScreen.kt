@@ -1557,6 +1557,121 @@ fun SettingsScreen(
             )
         }
 
+        // SECTION 4: Pembaruan Aplikasi (App Updates)
+        val updateState by com.wabulk.sender.update.UpdateManager.updateState.collectAsState()
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(neuColors.surface)
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(EmeraldPrimary.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Sync,
+                            contentDescription = null,
+                            tint = EmeraldPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Column(modifier = Modifier.weight(1f, fill = false)) {
+                        Text(
+                            text = strings.settingsUpdateTitle,
+                            color = neuColors.textPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = strings.settingsUpdateDesc,
+                            color = neuColors.textSecondary,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(EmeraldPrimary.copy(alpha = 0.15f))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = "v${com.wabulk.sender.update.UpdateManager.CURRENT_VERSION}",
+                        color = EmeraldPrimary,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        softWrap = false,
+                        maxLines = 1
+                    )
+                }
+            }
+
+            if (updateState is com.wabulk.sender.update.UpdateState.UpToDate) {
+                Text(
+                    text = strings.settingsAppUpToDate,
+                    color = EmeraldPrimary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            } else if (updateState is com.wabulk.sender.update.UpdateState.Error) {
+                Text(
+                    text = (updateState as com.wabulk.sender.update.UpdateState.Error).message,
+                    color = StatusError,
+                    fontSize = 11.sp
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(EmeraldPrimary)
+                    .springClickable {
+                        com.wabulk.sender.update.UpdateManager.checkForUpdates(context, isManual = true)
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                if (updateState is com.wabulk.sender.update.UpdateState.Checking) {
+                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = strings.settingsCheckUpdateBtn,
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
     }
 

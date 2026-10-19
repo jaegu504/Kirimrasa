@@ -20,6 +20,10 @@ class MainActivity : ComponentActivity() {
     com.wabulk.sender.engine.baileys.BaileysConfigManager.init(applicationContext)
     com.wabulk.sender.engine.WhatsAppSessionManager.getInstance(applicationContext)
 
+    if (intent?.getBooleanExtra("EXTRA_OPEN_UPDATE_DIALOG", false) == true) {
+      com.wabulk.sender.update.UpdateManager.openDialog()
+    }
+
     setContent {
       com.wabulk.sender.theme.KirimrasaTheme {
         Surface(
@@ -29,6 +33,13 @@ class MainActivity : ComponentActivity() {
           MainScreen(localizationManager = localizationManager)
         }
       }
+    }
+  }
+
+  override fun onNewIntent(intent: android.content.Intent) {
+    super.onNewIntent(intent)
+    if (intent.getBooleanExtra("EXTRA_OPEN_UPDATE_DIALOG", false)) {
+      com.wabulk.sender.update.UpdateManager.openDialog()
     }
   }
 }
