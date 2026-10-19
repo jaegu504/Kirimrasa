@@ -18,3 +18,4 @@ local.properties
 skills-lock.json
 *.apk
 *.aab
+.codebase-memory/

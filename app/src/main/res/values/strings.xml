@@ -1,4 +1,3 @@
 <resources>
     <string name="app_name">Kirimrasa</string>
-    <string name="accessibility_service_description">Layanan otomatisasi pengiriman pesan WhatsApp untuk Kirimrasa. Mengizinkan aplikasi mengirim pesan antrean tanpa perlu menekan tombol kirim manual.</string>
 </resources>

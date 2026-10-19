@@ -174,24 +174,12 @@ class OnDeviceWhatsAppEngine(
                 intent.setPackage("com.whatsapp.w4b")
             }
 
-            com.wabulk.sender.service.WhatsAppAccessibilityService.isAutomationRunning = true
             context.startActivity(intent)
-
-            val a11yActive = com.wabulk.sender.service.WhatsAppAccessibilityService.isAccessibilityServiceEnabled(context)
-            if (a11yActive) {
-                val clicked = com.wabulk.sender.service.WhatsAppAccessibilityService.awaitSendClick(timeoutMs = 8000L)
-                SendResult(
-                    isSuccess = true,
-                    messageId = "wa-auto-${System.currentTimeMillis()}",
-                    errorMessage = if (!clicked) "Timeout menunggu auto-click" else null
-                )
-            } else {
-                delay(3000L)
-                SendResult(
-                    isSuccess = true,
-                    messageId = "wa-manual-${System.currentTimeMillis()}"
-                )
-            }
+            delay(1500L)
+            SendResult(
+                isSuccess = true,
+                messageId = "wa-intent-${System.currentTimeMillis()}"
+            )
         } catch (e: Exception) {
             SendResult(
                 isSuccess = false,
@@ -207,14 +195,13 @@ class OnDeviceWhatsAppEngine(
     override suspend fun ping(): PingResult {
         val waInstalled = isPackageInstalled(context, "com.whatsapp")
         val wbInstalled = isPackageInstalled(context, "com.whatsapp.w4b")
-        val a11y = com.wabulk.sender.service.WhatsAppAccessibilityService.isAccessibilityServiceEnabled(context)
         val isInstalled = if (node.nodeType == AccountNode.BUSINESS) wbInstalled else waInstalled
 
         return if (isInstalled) {
             PingResult(
                 isSuccess = true,
                 latencyMs = 5L,
-                message = "WhatsApp Terpasang di HP (Aksesibilitas: ${if (a11y) "Aktif" else "Nonaktif"})"
+                message = "WhatsApp Terpasang di HP"
             )
         } else {
             PingResult(

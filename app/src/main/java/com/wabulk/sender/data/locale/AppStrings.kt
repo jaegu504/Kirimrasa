@@ -206,14 +206,6 @@ interface AppStrings {
     val settingsReadyStatus: String
     val settingsFailedStatus: String
     val settingsTestReadinessBtn: String
-    val settingsA11yServiceTitle: String
-    val settingsA11yServiceDesc: String
-    val settingsA11yActiveBadge: String
-    val settingsA11yInactiveBadge: String
-    val settingsA11yActiveDesc: String
-    val settingsA11yInactiveDesc: String
-    val settingsA11yOpenSettingsBtn: String
-    val settingsA11yActivateNowBtn: String
     val settingsStatusActive: String
     val settingsStatusInactive: String
     val settingsBaileysExplanation: String
@@ -439,14 +431,6 @@ object IndonesianStrings : AppStrings {
     override val settingsReadyStatus = "Siap Digunakan!"
     override val settingsFailedStatus = "Gagal"
     override val settingsTestReadinessBtn = "Uji Kesiapan"
-    override val settingsA11yServiceTitle = "Layanan Aksesibilitas HP"
-    override val settingsA11yServiceDesc = "Otomatisasi Klik Kirim Tanpa Server"
-    override val settingsA11yActiveBadge = "Otomatis Aktif ✓"
-    override val settingsA11yInactiveBadge = "Perlu Diaktifkan"
-    override val settingsA11yActiveDesc = "Layanan Aksesibilitas aktif! Pesan antrean akan terbuka di WhatsApp dan tombol 'Kirim' akan ditekan otomatis tanpa Anda perlu mengetuk manual."
-    override val settingsA11yInactiveDesc = "Agar pesan bulk dapat terkirim secara otomatis tanpa perlu server Baileys, aktifkan Layanan Aksesibilitas 'Kirimrasa' di pengaturan HP Anda."
-    override val settingsA11yOpenSettingsBtn = "Buka Pengaturan Aksesibilitas"
-    override val settingsA11yActivateNowBtn = "Aktifkan Layanan Aksesibilitas Sekarang"
     override val settingsStatusActive = "AKTIF"
     override val settingsStatusInactive = "NONAKTIF"
     override val settingsBaileysExplanation = "Gunakan gateway server Node.js Baileys lokal atau remote untuk pengiriman pesan massal berkecepatan tinggi dengan multi-device protocol."
@@ -462,8 +446,8 @@ object IndonesianStrings : AppStrings {
     override val tutorialTitle = "Panduan & Tutorial Kirimrasa"
     override val tutorialStep1Title = "Selamat Datang di Kirimrasa"
     override val tutorialStep1Desc = "Aplikasi broadcast WhatsApp personal dengan gaya Glassmorphism modern, menjaga kehangatan pesan tanpa terkesan seperti bot."
-    override val tutorialStep2Title = "Dua Mode Pengiriman Fleksibel"
-    override val tutorialStep2Desc = "Pilih 'Gateway Multi-Device' untuk pengiriman massal di latar belakang tanpa scan ulang, atau gunakan 'Layanan Aksesibilitas' untuk otomatisasi langsung di HP tanpa server."
+    override val tutorialStep2Title = "Pengiriman Cepat Multi-Device"
+    override val tutorialStep2Desc = "Gunakan fitur 'Gateway Multi-Device' bawaan untuk pengiriman massal di latar belakang tanpa perlu scan berulang, menjaga koneksi tetap stabil dan aman."
     override val tutorialStep3Title = "Variabel Personal & Anti-Spam"
     override val tutorialStep3Desc = "Gunakan tag {Nickname} untuk menyapa nama panggilan kontak, aktifkan Spintax untuk variasi kalimat otomatis, serta jeda aman agar nomor Anda tetap terlindungi."
     override val tutorialStep4Title = "Pengelolaan Kontak Cerdas"
@@ -672,14 +656,6 @@ object TurkishStrings : AppStrings {
     override val settingsReadyStatus = "Kullanıma Hazır!"
     override val settingsFailedStatus = "Başarısız"
     override val settingsTestReadinessBtn = "Hazırlık Testi"
-    override val settingsA11yServiceTitle = "Cihaz Erişilebilirlik Hizmeti"
-    override val settingsA11yServiceDesc = "Sunucusuz Otomatik Gönderim"
-    override val settingsA11yActiveBadge = "Otomatik Aktif ✓"
-    override val settingsA11yInactiveBadge = "Etkinleştirilmeli"
-    override val settingsA11yActiveDesc = "Erişilebilirlik hizmeti aktif! Mesajlar WhatsApp'ta açılacak ve Gönder butonuna otomatik tıklanacaktır."
-    override val settingsA11yInactiveDesc = "Toplu mesajların sunucusuz otomatik gönderilmesi için telefon ayarlarından 'Kirimrasa' Erişilebilirlik Hizmetini açın."
-    override val settingsA11yOpenSettingsBtn = "Erişilebilirlik Ayarlarını Aç"
-    override val settingsA11yActivateNowBtn = "Erişilebilirlik Hizmetini Şimdi Aç"
     override val settingsStatusActive = "AKTİF"
     override val settingsStatusInactive = "PASİF"
     override val settingsBaileysExplanation = "Çoklu cihaz protokolüyle yüksek hızlı toplu mesaj gönderimi için yerel veya uzak Baileys Node.js ağ geçidini kullanın."
@@ -695,8 +671,8 @@ object TurkishStrings : AppStrings {
     override val tutorialTitle = "Kirimrasa Rehber & Eğitici"
     override val tutorialStep1Title = "Kirimrasa'ya Hoş Geldiniz"
     override val tutorialStep1Desc = "Modern Apple Glassmorphic tarzıyla, mesajlarınızın bot gibi değil sıcak ve samimi hissettirmesini sağlayan kişisel WhatsApp toplu mesajlaşma uygulaması."
-    override val tutorialStep2Title = "İki Esnek Gönderim Modu"
-    override val tutorialStep2Desc = "Tekrar tarama yapmadan arka planda toplu gönderim için 'Çoklu Cihaz Ağ Geçidi'ni seçin veya sunucu olmadan doğrudan cihaz içi otomasyon için 'Erişilebilirlik Hizmeti'ni kullanın."
+    override val tutorialStep2Title = "Hızlı Çoklu Cihaz Gönderimi"
+    override val tutorialStep2Desc = "Sürekli karekod taraması gerekmeden arka planda toplu gönderim için yerleşik 'Çoklu Cihaz Ağ Geçidi'ni kullanın; bağlantınız her zaman kararlı ve güvende kalsın."
     override val tutorialStep3Title = "Kişisel Değişkenler & Anti-Spam"
     override val tutorialStep3Desc = "Kişilere adlarıyla hitap etmek için {Nickname} etiketini kullanın, cümle varyasyonları için Spintax'ı açın ve numaranızı korumak için doğal insansı gecikmeler ekleyin."
     override val tutorialStep4Title = "Akıllı Kişi Yönetimi"

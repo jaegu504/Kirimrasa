@@ -24,7 +24,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.AccessibilityNew
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -136,14 +135,6 @@ fun SettingsScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     val isWaInstalled = remember { com.wabulk.sender.engine.OnDeviceWhatsAppEngine.isPackageInstalled(context, "com.whatsapp") }
     val isWbInstalled = remember { com.wabulk.sender.engine.OnDeviceWhatsAppEngine.isPackageInstalled(context, "com.whatsapp.w4b") }
-    var isA11yActive by remember { mutableStateOf(com.wabulk.sender.service.WhatsAppAccessibilityService.isAccessibilityServiceEnabled(context)) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            isA11yActive = com.wabulk.sender.service.WhatsAppAccessibilityService.isAccessibilityServiceEnabled(context)
-            delay(1500)
-        }
-    }
 
     var pingState by remember { mutableStateOf<String?>(null) }
     var codeCopiedState by remember { mutableStateOf(false) }
@@ -900,103 +891,6 @@ fun SettingsScreen(
                             Icon(imageVector = Icons.Default.Sensors, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(14.dp))
                             Text(text = pingStateBusiness ?: "Uji Kesiapan", color = EmeraldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
-                    }
-                }
-            }
-
-            // Layanan Aksesibilitas Android Card
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(neuColors.surface)
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(if (isA11yActive) EmeraldPrimary.copy(alpha = 0.15f) else EmeraldSecondaryContainer.copy(alpha = 0.4f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AccessibilityNew,
-                                contentDescription = null,
-                                tint = if (isA11yActive) EmeraldPrimary else EmeraldSecondary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = "Layanan Aksesibilitas HP",
-                                color = neuColors.textPrimary,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "Otomatisasi Klik Kirim Tanpa Server",
-                                color = neuColors.textSecondary,
-                                fontSize = 11.sp
-                            )
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(if (isA11yActive) EmeraldPrimary.copy(alpha = 0.15f) else StatusErrorContainer.copy(alpha = 0.3f))
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
-                    ) {
-                        Text(
-                            text = if (isA11yActive) "Otomatis Aktif ✓" else "Perlu Diaktifkan",
-                            color = if (isA11yActive) EmeraldPrimary else StatusError,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                Text(
-                    text = if (isA11yActive)
-                        "Layanan Aksesibilitas aktif! Pesan antrean akan terbuka di WhatsApp dan tombol 'Kirim' akan ditekan otomatis tanpa Anda perlu mengetuk manual."
-                    else
-                        "Agar pesan bulk dapat terkirim secara otomatis tanpa perlu server Baileys, aktifkan Layanan Aksesibilitas 'WhatsApp Bulk Sender' di pengaturan HP Anda.",
-                    color = neuColors.textSecondary,
-                    fontSize = 11.sp,
-                    lineHeight = 15.sp
-                )
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (isA11yActive) neuColors.surfaceRaised else EmeraldPrimary)
-                        .springClickable {
-                            com.wabulk.sender.service.WhatsAppAccessibilityService.openAccessibilitySettings(context)
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(
-                            imageVector = if (isA11yActive) Icons.Default.Settings else Icons.Default.AccessibilityNew,
-                            contentDescription = null,
-                            tint = if (isA11yActive) EmeraldPrimary else Color(0xFF003915),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = if (isA11yActive) "Buka Pengaturan Aksesibilitas" else "Aktifkan Layanan Aksesibilitas Sekarang",
-                            color = if (isA11yActive) EmeraldPrimary else Color(0xFF003915),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
                     }
                 }
             }

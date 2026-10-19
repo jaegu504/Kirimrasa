@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.StopCircle
-import androidx.compose.material.icons.filled.AccessibilityNew
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Icon
@@ -209,48 +208,6 @@ fun LiveQueueScreen(
             )
         }
 
-        // Accessibility Service Automation Pill / Alert Banner
-        var a11yActive by remember { mutableStateOf(com.wabulk.sender.service.WhatsAppAccessibilityService.isAccessibilityServiceEnabled(context)) }
-        LaunchedEffect(Unit) {
-            while (true) {
-                a11yActive = com.wabulk.sender.service.WhatsAppAccessibilityService.isAccessibilityServiceEnabled(context)
-                delay(2000)
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(if (a11yActive) neuColors.surfaceInset else EmeraldSecondaryContainer.copy(alpha = 0.35f))
-                .springClickable {
-                    if (!a11yActive) {
-                        com.wabulk.sender.service.WhatsAppAccessibilityService.openAccessibilitySettings(context)
-                    }
-                }
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = if (a11yActive) Icons.Default.CheckCircle else Icons.Default.AccessibilityNew,
-                    contentDescription = null,
-                    tint = if (a11yActive) neuColors.primary else EmeraldSecondary,
-                    modifier = Modifier.size(16.dp)
-                )
-                Text(
-                    text = if (a11yActive)
-                        "Mode Otomatis Aktif — Tombol kirim WhatsApp akan ditekan otomatis"
-                    else
-                        "Layanan Aksesibilitas nonaktif — Ketuk untuk aktifkan pengiriman otomatis",
-                    color = if (a11yActive) neuColors.primary else neuColors.textPrimary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
 
         // Primary Campaign Progress Card
         Column(

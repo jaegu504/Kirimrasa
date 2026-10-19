@@ -127,6 +127,8 @@ async function getOrCreateSocket(nodeId, phoneNumber = null) {
         keepAliveIntervalMs: 25000,
         emitOwnEvents: false,
         retryRequestDelayMs: 250,
+        markOnlineOnConnect: false,
+        syncFullHistory: false,
         getMessage: async (key) => {
             if (key?.id) {
                 return messageStore.get(key.id) || undefined;
@@ -184,6 +186,12 @@ async function getOrCreateSocket(nodeId, phoneNumber = null) {
             node.status = 'CONNECTED';
             broadcastStatus(nodeId, 'CONNECTED');
             logger.info({ nodeId }, 'WhatsApp connection established successfully!');
+            // Keep companion presence as unavailable so main phone retains vibrations & notifications
+            try {
+                await sock.sendPresenceUpdate('unavailable');
+            } catch (err) {
+                logger.warn({ nodeId, err: err.message }, 'Failed to set presence to unavailable on connect');
+            }
         } else if (connection === 'connecting') {
             node.status = 'CONNECTING';
             broadcastStatus(nodeId, 'CONNECTING');
@@ -464,6 +472,11 @@ app.post('/api/nodes/:nodeId/send', authMiddleware, async (req, res) => {
             saveMessageToStore(sentMessage.key.id, sentMessage.message);
         }
 
+        // Return to background presence so phone notification vibrations aren't muted
+        try {
+            await node.sock.sendPresenceUpdate('unavailable');
+        } catch (_) {}
+
         return res.json({
             success: true,
             messageId: sentMessage?.key?.id || `msg-${Date.now()}`,
@@ -495,6 +508,7 @@ app.post('/api/nodes/:nodeId/presence', authMiddleware, async (req, res) => {
             await delay(Math.min(durationMs, 5000));
             await node.sock.sendPresenceUpdate('paused', jid);
         }
+        await node.sock.sendPresenceUpdate('unavailable');
         return res.json({ success: true });
     } catch (_) {
         return res.json({ success: true });
