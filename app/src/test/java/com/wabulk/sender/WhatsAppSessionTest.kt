@@ -33,7 +33,7 @@ class WhatsAppSessionTest {
         val node2 = sessionManager.node2Session.first()
 
         assertEquals(AccountNode.PERSONAL, node1.nodeType)
-        assertEquals(NodeStatus.CONNECTED, node1.status)
+        assertEquals(NodeStatus.DISCONNECTED, node1.status)
 
         assertEquals(AccountNode.BUSINESS, node2.nodeType)
         assertEquals(NodeStatus.DISCONNECTED, node2.status)

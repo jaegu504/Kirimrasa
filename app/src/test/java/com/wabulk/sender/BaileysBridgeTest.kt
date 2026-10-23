@@ -254,6 +254,37 @@ class BaileysBridgeTest {
     }
 
     @Test
+    fun `ping treats CONNECTING gateway status as not connected and does not restore`() = runBlocking {
+        val requests = mutableListOf<Request>()
+        val testHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                requests.add(chain.request())
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body("""{"status":"CONNECTING","registered":true}""".toResponseBody("application/json".toMediaType()))
+                    .build()
+            }
+            .build()
+
+        val statuses = mutableListOf<NodeStatus>()
+        val client = BaileysBridgeClient(
+            node = testNode.copy(status = NodeStatus.DISCONNECTED),
+            configProvider = { BaileysConfig(gatewayUrl = "http://10.0.2.2:3000", isEnabled = true) },
+            httpClient = testHttpClient,
+            onStatusChanged = { statuses.add(it) }
+        )
+
+        val pingResult = client.ping()
+
+        assertFalse(pingResult.isSuccess)
+        assertFalse(statuses.contains(NodeStatus.CONNECTED))
+        assertEquals(1, requests.size) // only the status call, no session restore
+    }
+
+    @Test
     fun `disconnect dispatches POST disconnect to gateway`() = runBlocking {
         var recordedRequest: Request? = null
 
@@ -492,6 +523,8 @@ class BaileysBridgeTest {
         val sessionManager = WhatsAppSessionManager()
 
         val engine = sessionManager.getOrCreateBaileysEngine(AccountNode.PERSONAL)
+        assertEquals(NodeStatus.DISCONNECTED, sessionManager.node1Session.value.status)
+        sessionManager.connectNode(AccountNode.PERSONAL)
         assertEquals(NodeStatus.CONNECTED, sessionManager.node1Session.value.status)
 
         // Disconnect updates session status to DISCONNECTED via status callback

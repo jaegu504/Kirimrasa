@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
@@ -12,8 +14,15 @@ android {
         applicationId = "com.wabulk.sender"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1.1"
+        versionCode = 3
+        versionName = "1.1.2"
+
+        // Gateway API key comes from local.properties (gateway.apiKey) or env, never from git
+        val localProps = Properties().apply {
+            rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+        }
+        val gatewayApiKey = localProps.getProperty("gateway.apiKey") ?: System.getenv("GATEWAY_API_KEY") ?: ""
+        buildConfigField("String", "GATEWAY_API_KEY", "\"$gatewayApiKey\"")
     }
 
     buildTypes {

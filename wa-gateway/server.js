@@ -22,6 +22,12 @@ const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.API_KEY || '';
 const SESSIONS_DIR = process.env.SESSIONS_DIR || path.join(__dirname, 'sessions');
 
+// Without a key, anyone can read session credentials via /api/nodes/:id/session
+if (!API_KEY && process.env.NODE_ENV === 'production') {
+    console.error('API_KEY env var is required in production. Refusing to start.');
+    process.exit(1);
+}
+
 if (!fs.existsSync(SESSIONS_DIR)) {
     fs.mkdirSync(SESSIONS_DIR, { recursive: true });
 }
@@ -39,7 +45,7 @@ app.get('/', (req, res) => {
         service: 'Kirimrasa WhatsApp Gateway',
         status: 'UP',
         uptime: process.uptime(),
-        activeNodes: Array.from(nodeMap.keys())
+        activeNodes: nodeMap.size
     });
 });
 
@@ -77,12 +83,14 @@ function normalizePhone(phone) {
 }
 
 // Authentication middleware
+function isAuthorized(headers) {
+    if (!API_KEY) return true;
+    const authHeader = headers['authorization'];
+    return !!authHeader && authHeader.replace(/^Bearer\s+/i, '').trim() === API_KEY.trim();
+}
+
 function authMiddleware(req, res, next) {
-    if (!API_KEY) return next();
-    const authHeader = req.headers['authorization'];
-    if (authHeader && authHeader.replace(/^Bearer\s+/i, '').trim() === API_KEY.trim()) {
-        return next();
-    }
+    if (isAuthorized(req.headers)) return next();
     return res.status(401).json({ error: 'Unauthorized: Invalid API Key' });
 }
 
@@ -101,7 +109,8 @@ function broadcastStatus(nodeId, status) {
 // Initialize Baileys Socket for a node
 async function getOrCreateSocket(nodeId, phoneNumber = null) {
     let node = nodeMap.get(nodeId);
-    if (node && node.sock && node.status === 'CONNECTED') {
+    // Reuse a live or connecting socket; a second socket on the same creds makes WA kick both (440 loop)
+    if (node && node.sock && node.status !== 'DISCONNECTED') {
         return node;
     }
 
@@ -142,7 +151,7 @@ async function getOrCreateSocket(nodeId, phoneNumber = null) {
             sock,
             state,
             saveCreds,
-            status: state.creds?.registered ? 'CONNECTED' : 'DISCONNECTED',
+            status: state.creds?.registered ? 'CONNECTING' : 'DISCONNECTED',
             phoneNumber: phoneNumber || '',
             wsClients: new Set()
         };
@@ -151,6 +160,7 @@ async function getOrCreateSocket(nodeId, phoneNumber = null) {
         node.sock = sock;
         node.state = state;
         node.saveCreds = saveCreds;
+        node.status = state.creds?.registered ? 'CONNECTING' : 'DISCONNECTED';
         if (phoneNumber) node.phoneNumber = phoneNumber;
     }
 
@@ -166,6 +176,8 @@ async function getOrCreateSocket(nodeId, phoneNumber = null) {
 
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
+        // Ignore events from a socket that has already been replaced
+        if (node.sock !== sock) return;
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
             const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
@@ -175,7 +187,11 @@ async function getOrCreateSocket(nodeId, phoneNumber = null) {
 
             if (shouldReconnect) {
                 logger.info({ nodeId }, 'Attempting reconnection in 5s...');
-                setTimeout(() => getOrCreateSocket(nodeId, node.phoneNumber), 5000);
+                setTimeout(() => {
+                    if (nodeMap.get(nodeId) === node && node.sock === sock) {
+                        getOrCreateSocket(nodeId, node.phoneNumber).catch(() => {});
+                    }
+                }, 5000);
             } else {
                 logger.warn({ nodeId }, 'Logged out from device, deleting session credentials');
                 try {
@@ -230,9 +246,18 @@ app.post('/api/nodes/:nodeId/pair', authMiddleware, async (req, res) => {
 
     try {
         const sessionPath = path.join(SESSIONS_DIR, `node_${nodeId}`);
-        // If re-pairing with different phone or clean slate, purge old credentials
-        if (fs.existsSync(sessionPath) && !nodeMap.get(nodeId)?.sock?.user) {
-            fs.rmSync(sessionPath, { recursive: true, force: true });
+        // Not logged in yet: drop the old socket and credentials so pairing starts clean
+        const existing = nodeMap.get(nodeId);
+        if (!existing?.sock?.authState?.creds?.registered) {
+            if (existing?.sock) {
+                const oldSock = existing.sock;
+                existing.sock = null;
+                existing.status = 'DISCONNECTED';
+                try { oldSock.end(undefined); } catch (_) {}
+            }
+            if (fs.existsSync(sessionPath)) {
+                fs.rmSync(sessionPath, { recursive: true, force: true });
+            }
         }
 
         const node = await getOrCreateSocket(nodeId, cleanPhone);
@@ -271,8 +296,8 @@ app.get('/api/nodes/:nodeId/status', authMiddleware, async (req, res) => {
     const { nodeId } = req.params;
     let node = nodeMap.get(nodeId);
 
-    // If not in memory, check if session folder exists
-    if (!node) {
+    // No live socket (e.g. after restart or a WS-only stub): resume from session folder if present
+    if (!node?.sock) {
         const sessionPath = path.join(SESSIONS_DIR, `node_${nodeId}`);
         if (fs.existsSync(sessionPath)) {
             try {
@@ -543,7 +568,10 @@ server.on('upgrade', (request, socket, head) => {
     const pathname = request.url ? new URL(request.url, `http://${request.headers.host}`).pathname : '';
     const match = pathname.match(/^\/ws\/nodes\/([a-zA-Z0-9_\-]+)$/);
 
-    if (match) {
+    if (match && !isAuthorized(request.headers)) {
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        socket.destroy();
+    } else if (match) {
         const nodeId = match[1];
         wss.handleUpgrade(request, socket, head, (ws) => {
             let node = nodeMap.get(nodeId);

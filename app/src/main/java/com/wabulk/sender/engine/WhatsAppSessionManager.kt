@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.security.SecureRandom
+import java.util.UUID
 
 class WhatsAppSessionManager(
     private val engine: WhatsAppEngine = SimulatedWhatsAppEngine()
@@ -18,7 +19,7 @@ class WhatsAppSessionManager(
             id = "node-personal-01",
             nodeType = AccountNode.PERSONAL,
             phoneNumber = "",
-            status = NodeStatus.CONNECTED,
+            status = NodeStatus.DISCONNECTED,
             uptimeSeconds = 0,
             healthPercent = 100f
         )
@@ -49,6 +50,17 @@ class WhatsAppSessionManager(
         }
         if (p2.isNotEmpty()) {
             _node2Session.value = _node2Session.value.copy(phoneNumber = p2)
+        }
+
+        // Gateway node IDs must be unique per install: a shared ID lets every phone see and
+        // control the same WhatsApp session on the gateway.
+        val id1 = prefs.getString("node1_id", null) ?: "node-personal-${UUID.randomUUID()}"
+        val id2 = prefs.getString("node2_id", null) ?: "node-business-${UUID.randomUUID()}"
+        prefs.edit().putString("node1_id", id1).putString("node2_id", id2).apply()
+        if (_node1Session.value.id != id1 || _node2Session.value.id != id2) {
+            _node1Session.value = _node1Session.value.copy(id = id1)
+            _node2Session.value = _node2Session.value.copy(id = id2)
+            resetBaileysEngines()
         }
     }
 

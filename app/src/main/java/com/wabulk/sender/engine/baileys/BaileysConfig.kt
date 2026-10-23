@@ -1,6 +1,7 @@
 package com.wabulk.sender.engine.baileys
 
 import android.content.Context
+import com.wabulk.sender.BuildConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,7 +34,7 @@ object BaileysConfigManager {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val rawUrl = prefs.getString(KEY_URL, PRODUCTION_RENDER_URL) ?: PRODUCTION_RENDER_URL
         val url = if (rawUrl == "http://10.0.2.2:3000") PRODUCTION_RENDER_URL else rawUrl
-        val apiKey = prefs.getString(KEY_API_KEY, "") ?: ""
+        val apiKey = prefs.getString(KEY_API_KEY, "").orEmpty().ifBlank { BuildConfig.GATEWAY_API_KEY }
         val isEnabled = prefs.getBoolean(KEY_ENABLED, true)
         val timeout = prefs.getLong(KEY_TIMEOUT, 45L)
         _config.value = BaileysConfig(

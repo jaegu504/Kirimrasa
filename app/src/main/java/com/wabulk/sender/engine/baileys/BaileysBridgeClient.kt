@@ -101,6 +101,10 @@ class BaileysBridgeClient(
                     if (!code.isNullOrBlank()) {
                         return@withContext code
                     }
+                    if (body.contains("ALREADY_CONNECTED")) {
+                        updateConnectionStatus(NodeStatus.CONNECTED)
+                        throw IOException("WhatsApp sudah terhubung di perangkat ini")
+                    }
                 }
 
                 if (fallbackOnException) {
@@ -243,8 +247,10 @@ class BaileysBridgeClient(
             httpClient.newCall(request).execute().use { response ->
                 if (response.isSuccessful) {
                     delay(1500)
-                    updateConnectionStatus(NodeStatus.CONNECTED)
-                    return@withContext true
+                    // Restore only reloads creds; the gateway says whether WhatsApp actually accepted them
+                    val body = response.body?.string().orEmpty()
+                    if (isGatewayConnected(body)) updateConnectionStatus(NodeStatus.CONNECTED)
+                    return@withContext isGatewayConnected(body) || gatewayStatus(body) == "CONNECTING"
                 }
             }
         } catch (_: Exception) {}
@@ -310,8 +316,7 @@ class BaileysBridgeClient(
                 val latency = (System.currentTimeMillis() - start).coerceAtLeast(1L)
                 val body = response.body?.string().orEmpty()
                 if (response.isSuccessful) {
-                    val isDisconnected = body.contains("\"status\":\"DISCONNECTED\"") || body.contains("\"registered\":false")
-                    if (!isDisconnected) {
+                    if (isGatewayConnected(body)) {
                         updateConnectionStatus(NodeStatus.CONNECTED)
                         if (autoBackupSession) {
                             backupSession()
@@ -320,6 +325,13 @@ class BaileysBridgeClient(
                             isSuccess = true,
                             latencyMs = latency,
                             message = "Baileys Bridge Connected"
+                        )
+                    } else if (gatewayStatus(body) == "CONNECTING") {
+                        // Creds are loaded and WhatsApp is still handshaking; restoring now would kill that socket
+                        return@withContext PingResult(
+                            isSuccess = false,
+                            latencyMs = latency,
+                            message = "Menyambungkan ke WhatsApp..."
                         )
                     } else {
                         // Check if we can auto-restore session from device vault
@@ -411,7 +423,7 @@ class BaileysBridgeClient(
 
         val listener = object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
-                updateConnectionStatus(NodeStatus.CONNECTED)
+                // Socket open only means the gateway is reachable; WhatsApp status arrives in onMessage
                 customListener?.onOpen(webSocket, response)
             }
 
@@ -464,6 +476,19 @@ class BaileysBridgeClient(
             addHeader("Authorization", "Bearer $apiKey")
         }
         return this
+    }
+
+    private fun gatewayStatus(jsonString: String): String? {
+        return try {
+            json.parseToJsonElement(jsonString).jsonObject["status"]?.jsonPrimitive?.content?.uppercase()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    // CONNECTING (creds loaded, WhatsApp not yet open) is not connected
+    private fun isGatewayConnected(jsonString: String): Boolean {
+        return gatewayStatus(jsonString) == "CONNECTED" && !jsonString.contains("\"registered\":false")
     }
 
     private fun extractPairingCode(jsonString: String): String? {
