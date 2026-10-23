@@ -14,6 +14,7 @@ import com.wabulk.sender.data.repository.ContactRepository
 import com.wabulk.sender.domain.model.AccountNode
 import com.wabulk.sender.domain.model.MessageBubble
 import com.wabulk.sender.domain.spintax.SpintaxParser
+import com.wabulk.sender.engine.WhatsAppEngine
 import com.wabulk.sender.engine.WhatsAppSessionManager
 import com.wabulk.sender.engine.queue.model.QueueItem
 import com.wabulk.sender.engine.queue.model.QueueTaskStatus
@@ -269,8 +270,15 @@ class DispatchQueueManager private constructor(
                 }
                 if (!_isRunning.value) break
 
-                // Jitter delay countdown simulation (4 down to 1s)
-                val assignedJitter = if (skipDelayForTesting) 0 else 4
+                // Anti-ban wait before every contact except the first: random delay from Settings,
+                // or the batch cooldown after every `batchSize` processed contacts
+                val antiBan = AntiBanSettings.config.value
+                val processed = _queueItems.value.count { it.status == QueueTaskStatus.DELIVERED || it.status == QueueTaskStatus.FAILED }
+                val assignedJitter = when {
+                    skipDelayForTesting || processed == 0 -> 0
+                    processed % antiBan.batchSize == 0 -> antiBan.pauseDurationMin * 60
+                    else -> AntiBanSettings.nextContactDelaySec(antiBan)
+                }
                 for (sec in assignedJitter downTo 1) {
                     _jitterCountdown.value = sec
                     delay(1000)
@@ -296,9 +304,9 @@ class DispatchQueueManager private constructor(
                     sentCount
                 )
 
-                if (!skipDelayForTesting) {
-                    engine.sendTypingPresence(nextItem.phoneNumber, 2000L)
-                } else {
+                if (!skipDelayForTesting && antiBan.typingSimEnabled) {
+                    engine.sendTypingPresence(nextItem.phoneNumber, AntiBanSettings.nextBubbleDelayMs())
+                } else if (skipDelayForTesting) {
                     engine.sendTypingPresence(nextItem.phoneNumber, 0L)
                 }
                 while (_isPaused.value && _isRunning.value) {
@@ -328,7 +336,7 @@ class DispatchQueueManager private constructor(
                     for (bubble in remainingBubbles) {
                         if (!_isRunning.value) break
                         while (_isPaused.value && _isRunning.value) delay(500)
-                        if (!skipDelayForTesting) delay(1800L)
+                        if (!skipDelayForTesting) bubblePause(engine, nextItem.phoneNumber, antiBan)
                         val bubbleRes = engine.sendMessage(nextItem.phoneNumber, bubble, emptyList())
                         if (!bubbleRes.isSuccess) {
                             overallSuccess = false
@@ -342,7 +350,7 @@ class DispatchQueueManager private constructor(
                         if (!_isRunning.value) break
                         while (_isPaused.value && _isRunning.value) delay(500)
                         if (bIdx > 0 && !skipDelayForTesting) {
-                            delay(1800L)
+                            bubblePause(engine, nextItem.phoneNumber, antiBan)
                         }
                         val bubbleRes = engine.sendMessage(nextItem.phoneNumber, bubble, emptyList())
                         if (!bubbleRes.isSuccess) {
@@ -396,6 +404,18 @@ class DispatchQueueManager private constructor(
                 )
             }
         }
+    }
+
+    // 3–6 s between bubbles to one contact, shown as "typing..." when typing simulation is on
+    private suspend fun bubblePause(engine: WhatsAppEngine, phone: String, antiBan: AntiBanConfig) {
+        val ms = AntiBanSettings.nextBubbleDelayMs()
+        val start = System.currentTimeMillis()
+        if (antiBan.typingSimEnabled) {
+            try { engine.sendTypingPresence(phone, ms) } catch (_: Exception) {}
+        }
+        // Presence may return early (offline gateway); still wait out the full pause
+        val left = ms - (System.currentTimeMillis() - start)
+        if (left > 0) delay(left)
     }
 
     private fun updateItemStatus(

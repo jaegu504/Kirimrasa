@@ -361,6 +361,11 @@ interface AppStrings {
     val queueBadgeWaiting: String
     val queueBadgeFailed: String
     val queueBadgeSent: String
+    val settingsPresetCustom: String
+    val customDelayMinLabel: String
+    val customDelayMaxLabel: String
+    val customDelayWarning: String
+    val secondsShort: (Int) -> String
 }
 
 object IndonesianStrings : AppStrings {
@@ -716,6 +721,11 @@ object IndonesianStrings : AppStrings {
     override val queueBadgeWaiting: String = "MENUNGGU"
     override val queueBadgeFailed: String = "GAGAL"
     override val queueBadgeSent: String = "TERKIRIM"
+    override val settingsPresetCustom: String = "Atur Sendiri"
+    override val customDelayMinLabel: String = "Jeda minimum"
+    override val customDelayMaxLabel: String = "Jeda maksimum"
+    override val customDelayWarning: String = "Jeda di bawah 25 detik meningkatkan risiko nomor diblokir."
+    override val secondsShort: (Int) -> String = { n -> "$n dtk" }
 }
 
 object TurkishStrings : AppStrings {
@@ -1071,6 +1081,11 @@ object TurkishStrings : AppStrings {
     override val queueBadgeWaiting: String = "BEKLİYOR"
     override val queueBadgeFailed: String = "BAŞARISIZ"
     override val queueBadgeSent: String = "GÖNDERİLDİ"
+    override val settingsPresetCustom: String = "Özel"
+    override val customDelayMinLabel: String = "En kısa bekleme"
+    override val customDelayMaxLabel: String = "En uzun bekleme"
+    override val customDelayWarning: String = "25 saniyeden kısa bekleme, numaranın engellenme riskini artırır."
+    override val secondsShort: (Int) -> String = { n -> "$n sn" }
 }
 
 val LocalAppStrings = compositionLocalOf<AppStrings> { IndonesianStrings }

@@ -106,6 +106,18 @@ function broadcastStatus(nodeId, status) {
     }
 }
 
+// Baileys silently drops available/unavailable presence when creds.me.name is empty, which is
+// common right after a pairing-code login. The companion then stays "online" and the main phone
+// mutes its notifications, so fill the name from what WhatsApp already gave us.
+async function markUnavailable(sock) {
+    const me = sock?.authState?.creds?.me;
+    if (!me) return;
+    if (!me.name) {
+        me.name = me.notify || me.verifiedName || (me.id || '').split(/[:@]/)[0] || 'Kirimrasa';
+    }
+    await sock.sendPresenceUpdate('unavailable');
+}
+
 // Initialize Baileys Socket for a node
 async function getOrCreateSocket(nodeId, phoneNumber = null) {
     let node = nodeMap.get(nodeId);
@@ -204,7 +216,7 @@ async function getOrCreateSocket(nodeId, phoneNumber = null) {
             logger.info({ nodeId }, 'WhatsApp connection established successfully!');
             // Keep companion presence as unavailable so main phone retains vibrations & notifications
             try {
-                await sock.sendPresenceUpdate('unavailable');
+                await markUnavailable(sock);
             } catch (err) {
                 logger.warn({ nodeId, err: err.message }, 'Failed to set presence to unavailable on connect');
             }
@@ -499,7 +511,7 @@ app.post('/api/nodes/:nodeId/send', authMiddleware, async (req, res) => {
 
         // Return to background presence so phone notification vibrations aren't muted
         try {
-            await node.sock.sendPresenceUpdate('unavailable');
+            await markUnavailable(node.sock);
         } catch (_) {}
 
         return res.json({
@@ -530,10 +542,10 @@ app.post('/api/nodes/:nodeId/presence', authMiddleware, async (req, res) => {
         const jid = `${cleanPhone}@s.whatsapp.net`;
         await node.sock.sendPresenceUpdate('composing', jid);
         if (durationMs && durationMs > 0) {
-            await delay(Math.min(durationMs, 5000));
+            await delay(Math.min(durationMs, 8000));
             await node.sock.sendPresenceUpdate('paused', jid);
         }
-        await node.sock.sendPresenceUpdate('unavailable');
+        await markUnavailable(node.sock);
         return res.json({ success: true });
     } catch (_) {
         return res.json({ success: true });

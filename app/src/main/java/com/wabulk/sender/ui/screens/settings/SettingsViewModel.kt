@@ -1,5 +1,10 @@
 package com.wabulk.sender.ui.screens.settings
 
+import com.wabulk.sender.engine.queue.AntiBanConfig
+import com.wabulk.sender.engine.queue.AntiBanSettings
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import com.wabulk.sender.data.locale.LocalizationManager
 import android.app.Application
 import android.content.ClipData
@@ -37,52 +42,43 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _isTestingGateway = MutableStateFlow(false)
     val isTestingGateway: StateFlow<Boolean> = _isTestingGateway.asStateFlow()
 
-    // Anti-ban settings state
-    private val _selectedPreset = MutableStateFlow(1) // 0: Conservative, 1: Optimal, 2: Turbo
-    val selectedPreset: StateFlow<Int> = _selectedPreset.asStateFlow()
+    // Anti-ban settings: persisted in AntiBanSettings and read by the dispatch queue
+    val antiBanConfig: StateFlow<AntiBanConfig> = AntiBanSettings.config
+    val selectedPreset: StateFlow<Int> = antiBanConfig.mapState { it.preset }
+    val typingSimEnabled: StateFlow<Boolean> = antiBanConfig.mapState { it.typingSimEnabled }
+    val autoRotateEnabled: StateFlow<Boolean> = antiBanConfig.mapState { it.autoRotateEnabled }
+    val pauseDurationMin: StateFlow<Int> = antiBanConfig.mapState { it.pauseDurationMin }
+    val batchSizeMsgs: StateFlow<Int> = antiBanConfig.mapState { it.batchSize }
 
-    private val _typingSimEnabled = MutableStateFlow(true)
-    val typingSimEnabled: StateFlow<Boolean> = _typingSimEnabled.asStateFlow()
-
-    private val _autoRotateEnabled = MutableStateFlow(true)
-    val autoRotateEnabled: StateFlow<Boolean> = _autoRotateEnabled.asStateFlow()
-
-    private val _pauseDurationMin = MutableStateFlow(5)
-    val pauseDurationMin: StateFlow<Int> = _pauseDurationMin.asStateFlow()
-
-    private val _batchSizeMsgs = MutableStateFlow(25)
-    val batchSizeMsgs: StateFlow<Int> = _batchSizeMsgs.asStateFlow()
+    private fun <T> StateFlow<AntiBanConfig>.mapState(pick: (AntiBanConfig) -> T): StateFlow<T> =
+        map(pick).stateIn(viewModelScope, SharingStarted.Eagerly, pick(value))
 
     private val _selectedAiTone = MutableStateFlow(1) // 0: Casual, 1: Friendly, 2: Formal
     val selectedAiTone: StateFlow<Int> = _selectedAiTone.asStateFlow()
 
-    fun selectPreset(index: Int) {
-        _selectedPreset.value = index
+    fun selectPreset(index: Int) = AntiBanSettings.update { it.copy(preset = index) }
+
+    fun adjustCustomMin(deltaSec: Int) = AntiBanSettings.update {
+        val min = it.customMinSec + deltaSec
+        // Raising min may push max up so the spread stays valid
+        it.copy(preset = AntiBanConfig.PRESET_CUSTOM, customMinSec = min, customMaxSec = maxOf(it.customMaxSec, min + AntiBanConfig.MIN_SPREAD_SEC))
     }
 
-    fun toggleTypingSim(enabled: Boolean) {
-        _typingSimEnabled.value = enabled
+    fun adjustCustomMax(deltaSec: Int) = AntiBanSettings.update {
+        it.copy(preset = AntiBanConfig.PRESET_CUSTOM, customMaxSec = it.customMaxSec + deltaSec)
     }
 
-    fun toggleAutoRotate(enabled: Boolean) {
-        _autoRotateEnabled.value = enabled
-    }
+    fun toggleTypingSim(enabled: Boolean) = AntiBanSettings.update { it.copy(typingSimEnabled = enabled) }
 
-    fun incrementPauseDuration() {
-        if (_pauseDurationMin.value < 60) _pauseDurationMin.value += 1
-    }
+    fun toggleAutoRotate(enabled: Boolean) = AntiBanSettings.update { it.copy(autoRotateEnabled = enabled) }
 
-    fun decrementPauseDuration() {
-        if (_pauseDurationMin.value > 1) _pauseDurationMin.value -= 1
-    }
+    fun incrementPauseDuration() = AntiBanSettings.update { it.copy(pauseDurationMin = it.pauseDurationMin + 1) }
 
-    fun incrementBatchSize() {
-        if (_batchSizeMsgs.value < 100) _batchSizeMsgs.value += 5
-    }
+    fun decrementPauseDuration() = AntiBanSettings.update { it.copy(pauseDurationMin = it.pauseDurationMin - 1) }
 
-    fun decrementBatchSize() {
-        if (_batchSizeMsgs.value > 5) _batchSizeMsgs.value -= 5
-    }
+    fun incrementBatchSize() = AntiBanSettings.update { it.copy(batchSize = it.batchSize + 5) }
+
+    fun decrementBatchSize() = AntiBanSettings.update { it.copy(batchSize = it.batchSize - 5) }
 
     fun selectAiTone(toneIndex: Int) {
         _selectedAiTone.value = toneIndex

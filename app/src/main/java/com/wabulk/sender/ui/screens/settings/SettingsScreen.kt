@@ -1,5 +1,6 @@
 package com.wabulk.sender.ui.screens.settings
 
+import com.wabulk.sender.engine.queue.AntiBanConfig
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.background
@@ -96,6 +97,7 @@ import com.wabulk.sender.theme.EmeraldSecondary
 import com.wabulk.sender.theme.EmeraldSecondaryContainer
 import com.wabulk.sender.theme.EmeraldTertiary
 import com.wabulk.sender.theme.StatusError
+import com.wabulk.sender.theme.StatusWarning
 import com.wabulk.sender.theme.StatusErrorContainer
 import com.wabulk.sender.theme.TextSubduedTertiary
 import com.wabulk.sender.theme.ThemeManager
@@ -123,6 +125,8 @@ fun SettingsScreen(
     val node1Session by viewModel.node1Session.collectAsState()
     val node2Session by viewModel.node2Session.collectAsState()
     val selectedPreset by viewModel.selectedPreset.collectAsState()
+    val antiBan by viewModel.antiBanConfig.collectAsState()
+    val delayRange = antiBan.delayRangeSec
     val typingSimEnabled by viewModel.typingSimEnabled.collectAsState()
     val autoRotateEnabled by viewModel.autoRotateEnabled.collectAsState()
     val pauseDurationMin by viewModel.pauseDurationMin.collectAsState()
@@ -1183,11 +1187,7 @@ fun SettingsScreen(
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = when (selectedPreset) {
-                                0 -> "35s - 75s"
-                                1 -> "25s - 65s"
-                                else -> "15s - 30s"
-                            },
+                            text = "${delayRange.first}s - ${delayRange.last}s",
                             color = EmeraldPrimary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -1197,11 +1197,7 @@ fun SettingsScreen(
                 }
 
                 // Range Graphic Track
-                val trackFraction = when (selectedPreset) {
-                    0 -> 0.75f
-                    1 -> 0.55f
-                    else -> 0.35f
-                }
+                val trackFraction = (delayRange.last / 120f).coerceIn(0.1f, 1f)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1224,7 +1220,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Min: 10s", color = neuColors.textSecondary, fontSize = 10.sp)
+                    Text(text = "Min: ${strings.secondsShort(AntiBanConfig.CUSTOM_FLOOR_SEC)}", color = neuColors.textSecondary, fontSize = 10.sp)
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
@@ -1236,7 +1232,7 @@ fun SettingsScreen(
                         Icon(imageVector = Icons.Default.StackedLineChart, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(11.dp))
                         Text(text = strings.randomDelayLabel, color = EmeraldPrimary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                     }
-                    Text(text = "Max: 120s", color = neuColors.textSecondary, fontSize = 10.sp)
+                    Text(text = "Max: ${strings.secondsShort(AntiBanConfig.CUSTOM_CEIL_SEC)}", color = neuColors.textSecondary, fontSize = 10.sp)
                 }
 
                 // Preset Pills
@@ -1249,7 +1245,8 @@ fun SettingsScreen(
                     val presets = listOf(
                         0 to strings.settingsPresetConservative,
                         1 to strings.settingsPresetOptimal,
-                        2 to strings.settingsPresetTurbo
+                        2 to strings.settingsPresetTurbo,
+                        AntiBanConfig.PRESET_CUSTOM to strings.settingsPresetCustom
                     )
                     presets.forEach { (idx, label) ->
                         val isSelected = selectedPreset == idx
@@ -1267,6 +1264,31 @@ fun SettingsScreen(
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                             )
                         }
+                    }
+                }
+
+                if (selectedPreset == AntiBanConfig.PRESET_CUSTOM) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        DelayStepper(
+                            label = strings.customDelayMinLabel,
+                            value = strings.secondsShort(antiBan.customMinSec),
+                            onMinus = { viewModel.adjustCustomMin(-5) },
+                            onPlus = { viewModel.adjustCustomMin(5) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        DelayStepper(
+                            label = strings.customDelayMaxLabel,
+                            value = strings.secondsShort(antiBan.customMaxSec),
+                            onMinus = { viewModel.adjustCustomMax(-5) },
+                            onPlus = { viewModel.adjustCustomMax(5) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    if (antiBan.customMinSec < AntiBanConfig.SAFE_MIN_SEC) {
+                        Text(text = strings.customDelayWarning, color = StatusWarning, fontSize = 10.sp)
                     }
                 }
             }
@@ -1816,6 +1838,45 @@ private fun NodeGatewayPairingCard(
                 ) {
                     Text(strings.copyCodeOpenWaBtn, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DelayStepper(
+    label: String,
+    value: String,
+    onMinus: () -> Unit,
+    onPlus: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val neuColors = LocalNeumorphicColors.current
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(neuColors.surfaceRaised)
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(text = label, color = neuColors.textSecondary, fontSize = 10.sp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(24.dp).clip(CircleShape).background(neuColors.surface).springClickable { onMinus() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(imageVector = Icons.Default.Remove, contentDescription = null, tint = neuColors.textPrimary, modifier = Modifier.size(14.dp))
+            }
+            Text(text = value, color = neuColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier.size(24.dp).clip(CircleShape).background(neuColors.surface).springClickable { onPlus() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = null, tint = neuColors.textPrimary, modifier = Modifier.size(14.dp))
             }
         }
     }
