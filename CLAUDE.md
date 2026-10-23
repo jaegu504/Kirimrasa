@@ -35,6 +35,10 @@ Outside the app:
 - `cloudflare-worker/worker.js` – AI proxy to Groq/Gemini (`kirimrasa.jaegu108.workers.dev`)
 - `plan.md`, `docs/superpowers/plans/` – original phase plans. Their checklists are stale: all phases are implemented; trust code and `git log`.
 
+## Navigating the code
+
+Use the `codebase-memory-mcp` index first (project `Users-sp-Documents-Whatsapp-Bulk`; it auto-refreshes from git): `search_graph` to find symbols, `get_code_snippet` for one function, `trace_path` for callers. Read whole files only when the index is not enough. This keeps token use low.
+
 ## Rules
 
 - Never write to the Android phonebook (`ContactsContract`). Nicknames, tags and CSV-imported contacts live only in Room. Sync must merge without duplicates and keep user nicknames/tags.
