@@ -50,6 +50,10 @@ class DispatchQueueManager private constructor(
     private val _jitterCountdown = MutableStateFlow(34)
     val jitterCountdown: StateFlow<Int> = _jitterCountdown.asStateFlow()
 
+    private val _isCoolingDown = MutableStateFlow(false)
+    /** True while the current countdown is the batch cooldown rather than the per-contact delay. */
+    val isCoolingDown: StateFlow<Boolean> = _isCoolingDown.asStateFlow()
+
     private val _currentTypingContact = MutableStateFlow<String?>(null)
     val currentTypingContact: StateFlow<String?> = _currentTypingContact.asStateFlow()
 
@@ -280,6 +284,7 @@ class DispatchQueueManager private constructor(
                     processed % antiBan.batchSize == 0 -> antiBan.pauseDurationMin * 60
                     else -> AntiBanSettings.nextContactDelaySec(antiBan)
                 }
+                _isCoolingDown.value = !skipDelayForTesting && processed > 0 && processed % antiBan.batchSize == 0
                 for (sec in assignedJitter downTo 1) {
                     _jitterCountdown.value = sec
                     delay(1000)
@@ -292,6 +297,8 @@ class DispatchQueueManager private constructor(
 
                 // Resolve engine for this node
                 val sessionManager = WhatsAppSessionManager.getInstance()
+                _isCoolingDown.value = false
+
                 // Dual-account mode: skip an account that is not connected when the other one is
                 val nodeForItem = nextItem.fallbackNode
                     ?.takeIf { !sessionManager.isConnected(nextItem.nodeUsed) && sessionManager.isConnected(it) }

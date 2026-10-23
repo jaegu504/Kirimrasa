@@ -1,5 +1,7 @@
 package com.wabulk.sender.ui.screens.contacts
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -9,93 +11,108 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoFixHigh
-import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Label
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.UploadFile
-import com.wabulk.sender.theme.PlusJakartaSansFamily
-import com.wabulk.sender.theme.glassDepth
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.wabulk.sender.data.locale.AppStrings
-import com.wabulk.sender.data.locale.LocalAppStrings
+import androidx.core.content.ContextCompat
+import com.wabulk.sender.data.io.CsvParseResult
 import com.wabulk.sender.data.local.db.ContactEntity
-import com.wabulk.sender.data.local.db.TagEntity
+import com.wabulk.sender.data.locale.ContactsTexts
+import com.wabulk.sender.data.locale.LocalAppStrings
+import com.wabulk.sender.data.locale.contactsTexts
 import com.wabulk.sender.data.repository.ContactRepository
-import com.wabulk.sender.theme.EmeraldPrimary
-import com.wabulk.sender.theme.LocalNeumorphicColors
-import com.wabulk.sender.theme.NeumorphicCard
-import com.wabulk.sender.theme.neumorphic
-import com.wabulk.sender.theme.pulseGlow
+import com.wabulk.sender.theme.AppleTheme
+import com.wabulk.sender.theme.GroupCard
+import com.wabulk.sender.theme.LargeTitle
+import com.wabulk.sender.theme.RowSeparator
+import com.wabulk.sender.theme.TileGradients
+import com.wabulk.sender.theme.TintPill
 import com.wabulk.sender.theme.springClickable
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private val DEFAULT_TAGS = listOf("Keluarga", "Teman", "Bisnis")
+private val NOTES_IN_BRACKETS = Regex("\\(.*?\\)")
 
 @Composable
 fun ContactManagerScreen(
     viewModel: ContactViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onUseSelection: () -> Unit = {}
 ) {
+    val t = contactsTexts()
     val strings = LocalAppStrings.current
-    val neuColors = LocalNeumorphicColors.current
+    val c = AppleTheme.colors
+    val context = LocalContext.current
     val contacts by viewModel.contacts.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val activeTag by viewModel.activeTag.collectAsState()
     val totalCount by viewModel.totalCount.collectAsState()
     val selectedCount by viewModel.selectedCount.collectAsState()
-    val nicknameCount by viewModel.nicknameCount.collectAsState()
     val tags by viewModel.tags.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
     val lastSyncResult by viewModel.lastSyncResult.collectAsState()
@@ -104,803 +121,291 @@ fun ContactManagerScreen(
     var showImportCsvDialog by remember { mutableStateOf(false) }
     var showBatchTagDialog by remember { mutableStateOf(false) }
     var contactForTagManagement by remember { mutableStateOf<ContactEntity?>(null) }
+    var expandedId by remember { mutableStateOf<Long?>(null) }
+    var permissionDenied by remember { mutableStateOf(false) }
+
+    val tagNames = remember(tags) { (DEFAULT_TAGS + tags.map { it.name }).distinct() }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        permissionDenied = !granted
+        if (granted) viewModel.syncContacts()
+    }
+    val syncFromPhone = {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+            permissionDenied = false
+            viewModel.syncContacts()
+        } else {
+            permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.ensureDefaultTags()
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        // Header: Title on left, Action Buttons (Impor CSV, Sinkron) on right
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column {
+                LargeTitle(text = t.title) {
+                    IconButton(onClick = { showImportCsvDialog = true }) {
+                        Icon(imageVector = Icons.Default.FileUpload, contentDescription = t.importCsv, tint = c.blue)
+                    }
+                    if (isSyncing) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), color = c.blue, strokeWidth = 2.dp)
+                    }
+                    TintPill(
+                        text = if (isSyncing) t.syncing else t.syncButton,
+                        background = c.blueTint,
+                        content = c.blueOnTint,
+                        icon = Icons.Default.Sync,
+                        onClick = { if (!isSyncing) syncFromPhone() }
+                    )
+                }
+                val syncMessage = if (permissionDenied) t.permissionDenied else lastSyncResult
+                if (syncMessage != null) {
+                    Text(
+                        text = syncMessage,
+                        color = if (permissionDenied) c.orangeOnTint else c.secondaryLabel,
+                        fontSize = 13.sp
+                    )
+                }
+            }
+
+            AppleTextField(
+                value = searchQuery,
+                onValueChange = viewModel::onSearchQueryChange,
+                placeholder = t.searchPlaceholder,
+                leadingIcon = Icons.Default.Search,
+                trailing = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onSearchQueryChange("") }, modifier = Modifier.size(44.dp)) {
+                            Icon(
+                                imageVector = Icons.Default.Cancel,
+                                contentDescription = t.clearSearch,
+                                tint = c.tertiaryLabel,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            )
+
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterChip(label = t.all(totalCount), selected = activeTag == null) {
+                    viewModel.onTagFilterChange(null)
+                }
+                val showingSelected = activeTag == ContactViewModel.SELECTED_FILTER_TAG
+                if (selectedCount > 0 || showingSelected) {
+                    FilterChip(label = t.selectedFilter(selectedCount), selected = showingSelected, dot = c.blue) {
+                        viewModel.onTagFilterChange(if (showingSelected) null else ContactViewModel.SELECTED_FILTER_TAG)
+                    }
+                }
+                for (name in tagNames) {
+                    FilterChip(label = name, selected = activeTag == name, dot = tagColor(name)) {
+                        viewModel.onTagFilterChange(name)
+                    }
+                }
+                FilterChip(label = "+ ${t.newLabel}", selected = false, textColor = c.blue) {
+                    showNewTagDialog = true
+                }
+            }
+
+            val allSelectedInView = remember(contacts) { contacts.isNotEmpty() && contacts.all { it.isSelected } }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = strings.contactsTitle,
-                        color = neuColors.textPrimary,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(neuColors.accentPrimary)
-                            .pulseGlow()
-                    )
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Impor CSV Button
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .neumorphic(elevation = 2.dp, cornerRadius = 12.dp)
-                            .springClickable { showImportCsvDialog = true }
-                            .padding(horizontal = 10.dp, vertical = 7.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.FileUpload,
-                                contentDescription = null,
-                                tint = neuColors.accentPrimary,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Text(
-                                text = strings.contactsImportCsvBtn,
-                                color = neuColors.accentPrimary,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        }
-                    }
-
-                    // Sync Button
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .neumorphic(elevation = 2.dp, cornerRadius = 12.dp)
-                            .springClickable { viewModel.syncContacts() }
-                            .padding(horizontal = 10.dp, vertical = 7.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            if (isSyncing) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(14.dp),
-                                    color = neuColors.accentPrimary,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Sync,
-                                    contentDescription = null,
-                                    tint = neuColors.accentPrimary,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                            }
-                            Text(
-                                text = if (isSyncing) strings.contactsSyncing else strings.contactsSyncBtn,
-                                color = neuColors.accentPrimary,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        }
-                    }
-                }
-            }
-
-            Text(
-                text = lastSyncResult ?: strings.contactsSubtitle,
-                color = neuColors.textSecondary,
-                fontSize = 11.sp
-            )
-        }
-
-        // Telemetry Shelf (Apple Glass Metrics)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            TelemetryPill(
-                label = strings.contactsTotalMetric,
-                value = totalCount.toString(),
-                icon = Icons.Default.Group,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            TelemetryPill(
-                label = strings.contactsSelectedMetric,
-                value = selectedCount.toString(),
-                icon = Icons.Default.CheckCircle,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            TelemetryPill(
-                label = strings.contactsNicknamesMetric,
-                value = nicknameCount.toString(),
-                icon = Icons.Default.Badge,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        // Search Bar (Neumorphic Inset Feel)
-        TextField(
-            value = searchQuery,
-            onValueChange = { viewModel.onSearchQueryChange(it) },
-            placeholder = {
                 Text(
-                    text = strings.contactsSearchPlaceholder,
-                    color = neuColors.textTertiary,
-                    fontSize = 13.sp
+                    text = t.selectedCaption(selectedCount).uppercase(),
+                    color = c.secondaryLabel,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.4.sp
                 )
-            },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = null,
-                    tint = neuColors.textSecondary,
-                    modifier = Modifier.size(18.dp)
-                )
-            },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    Icon(
-                        imageVector = Icons.Default.Cancel,
-                        contentDescription = strings.contactsClearSearch,
-                        tint = neuColors.textSecondary,
-                        modifier = Modifier
-                            .size(18.dp)
-                            .springClickable { viewModel.onSearchQueryChange("") }
-                    )
-                }
-            },
-            singleLine = true,
-            colors = TextFieldDefaults.colors(
-                unfocusedContainerColor = neuColors.surfaceContainer,
-                focusedContainerColor = neuColors.surface,
-                unfocusedIndicatorColor = Color.Transparent,
-                focusedIndicatorColor = neuColors.accentPrimary,
-                cursorColor = neuColors.accentPrimary,
-                focusedTextColor = neuColors.textPrimary,
-                unfocusedTextColor = neuColors.textPrimary
-            ),
-            shape = RoundedCornerShape(14.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(14.dp))
-        )
-
-        // Tag Filter Chips with Dedicated "Terpilih" Segment
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // All Contacts Tag
-            TagChip(
-                label = strings.contactsTagAll(totalCount),
-                isActive = activeTag == null,
-                onClick = { viewModel.onTagFilterChange(null) }
-            )
-
-            // Dedicated "Terpilih" Segment Filter
-            TagChip(
-                label = strings.contactsTagSelected(selectedCount),
-                isActive = activeTag == ContactViewModel.SELECTED_FILTER_TAG,
-                isSpecialSelectedTag = true,
-                onClick = {
-                    viewModel.onTagFilterChange(
-                        if (activeTag == ContactViewModel.SELECTED_FILTER_TAG) null
-                        else ContactViewModel.SELECTED_FILTER_TAG
-                    )
-                }
-            )
-
-            // Default categories
-            TagChip(
-                label = strings.contactsTagFamily(contacts.count { ContactRepository.parseTagsJson(it.tagsJson).contains("Keluarga") }),
-                isActive = activeTag == "Keluarga",
-                onClick = { viewModel.onTagFilterChange("Keluarga") }
-            )
-            TagChip(
-                label = strings.contactsTagFriends(contacts.count { ContactRepository.parseTagsJson(it.tagsJson).contains("Teman") }),
-                isActive = activeTag == "Teman",
-                onClick = { viewModel.onTagFilterChange("Teman") }
-            )
-            TagChip(
-                label = strings.contactsTagBusiness(contacts.count { ContactRepository.parseTagsJson(it.tagsJson).contains("Bisnis") }),
-                isActive = activeTag == "Bisnis",
-                onClick = { viewModel.onTagFilterChange("Bisnis") }
-            )
-
-            // Custom tags from DB
-            for (tag in tags.filter { it.name !in listOf("Keluarga", "Teman", "Bisnis") }) {
-                TagChip(
-                    label = "${tag.name} (${contacts.count { c -> ContactRepository.parseTagsJson(c.tagsJson).contains(tag.name) }})",
-                    isActive = activeTag == tag.name,
-                    onClick = { viewModel.onTagFilterChange(tag.name) }
-                )
-            }
-
-            // + New Tag button
-            TagChip(
-                label = "+ ${strings.contactsNewTagBtn}",
-                isActive = false,
-                onClick = { showNewTagDialog = true }
-            )
-        }
-
-        // Select All / Deselect All Bar
-        val isAllSelectedInView = contacts.isNotEmpty() && contacts.all { it.isSelected }
-        val viewCount = contacts.size
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .neumorphic(elevation = 2.dp, cornerRadius = 12.dp)
-                .springClickable { viewModel.selectAllContacts(!isAllSelectedInView) }
-                .padding(horizontal = 14.dp, vertical = 10.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clip(RoundedCornerShape(5.dp))
-                            .then(
-                                if (isAllSelectedInView) Modifier.background(neuColors.accentPrimary)
-                                else Modifier.border(1.5.dp, neuColors.accentPrimary, RoundedCornerShape(5.dp))
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isAllSelectedInView) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (selectedCount > 0 || allSelectedInView) {
+                        TextAction(text = t.deselectAll, color = c.blue) { viewModel.selectAllContacts(false) }
                     }
-                    Text(
-                        text = if (isAllSelectedInView)
-                            strings.contactsAllSelectedInViewCount(viewCount)
-                        else if (activeTag == ContactViewModel.SELECTED_FILTER_TAG)
-                            strings.contactsTagSelected(viewCount)
-                        else if (activeTag != null)
-                            strings.contactsSelectAllInTag(activeTag ?: "", viewCount)
-                        else
-                            strings.contactsSelectAllInViewCount(viewCount),
-                        color = neuColors.textPrimary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    if (contacts.isNotEmpty() && !allSelectedInView) {
+                        TextAction(text = t.selectAll, color = c.blue) { viewModel.selectAllContacts(true) }
+                    }
                 }
-                Text(
-                    text = if (isAllSelectedInView) strings.contactsDeselectAllInView else strings.contactsSelectAllInView,
-                    color = neuColors.accentPrimary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
             }
-        }
 
-        // Batch Action Bar (Visible whenever contacts are selected)
-        if (selectedCount > 0) {
-            BatchActionBar(
-                selectedCount = selectedCount,
-                strings = strings,
-                onBatchTag = { showBatchTagDialog = true },
-                onClearSelection = {
-                    viewModel.selectAllContacts(false)
-                }
-            )
-        }
-
-        // Empty state
-        if (contacts.isEmpty() && !isSyncing) {
-            NeumorphicCard(
-                modifier = Modifier.fillMaxWidth(),
-                cornerRadius = 16.dp
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CloudSync,
-                        contentDescription = null,
-                        tint = neuColors.accentPrimary,
-                        modifier = Modifier.size(44.dp)
-                    )
+            if (contacts.isEmpty() && !isSyncing) {
+                GroupCard(padding = 20.dp) {
                     Text(
-                        text = if (activeTag == ContactViewModel.SELECTED_FILTER_TAG)
-                            strings.contactsTagSelected(0)
-                        else
-                            strings.contactsSyncBtn,
-                        color = neuColors.textPrimary,
+                        text = when {
+                            activeTag == ContactViewModel.SELECTED_FILTER_TAG -> t.emptySelected
+                            searchQuery.isNotBlank() || activeTag != null -> t.emptyNoMatch
+                            else -> t.emptyNoContacts
+                        },
+                        color = c.secondaryLabel,
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    Text(
-                        text = lastSyncResult ?: strings.contactsSyncedAgo,
-                        color = neuColors.textSecondary,
-                        fontSize = 12.sp
+                }
+            }
+
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                // Room for the floating selection bar so the last row stays reachable
+                contentPadding = PaddingValues(bottom = if (selectedCount > 0) 96.dp else 16.dp)
+            ) {
+                itemsIndexed(contacts, key = { _, contact -> contact.id }) { index, contact ->
+                    val corner = 20.dp
+                    ContactRow(
+                        contact = contact,
+                        t = t,
+                        nicknameFallback = strings.nicknameFallback,
+                        shape = RoundedCornerShape(
+                            topStart = if (index == 0) corner else 0.dp,
+                            topEnd = if (index == 0) corner else 0.dp,
+                            bottomEnd = if (index == contacts.lastIndex) corner else 0.dp,
+                            bottomStart = if (index == contacts.lastIndex) corner else 0.dp
+                        ),
+                        showSeparator = index > 0,
+                        expanded = expandedId == contact.id,
+                        onToggleSelection = { viewModel.toggleContactSelection(contact.id, !contact.isSelected) },
+                        onToggleExpanded = { expandedId = if (expandedId == contact.id) null else contact.id },
+                        onNicknameChange = { viewModel.updateNickname(contact.id, it) },
+                        onQuickFirstName = { viewModel.quickFormatFirstName(contact.id) },
+                        onQuickRemoveNotes = { viewModel.quickFormatRemoveNotes(contact.id) },
+                        onQuickAddGreeting = { viewModel.quickFormatAddGreeting(contact.id) },
+                        onManageTags = { contactForTagManagement = contact }
                     )
                 }
             }
         }
 
-        // Contact List (Supports tap-anywhere on card to multi-select)
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            items(contacts, key = { it.id }) { contact ->
-                ContactCard(
-                    contact = contact,
-                    strings = strings,
-                    onToggleSelection = { viewModel.toggleContactSelection(contact.id, !contact.isSelected) },
-                    onNicknameChange = { viewModel.updateNickname(contact.id, it) },
-                    onQuickFirstName = { viewModel.quickFormatFirstName(contact.id) },
-                    onQuickRemoveNotes = { viewModel.quickFormatRemoveNotes(contact.id) },
-                    onQuickAddGreeting = { viewModel.quickFormatAddGreeting(contact.id) },
-                    onManageTags = { contactForTagManagement = contact }
-                )
-            }
-        }
-
-        // Dialog Tambah Kategori Tag Baru
-        if (showNewTagDialog) {
-            CreateTagDialog(
-                strings = strings,
-                onDismiss = { showNewTagDialog = false },
-                onConfirm = { tagName ->
-                    if (tagName.isNotBlank()) {
-                        viewModel.createTag(tagName.trim())
-                    }
-                    showNewTagDialog = false
-                }
-            )
-        }
-
-        // Dialog Beri Label Bersamaan (Batch Tagging)
-        if (showBatchTagDialog) {
-            BatchTagDialog(
-                selectedCount = selectedCount,
-                strings = strings,
-                availableTags = tags,
-                onDismiss = { showBatchTagDialog = false },
-                onApplyTag = { tagName ->
-                    if (tagName.isNotBlank()) {
-                        viewModel.addTagToSelectedContacts(tagName.trim())
-                    }
-                    showBatchTagDialog = false
-                }
-            )
-        }
-
-        // Dialog Kelola Tag pada Kontak Individu
-        if (contactForTagManagement != null) {
-            val targetId = contactForTagManagement!!.id
-            val liveContact = contacts.find { it.id == targetId } ?: contactForTagManagement!!
-            ManageContactTagsDialog(
-                contact = liveContact,
-                strings = strings,
-                availableTags = tags,
-                onDismiss = { contactForTagManagement = null },
-                onToggleTag = { tagName, isCurrentlyAssigned ->
-                    if (isCurrentlyAssigned) {
-                        viewModel.removeTagFromContact(liveContact.id, tagName)
-                    } else {
-                        viewModel.addTagToContact(liveContact.id, tagName)
-                    }
-                },
-                onCreateAndAssignTag = { newTagName ->
-                    if (newTagName.isNotBlank()) {
-                        val trimmed = newTagName.trim()
-                        viewModel.createTag(trimmed)
-                        viewModel.addTagToContact(liveContact.id, trimmed)
-                    }
-                }
-            )
-        }
-
-        // Dialog Impor CSV Kontak
-        if (showImportCsvDialog) {
-            ImportCsvDialog(
-                strings = strings,
-                onDismiss = { showImportCsvDialog = false },
-                onImportFile = { stream -> viewModel.importContactsFromStream(stream) },
-                onImportSample = { viewModel.importSampleCsv() }
+        if (selectedCount > 0) {
+            SelectionBar(
+                text = t.barCount(selectedCount),
+                labelText = t.giveLabel,
+                useText = t.use,
+                onLabel = { showBatchTagDialog = true },
+                onUse = onUseSelection,
+                modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
     }
+
+    if (showNewTagDialog) {
+        CreateTagDialog(
+            t = t,
+            onDismiss = { showNewTagDialog = false },
+            onConfirm = { tagName ->
+                viewModel.createTag(tagName.trim())
+                showNewTagDialog = false
+            }
+        )
+    }
+
+    if (showBatchTagDialog) {
+        BatchTagDialog(
+            t = t,
+            selectedCount = selectedCount,
+            tagNames = tagNames,
+            onDismiss = { showBatchTagDialog = false },
+            onApplyTag = { tagName ->
+                viewModel.addTagToSelectedContacts(tagName)
+                showBatchTagDialog = false
+            }
+        )
+    }
+
+    contactForTagManagement?.let { target ->
+        val liveContact = contacts.find { it.id == target.id } ?: target
+        ManageContactTagsDialog(
+            t = t,
+            contact = liveContact,
+            tagNames = tagNames,
+            onDismiss = { contactForTagManagement = null },
+            onToggleTag = { tagName, isAssigned ->
+                if (isAssigned) viewModel.removeTagFromContact(liveContact.id, tagName)
+                else viewModel.addTagToContact(liveContact.id, tagName)
+            },
+            onCreateAndAssignTag = { newTagName ->
+                val trimmed = newTagName.trim()
+                viewModel.createTag(trimmed)
+                viewModel.addTagToContact(liveContact.id, trimmed)
+            }
+        )
+    }
+
+    if (showImportCsvDialog) {
+        ImportCsvDialog(
+            t = t,
+            onDismiss = { showImportCsvDialog = false },
+            onImportFile = { stream -> viewModel.importContactsFromStream(stream) },
+            onImportSample = { viewModel.importSampleCsv() }
+        )
+    }
 }
 
-/**
- * Batch Action Bar shown when 1 or more contacts are selected.
- * Provides quick actions to assign a tag in bulk, view selected, or deselect all.
- */
+/** Stable colour per tag name so a tag looks the same everywhere. */
 @Composable
-private fun BatchActionBar(
-    selectedCount: Int,
-    strings: AppStrings,
-    onBatchTag: () -> Unit,
-    onClearSelection: () -> Unit
-) {
-    val neuColors = LocalNeumorphicColors.current
+private fun tagColor(name: String): Color {
+    val c = AppleTheme.colors
+    val palette = listOf(c.blue, c.orange, c.purple, TileGradients.Pink.last(), c.teal, TileGradients.Indigo.last())
+    return palette[Math.floorMod(name.hashCode(), palette.size)]
+}
 
+private val AVATAR_GRADIENTS = listOf(
+    TileGradients.Orange, TileGradients.Blue, TileGradients.Purple, TileGradients.Green,
+    TileGradients.Pink, TileGradients.Teal, TileGradients.Indigo
+)
+
+@Composable
+private fun FilterChip(
+    label: String,
+    selected: Boolean,
+    dot: Color? = null,
+    textColor: Color? = null,
+    idleBackground: Color = AppleTheme.colors.card,
+    onClick: () -> Unit
+) {
+    val c = AppleTheme.colors
+    // 44 dp touch target around a 36 dp pill
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(neuColors.surfaceRaised.copy(alpha = 0.95f))
-            .border(1.dp, neuColors.borderBevel, RoundedCornerShape(20.dp))
-            .glassDepth(cornerRadius = 20.dp, elevation = 4.dp, isDark = neuColors.isDark)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .height(44.dp)
+            .semantics { role = Role.Button; this.selected = selected }
+            .springClickable(onClick = onClick),
+        contentAlignment = Alignment.Center
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            // Left: Selection count pill
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(neuColors.accentPrimary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
-                Text(
-                    text = strings.contactsBatchSelectedCount(selectedCount),
-                    color = neuColors.textPrimary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = PlusJakartaSansFamily
-                )
-            }
-
-            // Right: Tag + Cancel Buttons
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                // "+ Label" Button
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(neuColors.accentPrimary)
-                        .springClickable { onBatchTag() }
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Sell,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Text(
-                            text = strings.contactsBatchAssignTagBtn,
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = PlusJakartaSansFamily,
-                            maxLines = 1
-                        )
-                    }
-                }
-
-                // "Batal" Button
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(neuColors.surfaceInset)
-                        .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(12.dp))
-                        .springClickable { onClearSelection() }
-                        .padding(horizontal = 8.dp, vertical = 6.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = strings.contactsDeselectAllInView,
-                            tint = neuColors.textSecondary,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Text(
-                            text = strings.contactsDeselectAllInView,
-                            color = neuColors.textSecondary,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            fontFamily = PlusJakartaSansFamily,
-                            maxLines = 1
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Batch Tag Assignment Dialog
- */
-@Composable
-private fun BatchTagDialog(
-    selectedCount: Int,
-    strings: AppStrings,
-    availableTags: List<TagEntity>,
-    onDismiss: () -> Unit,
-    onApplyTag: (String) -> Unit
-) {
-    val neuColors = LocalNeumorphicColors.current
-    var selectedTagName by remember { mutableStateOf("") }
-    var customTagInput by remember { mutableStateOf("") }
-
-    val allTagNames = remember(availableTags) {
-        (listOf("Keluarga", "Teman", "Bisnis") + availableTags.map { it.name }).distinct()
-    }
-
-    Dialog(onDismissRequest = onDismiss) {
-        NeumorphicCard(
-            modifier = Modifier.fillMaxWidth(),
-            cornerRadius = 16.dp,
-            elevation = 6.dp
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = strings.contactsBatchTagDialogTitle(selectedCount),
-                            color = neuColors.textPrimary,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = strings.contactsManageTagsDesc,
-                            color = neuColors.textSecondary,
-                            fontSize = 11.sp
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .neumorphic(elevation = 2.dp, cornerRadius = 14.dp)
-                            .springClickable { onDismiss() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Cancel,
-                            contentDescription = strings.contactsCloseBtn,
-                            tint = neuColors.textSecondary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-
-                // Available Tags
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    for (tagName in allTagNames) {
-                        val isChosen = selectedTagName == tagName
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(if (isChosen) neuColors.accentPrimary else neuColors.surfaceContainer)
-                                .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(14.dp))
-                                .springClickable {
-                                    selectedTagName = if (isChosen) "" else tagName
-                                    if (selectedTagName.isNotEmpty()) customTagInput = ""
-                                }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = tagName,
-                                color = if (isChosen) Color.White else neuColors.textPrimary,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
-                }
-
-                // Or create custom tag
-                BasicTextField(
-                    value = customTagInput,
-                    onValueChange = {
-                        customTagInput = it
-                        if (it.isNotBlank()) selectedTagName = it
-                    },
-                    singleLine = true,
-                    textStyle = TextStyle(
-                        color = neuColors.textPrimary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    cursorBrush = SolidColor(neuColors.accentPrimary),
-                    decorationBox = { innerTextField ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(neuColors.surfaceContainer)
-                                .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(10.dp))
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            if (customTagInput.isEmpty()) {
-                                Text(
-                                    text = strings.contactsAddNewTagOption,
-                                    color = neuColors.textTertiary,
-                                    fontSize = 11.sp
-                                )
-                            }
-                            innerTextField()
-                        }
-                    }
-                )
-
-                // Dialog Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .springClickable { onDismiss() }
-                            .padding(horizontal = 14.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = strings.contactsCancelBtn,
-                            color = neuColors.textSecondary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    val effectiveTag = selectedTagName.ifBlank { customTagInput }.trim()
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (effectiveTag.isNotBlank()) neuColors.accentPrimary else neuColors.surfaceContainer)
-                            .then(
-                                if (effectiveTag.isNotBlank()) Modifier.springClickable { onApplyTag(effectiveTag) }
-                                else Modifier
-                            )
-                            .padding(horizontal = 16.dp, vertical = 9.dp)
-                    ) {
-                        Text(
-                            text = strings.contactsSaveBtn,
-                            color = if (effectiveTag.isNotBlank()) Color.White else neuColors.textTertiary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TelemetryPill(
-    label: String,
-    value: String,
-    icon: ImageVector,
-    modifier: Modifier = Modifier
-) {
-    val neuColors = LocalNeumorphicColors.current
-
-    NeumorphicCard(
-        modifier = modifier,
-        cornerRadius = 16.dp,
-        elevation = 2.dp
-    ) {
-        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .height(36.dp)
+                .clip(CircleShape)
+                .background(if (selected) c.label else idleBackground)
+                .padding(horizontal = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = neuColors.accentPrimary,
-                    modifier = Modifier.size(15.dp)
-                )
-                Text(
-                    text = value,
-                    color = neuColors.textPrimary,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = PlusJakartaSansFamily
-                )
-            }
-            Spacer(modifier = Modifier.height(2.dp))
+            if (dot != null) Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(dot))
             Text(
                 text = label,
-                color = neuColors.textSecondary,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = PlusJakartaSansFamily,
+                color = if (selected) c.card else textColor ?: c.label,
+                fontSize = 14.sp,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
                 maxLines = 1
             )
         }
@@ -908,617 +413,494 @@ private fun TelemetryPill(
 }
 
 @Composable
-private fun TagChip(
-    label: String,
-    isActive: Boolean,
-    isSpecialSelectedTag: Boolean = false,
-    onClick: () -> Unit
-) {
-    val neuColors = LocalNeumorphicColors.current
-
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .then(
-                if (isActive) {
-                    Modifier.background(neuColors.accentPrimary)
-                } else if (isSpecialSelectedTag) {
-                    Modifier
-                        .background(neuColors.surfaceContainer)
-                        .border(1.dp, neuColors.accentPrimary.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
-                } else {
-                    Modifier
-                        .neumorphic(elevation = 2.dp, cornerRadius = 20.dp)
-                }
-            )
-            .springClickable { onClick() }
-            .padding(horizontal = 14.dp, vertical = 7.dp)
-    ) {
-        Text(
-            text = label,
-            color = if (isActive) Color.White else if (isSpecialSelectedTag) neuColors.accentPrimary else neuColors.textPrimary,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-    }
-}
-
-/**
- * ContactCard represents a contact. Tapping anywhere on the top header/row
- * toggles selection, fulfilling the multi-select UX requested by the user.
- */
-@Composable
-private fun ContactCard(
+private fun ContactRow(
     contact: ContactEntity,
-    strings: AppStrings,
+    t: ContactsTexts,
+    nicknameFallback: String,
+    shape: Shape,
+    showSeparator: Boolean,
+    expanded: Boolean,
     onToggleSelection: () -> Unit,
+    onToggleExpanded: () -> Unit,
     onNicknameChange: (String) -> Unit,
     onQuickFirstName: () -> Unit,
     onQuickRemoveNotes: () -> Unit,
     onQuickAddGreeting: () -> Unit,
     onManageTags: () -> Unit
 ) {
-    val neuColors = LocalNeumorphicColors.current
-    var localNickname by remember(contact.id, contact.customNickname) { mutableStateOf(contact.customNickname) }
-    val initials = ContactRepository.extractInitials(contact.rawName)
-    val contactTags = ContactRepository.parseTagsJson(contact.tagsJson)
+    val c = AppleTheme.colors
+    val contactTags = remember(contact.tagsJson) { ContactRepository.parseTagsJson(contact.tagsJson) }
+    val displayName = remember(contact.rawName) {
+        contact.rawName.replace(NOTES_IN_BRACKETS, "").trim().ifEmpty { contact.phoneNumber }
+    }
+    val subtitle = buildAnnotatedString {
+        if (contact.customNickname.isBlank()) {
+            withStyle(SpanStyle(color = c.orangeOnTint)) { append(t.noNickname) }
+        } else {
+            append(t.calledAs(contact.customNickname))
+        }
+        contactTags.forEach { append(" · $it") }
+    }
 
-    NeumorphicCard(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (contact.isSelected) Modifier.border(1.dp, neuColors.accentPrimary.copy(alpha = 0.45f), RoundedCornerShape(14.dp))
-                else Modifier
-            ),
-        cornerRadius = 14.dp,
-        elevation = if (contact.isSelected) 4.dp else 2.dp
+            .clip(shape)
+            .background(c.card)
     ) {
-        Column(
+        if (showSeparator) RowSeparator(startInset = 72.dp)
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .heightIn(min = 68.dp)
+                .toggleable(value = contact.isSelected, role = Role.Checkbox, onValueChange = { onToggleSelection() })
+                .padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Header Row: Tapping this row toggles selection
-            Row(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .springClickable { onToggleSelection() },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Checkbox Box
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .then(
-                            if (contact.isSelected) Modifier.background(neuColors.accentPrimary)
-                            else Modifier.border(1.5.dp, neuColors.borderBevel, RoundedCornerShape(6.dp))
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (contact.isSelected) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(15.dp)
-                        )
-                    }
-                }
-
-                // Avatar with Neumorphic Inset/Raised Circle
-                Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(neuColors.surfaceContainer)
-                        .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = initials,
-                        color = neuColors.accentPrimary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                // Contact Name & Phone
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = contact.rawName.replace(Regex("\\(.*?\\)"), "").trim(),
-                            color = neuColors.textPrimary,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1
-                        )
-                        // Tag badges (Clicking opens tag manager)
-                        for (tag in contactTags.take(3)) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(neuColors.surfaceContainer)
-                                    .border(0.5.dp, neuColors.borderBevel, RoundedCornerShape(6.dp))
-                                    .springClickable { onManageTags() }
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = tag,
-                                    color = neuColors.accentPrimary,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-                    }
-                    Text(
-                        text = contact.phoneNumber,
-                        color = neuColors.textSecondary,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
-
-                // Tag icon button
-                Box(
-                    modifier = Modifier
-                        .size(30.dp)
-                        .clip(CircleShape)
-                        .neumorphic(elevation = 2.dp, cornerRadius = 15.dp)
-                        .springClickable { onManageTags() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Sell,
-                        contentDescription = strings.contactsManageTagsTitle,
-                        tint = neuColors.accentPrimary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
-            }
-
-            // Inline Nickname Editor
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(Brush.linearGradient(AVATAR_GRADIENTS[Math.floorMod(contact.phoneNumber.hashCode(), AVATAR_GRADIENTS.size)])),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = strings.contactsCallNameLabel,
-                    color = neuColors.textSecondary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                BasicTextField(
-                    value = localNickname,
-                    onValueChange = {
-                        localNickname = it
-                        onNicknameChange(it)
-                    },
-                    singleLine = true,
-                    textStyle = TextStyle(
-                        color = neuColors.accentPrimary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    cursorBrush = SolidColor(neuColors.accentPrimary),
-                    decorationBox = { innerTextField ->
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(neuColors.surfaceContainer)
-                                .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(8.dp))
-                                .padding(horizontal = 10.dp, vertical = 7.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            if (localNickname.isEmpty()) {
-                                Text(
-                                    text = strings.contactsAutoKak,
-                                    color = neuColors.textTertiary,
-                                    fontSize = 11.sp
-                                )
-                            }
-                            innerTextField()
-                        }
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            // Greeting Preview
-            val effectivePreviewNick = localNickname.ifBlank { strings.nicknameFallback }
-            Text(
-                text = strings.contactsGreetingPreview(effectivePreviewNick),
-                color = if (localNickname.isNotBlank()) neuColors.accentPrimary else neuColors.textSecondary,
-                fontSize = 10.sp
-            )
-
-            // Quick Format Pills
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = strings.contactsQuickFormat,
-                    color = neuColors.textTertiary,
-                    fontSize = 10.sp,
-                    maxLines = 1,
-                    softWrap = false
-                )
-                QuickPill(strings.contactsFormatFirstName) { onQuickFirstName() }
-                QuickPill(strings.contactsFormatRemoveNotes) { onQuickRemoveNotes() }
-                QuickPill(strings.contactsFormatAddHello) { onQuickAddGreeting() }
-            }
-        }
-    }
-}
-
-@Composable
-private fun QuickPill(label: String, onClick: () -> Unit) {
-    val neuColors = LocalNeumorphicColors.current
-
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .neumorphic(elevation = 1.dp, cornerRadius = 8.dp)
-            .springClickable { onClick() }
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-    ) {
-        Text(
-            text = label,
-            color = neuColors.accentPrimary,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            softWrap = false
-        )
-    }
-}
-
-@Composable
-private fun CreateTagDialog(
-    strings: AppStrings,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
-    val neuColors = LocalNeumorphicColors.current
-    var tagName by remember { mutableStateOf("") }
-
-    Dialog(onDismissRequest = onDismiss) {
-        NeumorphicCard(
-            modifier = Modifier.fillMaxWidth(),
-            cornerRadius = 16.dp,
-            elevation = 6.dp
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Text(
-                    text = strings.contactsAddNewTagTitle,
-                    color = neuColors.textPrimary,
-                    fontSize = 15.sp,
+                    text = ContactRepository.extractInitials(contact.rawName),
+                    color = Color.White,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
-                Text(
-                    text = strings.contactsAddNewTagDesc,
-                    color = neuColors.textSecondary,
-                    fontSize = 11.sp
-                )
-
-                BasicTextField(
-                    value = tagName,
-                    onValueChange = { tagName = it },
-                    singleLine = true,
-                    textStyle = TextStyle(
-                        color = neuColors.textPrimary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    cursorBrush = SolidColor(neuColors.accentPrimary),
-                    decorationBox = { innerTextField ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(neuColors.surfaceContainer)
-                                .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(10.dp))
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            if (tagName.isEmpty()) {
-                                Text(
-                                    text = strings.contactsTagNamePlaceholder,
-                                    color = neuColors.textTertiary,
-                                    fontSize = 12.sp
-                                )
-                            }
-                            innerTextField()
-                        }
-                    }
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .springClickable { onDismiss() }
-                            .padding(horizontal = 14.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = strings.contactsCancelBtn,
-                            color = neuColors.textSecondary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (tagName.isNotBlank()) neuColors.accentPrimary else neuColors.surfaceContainer)
-                            .then(if (tagName.isNotBlank()) Modifier.springClickable { onConfirm(tagName) } else Modifier)
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = strings.contactsSaveBtn,
-                            color = if (tagName.isNotBlank()) Color.White else neuColors.textTertiary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
             }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = displayName,
+                    color = c.label,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = subtitle,
+                    color = c.secondaryLabel,
+                    fontSize = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            IconButton(onClick = onToggleExpanded) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = t.editContact,
+                    tint = if (expanded) c.blue else c.tertiaryLabel,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            RoundCheck(checked = contact.isSelected)
         }
-    }
-}
 
-@Composable
-private fun ManageContactTagsDialog(
-    contact: ContactEntity,
-    strings: AppStrings,
-    availableTags: List<TagEntity>,
-    onDismiss: () -> Unit,
-    onToggleTag: (String, Boolean) -> Unit,
-    onCreateAndAssignTag: (String) -> Unit
-) {
-    val neuColors = LocalNeumorphicColors.current
-    val assignedTags = remember(contact.tagsJson) {
-        ContactRepository.parseTagsJson(contact.tagsJson).toSet()
-    }
-    var newTagInput by remember { mutableStateOf("") }
-
-    Dialog(onDismissRequest = onDismiss) {
-        NeumorphicCard(
-            modifier = Modifier.fillMaxWidth(),
-            cornerRadius = 16.dp,
-            elevation = 6.dp
-        ) {
+        if (expanded) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                    .padding(start = 72.dp, end = 16.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = strings.contactsManageTagsTitle,
-                            color = neuColors.textPrimary,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = contact.rawName.replace(Regex("\\(.*?\\)"), "").trim(),
-                            color = neuColors.accentPrimary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .neumorphic(elevation = 2.dp, cornerRadius = 14.dp)
-                            .springClickable { onDismiss() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Cancel,
-                            contentDescription = strings.contactsCloseBtn,
-                            tint = neuColors.textSecondary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-
-                Text(
-                    text = strings.contactsManageTagsDesc,
-                    color = neuColors.textSecondary,
-                    fontSize = 11.sp
+                Text(text = contact.phoneNumber, color = c.secondaryLabel, fontSize = 13.sp)
+                Text(text = t.nicknameLabel, color = c.secondaryLabel, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                NicknameEditor(
+                    contact = contact,
+                    placeholder = t.nicknameHint(nicknameFallback),
+                    onNicknameChange = onNicknameChange
                 )
-
-                // List of tags as clickable toggle chips
-                val allTagNames = (listOf("Keluarga", "Teman", "Bisnis") + availableTags.map { it.name }).distinct()
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    for (tagName in allTagNames) {
-                        val isAssigned = assignedTags.contains(tagName)
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(if (isAssigned) neuColors.accentPrimary else neuColors.surfaceContainer)
-                                .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(14.dp))
-                                .springClickable { onToggleTag(tagName, isAssigned) }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                if (isAssigned) {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                }
-                                Text(
-                                    text = tagName,
-                                    color = if (isAssigned) Color.White else neuColors.textPrimary,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Add custom tag inline
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    BasicTextField(
-                        value = newTagInput,
-                        onValueChange = { newTagInput = it },
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            color = neuColors.textPrimary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        cursorBrush = SolidColor(neuColors.accentPrimary),
-                        decorationBox = { innerTextField ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(neuColors.surfaceContainer)
-                                    .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(8.dp))
-                                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                                contentAlignment = Alignment.CenterStart
-                            ) {
-                                if (newTagInput.isEmpty()) {
-                                    Text(
-                                        text = strings.contactsAddNewTagOption,
-                                        color = neuColors.textTertiary,
-                                        fontSize = 11.sp
-                                    )
-                                }
-                                innerTextField()
-                            }
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (newTagInput.isNotBlank()) neuColors.accentPrimary else neuColors.surfaceContainer)
-                            .then(
-                                if (newTagInput.isNotBlank()) Modifier.springClickable {
-                                    onCreateAndAssignTag(newTagInput)
-                                    newTagInput = ""
-                                } else Modifier
-                            )
-                            .padding(horizontal = 12.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = strings.contactsAddBtn,
-                            color = if (newTagInput.isNotBlank()) Color.White else neuColors.textTertiary,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                // Selesai Button
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(neuColors.accentPrimary)
-                        .springClickable { onDismiss() }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = strings.contactsDoneBtn,
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    TintPill(text = t.firstNameOnly, background = c.blueTint, content = c.blueOnTint, onClick = onQuickFirstName)
+                    TintPill(text = t.removeNotes, background = c.blueTint, content = c.blueOnTint, onClick = onQuickRemoveNotes)
+                    TintPill(text = t.addGreeting, background = c.blueTint, content = c.blueOnTint, onClick = onQuickAddGreeting)
+                    TintPill(text = t.labels, background = c.purpleTint, content = c.purpleOnTint, icon = Icons.Default.Sell, onClick = onManageTags)
                 }
             }
         }
     }
 }
 
+/**
+ * Saves the nickname 400 ms after the last keystroke instead of on every key,
+ * and flushes a pending edit if the row scrolls away or collapses.
+ */
+@Composable
+private fun NicknameEditor(
+    contact: ContactEntity,
+    placeholder: String,
+    onNicknameChange: (String) -> Unit
+) {
+    var text by remember(contact.id) { mutableStateOf(contact.customNickname) }
+    var lastSent by remember(contact.id) { mutableStateOf<String?>(null) }
+    val latestText by rememberUpdatedState(text)
+    val saved by rememberUpdatedState(contact.customNickname)
+    val save by rememberUpdatedState(onNicknameChange)
+
+    // Pick up changes made elsewhere (quick formats), but ignore the echo of our own save.
+    LaunchedEffect(contact.customNickname) {
+        if (contact.customNickname != lastSent) text = contact.customNickname
+    }
+    LaunchedEffect(text) {
+        delay(400)
+        if (text != saved) {
+            lastSent = text
+            save(text)
+        }
+    }
+    DisposableEffect(contact.id) {
+        onDispose { if (latestText != saved) save(latestText) }
+    }
+
+    AppleTextField(value = text, onValueChange = { text = it }, placeholder = placeholder)
+}
+
+@Composable
+private fun RoundCheck(checked: Boolean) {
+    val c = AppleTheme.colors
+    Box(
+        modifier = Modifier
+            .size(26.dp)
+            .clip(CircleShape)
+            .then(if (checked) Modifier.background(c.blue) else Modifier.border(2.dp, c.tertiaryLabel, CircleShape)),
+        contentAlignment = Alignment.Center
+    ) {
+        if (checked) {
+            Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun SelectionBar(
+    text: String,
+    labelText: String,
+    useText: String,
+    onLabel: () -> Unit,
+    onUse: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val c = AppleTheme.colors
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        modifier = modifier
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .fillMaxWidth()
+            .heightIn(min = 60.dp)
+            .shadow(12.dp, shape)
+            .clip(shape)
+            .background(if (c.isDark) c.cardInset else c.label.copy(alpha = 0.94f))
+            .padding(start = 18.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = text,
+            color = Color.White,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        FilledButton(text = labelText, onClick = onLabel, background = Color.White.copy(alpha = 0.14f))
+        FilledButton(text = useText, onClick = onUse)
+    }
+}
+
+/** Blue (or custom-coloured) rounded button, ≥ 44 dp tall. */
+@Composable
+private fun FilledButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    background: Color = AppleTheme.colors.blue,
+    content: Color = Color.White,
+    icon: ImageVector? = null
+) {
+    val c = AppleTheme.colors
+    Row(
+        modifier = modifier
+            .heightIn(min = 44.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (enabled) background else c.fill)
+            .semantics { role = Role.Button }
+            .springClickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val tint = if (enabled) content else c.tertiaryLabel
+        if (icon != null) Icon(imageVector = icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+        Text(text = text, color = tint, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+    }
+}
+
+@Composable
+private fun TextAction(text: String, color: Color, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .heightIn(min = 44.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .semantics { role = Role.Button }
+            .springClickable(onClick = onClick)
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = text, color = color, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** iOS grey-filled text field. */
+@Composable
+private fun AppleTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    leadingIcon: ImageVector? = null,
+    trailing: @Composable () -> Unit = {}
+) {
+    val c = AppleTheme.colors
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        textStyle = TextStyle(color = c.label, fontSize = 16.sp),
+        cursorBrush = SolidColor(c.blue),
+        modifier = modifier.fillMaxWidth(),
+        decorationBox = { innerTextField ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(c.fill)
+                    .padding(start = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (leadingIcon != null) {
+                    Icon(imageVector = leadingIcon, contentDescription = null, tint = c.secondaryLabel, modifier = Modifier.size(18.dp))
+                }
+                Box(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                    if (value.isEmpty()) {
+                        Text(text = placeholder, color = c.secondaryLabel, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    innerTextField()
+                }
+                trailing()
+            }
+        }
+    )
+}
+
+/** White rounded sheet with a title, optional subtitle and a close button. */
+@Composable
+private fun SheetDialog(
+    title: String,
+    subtitle: String?,
+    closeText: String,
+    onDismiss: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val c = AppleTheme.colors
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(c.card)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(verticalAlignment = Alignment.Top) {
+                Column(modifier = Modifier.weight(1f).padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(text = title, color = c.label, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    if (subtitle != null) Text(text = subtitle, color = c.secondaryLabel, fontSize = 14.sp)
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(imageVector = Icons.Default.Close, contentDescription = closeText, tint = c.secondaryLabel)
+                }
+            }
+            content()
+        }
+    }
+}
+
+@Composable
+private fun DialogButtons(
+    t: ContactsTexts,
+    confirmText: String,
+    confirmEnabled: Boolean,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TextAction(text = t.cancel, color = AppleTheme.colors.blue, onClick = onCancel)
+        FilledButton(text = confirmText, enabled = confirmEnabled, onClick = onConfirm)
+    }
+}
+
+@Composable
+private fun TagChoiceRow(tagNames: List<String>, isChosen: (String) -> Boolean, onTap: (String) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        for (name in tagNames) {
+            FilterChip(
+                label = name,
+                selected = isChosen(name),
+                dot = tagColor(name),
+                idleBackground = AppleTheme.colors.fill
+            ) { onTap(name) }
+        }
+    }
+}
+
+@Composable
+private fun CreateTagDialog(
+    t: ContactsTexts,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var tagName by remember { mutableStateOf("") }
+    SheetDialog(title = t.newLabel, subtitle = t.newLabelDesc, closeText = t.close, onDismiss = onDismiss) {
+        AppleTextField(value = tagName, onValueChange = { tagName = it }, placeholder = t.labelNamePlaceholder)
+        DialogButtons(
+            t = t,
+            confirmText = t.save,
+            confirmEnabled = tagName.isNotBlank(),
+            onConfirm = { onConfirm(tagName) },
+            onCancel = onDismiss
+        )
+    }
+}
+
+@Composable
+private fun BatchTagDialog(
+    t: ContactsTexts,
+    selectedCount: Int,
+    tagNames: List<String>,
+    onDismiss: () -> Unit,
+    onApplyTag: (String) -> Unit
+) {
+    var chosen by remember { mutableStateOf("") }
+    var typed by remember { mutableStateOf("") }
+    val effectiveTag = typed.trim().ifEmpty { chosen }
+
+    SheetDialog(title = t.batchTitle(selectedCount), subtitle = t.batchDesc, closeText = t.close, onDismiss = onDismiss) {
+        TagChoiceRow(tagNames = tagNames, isChosen = { it == chosen && typed.isBlank() }) { name ->
+            chosen = if (chosen == name) "" else name
+            typed = ""
+        }
+        AppleTextField(value = typed, onValueChange = { typed = it }, placeholder = t.typeNewLabel)
+        DialogButtons(
+            t = t,
+            confirmText = t.save,
+            confirmEnabled = effectiveTag.isNotBlank(),
+            onConfirm = { onApplyTag(effectiveTag) },
+            onCancel = onDismiss
+        )
+    }
+}
+
+@Composable
+private fun ManageContactTagsDialog(
+    t: ContactsTexts,
+    contact: ContactEntity,
+    tagNames: List<String>,
+    onDismiss: () -> Unit,
+    onToggleTag: (String, Boolean) -> Unit,
+    onCreateAndAssignTag: (String) -> Unit
+) {
+    val assignedTags = remember(contact.tagsJson) { ContactRepository.parseTagsJson(contact.tagsJson).toSet() }
+    var newTagInput by remember { mutableStateOf("") }
+
+    SheetDialog(
+        title = contact.rawName.replace(NOTES_IN_BRACKETS, "").trim().ifEmpty { contact.phoneNumber },
+        subtitle = t.manageDesc,
+        closeText = t.close,
+        onDismiss = onDismiss
+    ) {
+        TagChoiceRow(tagNames = tagNames, isChosen = { it in assignedTags }) { name ->
+            onToggleTag(name, name in assignedTags)
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppleTextField(
+                value = newTagInput,
+                onValueChange = { newTagInput = it },
+                placeholder = t.typeNewLabel,
+                modifier = Modifier.weight(1f)
+            )
+            FilledButton(
+                text = t.add,
+                enabled = newTagInput.isNotBlank(),
+                onClick = {
+                    onCreateAndAssignTag(newTagInput)
+                    newTagInput = ""
+                }
+            )
+        }
+        FilledButton(text = t.done, onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+    }
+}
+
 @Composable
 private fun ImportCsvDialog(
-    strings: AppStrings,
+    t: ContactsTexts,
     onDismiss: () -> Unit,
-    onImportFile: suspend (java.io.InputStream) -> com.wabulk.sender.data.io.CsvParseResult,
-    onImportSample: suspend () -> com.wabulk.sender.data.io.CsvParseResult
+    onImportFile: suspend (java.io.InputStream) -> CsvParseResult,
+    onImportSample: suspend () -> CsvParseResult
 ) {
     val strings = LocalAppStrings.current
-    val neuColors = LocalNeumorphicColors.current
+    val c = AppleTheme.colors
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var lastImportStatus by remember { mutableStateOf<String?>(null) }
     var isSuccess by remember { mutableStateOf(false) }
 
-    val csvPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
+    fun showResult(result: CsvParseResult) {
+        when (result) {
+            is CsvParseResult.Success -> {
+                isSuccess = true
+                lastImportStatus = strings.contactsImportResult(result.contacts.size, result.rowCount)
+            }
+            is CsvParseResult.Error -> {
+                isSuccess = false
+                lastImportStatus = strings.failedWith(result.message)
+            }
+        }
+    }
+
+    val csvPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
             coroutineScope.launch {
                 try {
-                    val stream = withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(uri)
-                    }
+                    val stream = withContext(Dispatchers.IO) { context.contentResolver.openInputStream(uri) }
                     if (stream != null) {
-                        stream.use { s ->
-                            when (val result = onImportFile(s)) {
-                                is com.wabulk.sender.data.io.CsvParseResult.Success -> {
-                                    isSuccess = true
-                                    lastImportStatus = strings.contactsImportResult(result.contacts.size, result.rowCount)
-                                }
-                                is com.wabulk.sender.data.io.CsvParseResult.Error -> {
-                                    isSuccess = false
-                                    lastImportStatus = strings.failedWith(result.message)
-                                }
-                            }
-                        }
+                        stream.use { showResult(onImportFile(it)) }
                     } else {
                         isSuccess = false
                         lastImportStatus = strings.csvOpenFailed
@@ -1531,158 +913,33 @@ private fun ImportCsvDialog(
         }
     }
 
-    Dialog(onDismissRequest = onDismiss) {
-        NeumorphicCard(
-            modifier = Modifier.fillMaxWidth(),
-            cornerRadius = 16.dp,
-            elevation = 6.dp
-        ) {
-            Column(
+    SheetDialog(title = t.importCsv, subtitle = t.importDesc, closeText = t.close, onDismiss = onDismiss) {
+        FilledButton(
+            text = t.importPickFile,
+            icon = Icons.Default.UploadFile,
+            onClick = { csvPickerLauncher.launch("*/*") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        FilledButton(
+            text = t.importSample,
+            icon = Icons.Default.AutoFixHigh,
+            background = c.blueTint,
+            content = c.blueOnTint,
+            onClick = { coroutineScope.launch { showResult(onImportSample()) } },
+            modifier = Modifier.fillMaxWidth()
+        )
+        lastImportStatus?.let { status ->
+            Text(
+                text = status,
+                color = if (isSuccess) c.greenOnTint else c.redOnTint,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = strings.contactsImportDialogTitle,
-                            color = neuColors.textPrimary,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = strings.csvImportTitle,
-                            color = neuColors.textSecondary,
-                            fontSize = 11.sp
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .neumorphic(elevation = 2.dp, cornerRadius = 14.dp)
-                            .springClickable { onDismiss() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Cancel,
-                            contentDescription = strings.contactsCloseBtn,
-                            tint = neuColors.textSecondary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
-
-                // Option 1: File Picker
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(neuColors.accentPrimary)
-                        .springClickable { csvPickerLauncher.launch("*/*") },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.UploadFile,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = strings.contactsImportPickFile,
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
-                // Option 2: Sample CSV Loader
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .neumorphic(elevation = 2.dp, cornerRadius = 12.dp)
-                        .springClickable {
-                            coroutineScope.launch {
-                                val result = onImportSample()
-                                if (result is com.wabulk.sender.data.io.CsvParseResult.Success) {
-                                    isSuccess = true
-                                    lastImportStatus = strings.contactsImportResult(result.contacts.size, result.rowCount)
-                                } else if (result is com.wabulk.sender.data.io.CsvParseResult.Error) {
-                                    isSuccess = false
-                                    lastImportStatus = strings.failedWith(result.message)
-                                }
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AutoFixHigh,
-                            contentDescription = null,
-                            tint = neuColors.accentPrimary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = strings.contactsImportLoadSample,
-                            color = neuColors.textPrimary,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-
-                // Status banner if present
-                if (lastImportStatus != null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSuccess) neuColors.accentPrimary.copy(alpha = 0.15f) else Color(0x33FF5252))
-                            .padding(horizontal = 10.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = lastImportStatus!!,
-                            color = if (isSuccess) neuColors.accentPrimary else Color(0xFFFF5252),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-
-                // Close Button
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .neumorphic(elevation = 1.dp, cornerRadius = 10.dp)
-                        .springClickable { onDismiss() }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = strings.contactsCloseBtn,
-                        color = neuColors.textPrimary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (isSuccess) c.greenTint else c.redTint)
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+            )
         }
     }
 }

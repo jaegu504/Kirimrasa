@@ -5,19 +5,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,286 +21,160 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.wabulk.sender.data.locale.LocalAppStrings
+import com.wabulk.sender.data.locale.composerTexts
 import com.wabulk.sender.domain.model.MediaAttachment
 import com.wabulk.sender.domain.model.MediaType
 import com.wabulk.sender.domain.model.MessageBubble
 import com.wabulk.sender.domain.spintax.SpintaxParser
-import com.wabulk.sender.theme.EmeraldPrimary
-import com.wabulk.sender.theme.EmeraldSecondaryContainer
-import com.wabulk.sender.theme.LocalNeumorphicColors
-import com.wabulk.sender.theme.StatusError
+import com.wabulk.sender.theme.AppleTheme
+import com.wabulk.sender.theme.IconTile
+import com.wabulk.sender.theme.RowSeparator
+import com.wabulk.sender.theme.TileGradients
 import com.wabulk.sender.theme.WhatsAppBlueTicks
-import com.wabulk.sender.theme.WhatsAppChatBubbleGreen
-import com.wabulk.sender.theme.WhatsAppChatBubbleText
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
+/** Live WhatsApp-style preview: each bubble as the contact will see it, files inside their bubble. */
 @Composable
 fun WhatsAppPreviewBubble(
     bubbles: List<MessageBubble>,
     attachments: List<MediaAttachment>,
-    modifier: Modifier = Modifier,
-    contactName: String = "Sarah Miller",
-    contactInitials: String = "S",
-    customVariables: Map<String, String> = emptyMap()
+    contactName: String,
+    customVariables: Map<String, String>,
+    modifier: Modifier = Modifier
 ) {
-    val strings = LocalAppStrings.current
-    val neuColors = LocalNeumorphicColors.current
+    val c = AppleTheme.colors
+    val t = composerTexts()
+    val time = remember { SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date()) }
+    val initials = contactName.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1).uppercase() }
 
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(neuColors.surface)
-    ) {
-        // WhatsApp Top Recipient Header Bar
+    // (text, files) per chat bubble; files outside the bubbles go last on their own
+    val entries = bubbles.mapIndexed { i, b -> b.text to attachments.filter { it.bubbleIndex == i } } +
+        attachments.filter { it.bubbleIndex !in bubbles.indices }.map { "" to listOf(it) }
+    val visible = entries.filter { (text, files) -> text.isNotBlank() || files.isNotEmpty() }
+
+    Column(modifier = modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp))) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(neuColors.surfaceRaised)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .background(c.card)
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(EmeraldSecondaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = contactInitials,
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Column {
-                    Text(
-                        text = contactName,
-                        color = neuColors.textPrimary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = strings.composerOnlinePreview,
-                        color = neuColors.primary,
-                        fontSize = 9.sp
-                    )
-                }
-            }
-
-            Row(
+            Box(
                 modifier = Modifier
+                    .size(34.dp)
                     .clip(CircleShape)
-                    .background(neuColors.surfaceInset)
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    .background(Brush.linearGradient(TileGradients.Orange)),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Visibility,
-                    contentDescription = null,
-                    tint = neuColors.primary,
-                    modifier = Modifier.size(11.dp)
-                )
-                Text(
-                    text = strings.composerLivePreviewTitle,
-                    color = neuColors.textSecondary,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = initials, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            }
+            Column {
+                Text(text = contactName, color = c.label, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(text = t.typing, color = c.greenOnTint, fontSize = 13.sp)
             }
         }
+        RowSeparator(startInset = 0.dp)
 
-        // WhatsApp Wallpaper Container
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFF080D11))
-                .padding(12.dp)
+                .background(Brush.verticalGradient(listOf(c.chatWallpaperTop, c.chatWallpaperBottom)))
+                .padding(start = 12.dp, end = 12.dp, top = 14.dp, bottom = 16.dp),
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .fillMaxWidth(0.90f),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                // Media preview if attachments exist
-                if (attachments.isNotEmpty()) {
-                    val firstAttachment = attachments.first()
-                    PreviewMediaCard(attachment = firstAttachment)
+            if (visible.isEmpty()) {
+                Text(
+                    text = t.previewEmpty,
+                    color = c.secondaryLabel,
+                    fontSize = 15.sp,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+            visible.forEachIndexed { index, (text, files) ->
+                val resolved = remember(text, contactName, customVariables) {
+                    SpintaxParser.interpolateVariables(SpintaxParser.spin(text), contactName, customVariables)
                 }
-
-                // Render each message bubble
-                bubbles.forEachIndexed { index, bubble ->
-                    val resolvedText = remember(bubble.text, contactName, customVariables) {
-                        val spun = SpintaxParser.spin(bubble.text)
-                        val nick = contactName.split(" ").firstOrNull() ?: "Sarah"
-                        SpintaxParser.interpolateVariables(
-                            text = spun,
-                            nickname = nick,
-                            variables = customVariables
-                        )
-                    }
-
-                    SingleWhatsAppBubble(
-                        text = resolvedText.ifEmpty { "..." },
-                        timestamp = "10:${42 + index} AM",
-                        isFirst = index == 0,
-                        isLast = index == bubbles.lastIndex
-                    )
-                }
+                ChatBubble(text = resolved, files = files, time = time, isFirst = index == 0)
             }
         }
     }
 }
 
 @Composable
-private fun PreviewMediaCard(attachment: MediaAttachment) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(100.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.Black.copy(alpha = 0.5f)),
-        contentAlignment = Alignment.Center
-    ) {
-        when (attachment.mediaType) {
-            MediaType.IMAGE -> {
-                if (attachment.uriString.isNotBlank() && !attachment.uriString.startsWith("dummy")) {
-                    AsyncImage(
-                        model = attachment.uriString,
-                        contentDescription = attachment.fileName,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp)
-                    )
-                } else {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Image,
-                            contentDescription = null,
-                            tint = EmeraldPrimary,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Text(
-                            text = attachment.fileName.uppercase(),
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-            MediaType.VIDEO -> {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.6f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Text(
-                        text = "${attachment.fileName} (${attachment.formattedSize})",
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            MediaType.DOCUMENT, MediaType.AUDIO -> {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PictureAsPdf,
-                        contentDescription = null,
-                        tint = StatusError,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Text(
-                        text = "${attachment.fileName} • ${attachment.formattedSize}",
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SingleWhatsAppBubble(
-    text: String,
-    timestamp: String,
-    isFirst: Boolean,
-    isLast: Boolean
-) {
+private fun ChatBubble(text: String, files: List<MediaAttachment>, time: String, isFirst: Boolean) {
+    val c = AppleTheme.colors
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(
-                RoundedCornerShape(
-                    topStart = 14.dp,
-                    topEnd = if (isFirst) 4.dp else 12.dp,
-                    bottomStart = 14.dp,
-                    bottomEnd = if (isLast) 14.dp else 6.dp
-                )
-            )
-            .background(WhatsAppChatBubbleGreen)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .widthIn(max = 280.dp)
+            .clip(RoundedCornerShape(topStart = 14.dp, topEnd = if (isFirst) 4.dp else 14.dp, bottomStart = 14.dp, bottomEnd = 14.dp))
+            .background(c.chatBubble)
+            .padding(4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            text = text,
-            color = WhatsAppChatBubbleText,
-            fontSize = 12.sp,
-            lineHeight = 17.sp
-        )
-
-        Row(
-            modifier = Modifier.align(Alignment.End),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
+        files.forEach { file ->
+            if (file.mediaType == MediaType.IMAGE) {
+                AsyncImage(
+                    model = file.uriString,
+                    contentDescription = file.fileName,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .widthIn(min = 220.dp)
+                        .height(150.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(c.fill)
+                )
+            } else {
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(c.fill)
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconTile(icon = file.mediaType.icon, gradient = file.mediaType.gradient, size = 36.dp)
+                    Text(
+                        text = file.fileName,
+                        color = c.label,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+        if (text.isNotBlank()) {
             Text(
-                text = timestamp,
-                color = Color(0xFF8696A0),
-                fontSize = 10.sp
+                text = text,
+                color = c.label,
+                fontSize = 15.sp,
+                lineHeight = 21.sp,
+                modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = 4.dp)
             )
-            Icon(
-                imageVector = Icons.Default.DoneAll,
-                contentDescription = "Read",
-                tint = WhatsAppBlueTicks,
-                modifier = Modifier.size(13.dp)
-            )
+        }
+        Row(
+            modifier = Modifier.align(Alignment.End).padding(end = 6.dp, bottom = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = time, color = c.secondaryLabel, fontSize = 11.sp)
+            Icon(imageVector = Icons.Default.DoneAll, contentDescription = null, tint = WhatsAppBlueTicks, modifier = Modifier.size(15.dp))
         }
     }
 }

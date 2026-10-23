@@ -11,7 +11,6 @@ data class AntiBanConfig(
     val customMinSec: Int = 30,
     val customMaxSec: Int = 70,
     val typingSimEnabled: Boolean = true,
-    val autoRotateEnabled: Boolean = true,
     val pauseDurationMin: Int = 5,
     val batchSize: Int = 25
 ) {
@@ -55,7 +54,6 @@ object AntiBanSettings {
             customMinSec = p.getInt("custom_min", d.customMinSec),
             customMaxSec = p.getInt("custom_max", d.customMaxSec),
             typingSimEnabled = p.getBoolean("typing_sim", d.typingSimEnabled),
-            autoRotateEnabled = p.getBoolean("auto_rotate", d.autoRotateEnabled),
             pauseDurationMin = p.getInt("pause_min", d.pauseDurationMin),
             batchSize = p.getInt("batch_size", d.batchSize)
         )
@@ -69,7 +67,6 @@ object AntiBanSettings {
             ?.putInt("custom_min", c.customMinSec)
             ?.putInt("custom_max", c.customMaxSec)
             ?.putBoolean("typing_sim", c.typingSimEnabled)
-            ?.putBoolean("auto_rotate", c.autoRotateEnabled)
             ?.putInt("pause_min", c.pauseDurationMin)
             ?.putInt("batch_size", c.batchSize)
             ?.apply()

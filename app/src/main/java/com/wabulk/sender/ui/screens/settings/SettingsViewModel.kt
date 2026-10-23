@@ -2,9 +2,6 @@ package com.wabulk.sender.ui.screens.settings
 
 import com.wabulk.sender.engine.queue.AntiBanConfig
 import com.wabulk.sender.engine.queue.AntiBanSettings
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import com.wabulk.sender.data.locale.LocalizationManager
 import android.app.Application
 import android.content.ClipData
@@ -44,14 +41,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     // Anti-ban settings: persisted in AntiBanSettings and read by the dispatch queue
     val antiBanConfig: StateFlow<AntiBanConfig> = AntiBanSettings.config
-    val selectedPreset: StateFlow<Int> = antiBanConfig.mapState { it.preset }
-    val typingSimEnabled: StateFlow<Boolean> = antiBanConfig.mapState { it.typingSimEnabled }
-    val autoRotateEnabled: StateFlow<Boolean> = antiBanConfig.mapState { it.autoRotateEnabled }
-    val pauseDurationMin: StateFlow<Int> = antiBanConfig.mapState { it.pauseDurationMin }
-    val batchSizeMsgs: StateFlow<Int> = antiBanConfig.mapState { it.batchSize }
-
-    private fun <T> StateFlow<AntiBanConfig>.mapState(pick: (AntiBanConfig) -> T): StateFlow<T> =
-        map(pick).stateIn(viewModelScope, SharingStarted.Eagerly, pick(value))
 
     private val _selectedAiTone = MutableStateFlow(1) // 0: Casual, 1: Friendly, 2: Formal
     val selectedAiTone: StateFlow<Int> = _selectedAiTone.asStateFlow()
@@ -69,8 +58,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun toggleTypingSim(enabled: Boolean) = AntiBanSettings.update { it.copy(typingSimEnabled = enabled) }
-
-    fun toggleAutoRotate(enabled: Boolean) = AntiBanSettings.update { it.copy(autoRotateEnabled = enabled) }
 
     fun incrementPauseDuration() = AntiBanSettings.update { it.copy(pauseDurationMin = it.pauseDurationMin + 1) }
 
@@ -122,10 +109,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun requestNewPairingCode(node: AccountNode): String {
-        return sessionManager.requestNewPairingCode(node)
-    }
-
     fun requestGatewayPairingCode(node: AccountNode, phoneNumber: String, onResult: (Result<String>) -> Unit) {
         viewModelScope.launch {
             try {
@@ -158,15 +141,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         sessionManager.updateNodePhone(node, phone, getApplication())
     }
 
-    fun connectNode(node: AccountNode, phone: String = "") {
-        sessionManager.connectNode(node, phone)
-    }
-
     suspend fun pingNode(node: AccountNode): Boolean {
         return sessionManager.pingNode(node, getApplication())
     }
 
-    fun copyCodeAndOpenWhatsApp(code: String) {
+    fun copyCodeAndOpenWhatsApp(code: String, node: AccountNode) {
         val context = getApplication<Application>()
         // 1. Copy to clipboard
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -176,8 +155,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
         // 2. Open WhatsApp intent
         try {
-            val launchIntent = context.packageManager.getLaunchIntentForPackage("com.whatsapp")
-                ?: context.packageManager.getLaunchIntentForPackage("com.whatsapp.w4b")
+            // Open the app that belongs to this account first, then the other one
+            val packages = if (node == AccountNode.PERSONAL) listOf("com.whatsapp", "com.whatsapp.w4b") else listOf("com.whatsapp.w4b", "com.whatsapp")
+            val launchIntent = packages.firstNotNullOfOrNull { context.packageManager.getLaunchIntentForPackage(it) }
                 ?: Intent(Intent.ACTION_VIEW, Uri.parse("https://web.whatsapp.com"))
             launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(launchIntent)

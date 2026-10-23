@@ -33,8 +33,9 @@ class QueueViewModel(application: Application) : AndroidViewModel(application) {
     val isPaused: StateFlow<Boolean> = queueManager.isPaused
     val isRunning: StateFlow<Boolean> = queueManager.isRunning
     val jitterCountdown: StateFlow<Int> = queueManager.jitterCountdown
+    val isCoolingDown: StateFlow<Boolean> = queueManager.isCoolingDown
     val currentTypingContact: StateFlow<String?> = queueManager.currentTypingContact
-    val campaignTitle: StateFlow<String> = queueManager.campaignTitle
+    val queueItems: StateFlow<List<QueueItem>> = queueManager.queueItems
 
     private val _selectedFilter = MutableStateFlow(QueueStatusFilter.ALL)
     val selectedFilter: StateFlow<QueueStatusFilter> = _selectedFilter.asStateFlow()
@@ -48,6 +49,7 @@ class QueueViewModel(application: Application) : AndroidViewModel(application) {
             QueueStatusFilter.ACTIVE -> items.filter { it.status == QueueTaskStatus.TYPING }
             QueueStatusFilter.DELIVERED -> items.filter { it.status == QueueTaskStatus.DELIVERED }
             QueueStatusFilter.PENDING -> items.filter { it.status == QueueTaskStatus.PENDING || it.status == QueueTaskStatus.PAUSED }
+            QueueStatusFilter.FAILED -> items.filter { it.status == QueueTaskStatus.FAILED }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -58,15 +60,6 @@ class QueueViewModel(application: Application) : AndroidViewModel(application) {
     val sentCount: StateFlow<Int> = combine(queueManager.queueItems) { items ->
         items.first().count { it.status == QueueTaskStatus.DELIVERED }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), queueManager.sentCount)
-
-    val percentComplete: StateFlow<Int> = combine(queueManager.queueItems) { items ->
-        val list = items.first()
-        if (list.isEmpty()) 0 else ((list.count { it.status == QueueTaskStatus.DELIVERED }.toFloat() / list.size.toFloat()) * 100).toInt()
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), queueManager.percentComplete)
-
-    val remainingCount: StateFlow<Int> = combine(queueManager.queueItems) { items ->
-        items.first().count { it.status == QueueTaskStatus.PENDING || it.status == QueueTaskStatus.TYPING }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), queueManager.remainingCount)
 
     fun setFilter(filter: QueueStatusFilter) {
         _selectedFilter.value = filter

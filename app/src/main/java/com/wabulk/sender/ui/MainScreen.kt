@@ -153,6 +153,11 @@ fun MainScreen(
                     ScreenTab.COMPOSE -> ComposerScreen(
                         viewModel = composerViewModel,
                         onOpenHelp = { showTutorial = true },
+                        onOpenContacts = { currentTab = ScreenTab.CONTACTS },
+                        totalContactCount = contacts.size,
+                        previewContactName = contacts.firstOrNull { it.isSelected }?.let { c ->
+                            c.customNickname.ifBlank { com.wabulk.sender.data.repository.ContactRepository.extractSmartNickname(c.rawName) }
+                        },
                         selectedContactCount = selectedCount,
                         onLaunchCampaign = {
                             scope.launch {
@@ -198,7 +203,10 @@ fun MainScreen(
                             }
                         }
                     )
-                    ScreenTab.CONTACTS -> ContactManagerScreen(viewModel = contactViewModel)
+                    ScreenTab.CONTACTS -> ContactManagerScreen(
+                        viewModel = contactViewModel,
+                        onUseSelection = { currentTab = ScreenTab.COMPOSE }
+                    )
                     ScreenTab.QUEUE -> LiveQueueScreen()
                     ScreenTab.SETTINGS -> SettingsScreen(
                         currentLanguage = currentLanguage,
