@@ -373,9 +373,9 @@ interface AppStrings {
 }
 
 object IndonesianStrings : AppStrings {
-    override val navCompose = "Buat Pesan"
+    override val navCompose = "Kirim"
     override val navContacts = "Kontak"
-    override val navQueue = "Antrean"
+    override val navQueue = "Status"
     override val navSettings = "Pengaturan"
 
     override val appTitle = "Kirimrasa"
@@ -737,9 +737,9 @@ object IndonesianStrings : AppStrings {
 }
 
 object TurkishStrings : AppStrings {
-    override val navCompose = "Mesaj Oluştur"
+    override val navCompose = "Gönder"
     override val navContacts = "Kişiler"
-    override val navQueue = "Sıra"
+    override val navQueue = "Durum"
     override val navSettings = "Ayarlar"
 
     override val appTitle = "Kirimrasa"

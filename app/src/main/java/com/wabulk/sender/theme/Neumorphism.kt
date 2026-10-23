@@ -33,15 +33,15 @@ enum class ThemeMode {
 }
 
 object ThemeManager {
-    private val _themeMode = MutableStateFlow(ThemeMode.DARK)
+    private val _themeMode = MutableStateFlow(ThemeMode.SYSTEM)
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
     private var prefs: SharedPreferences? = null
 
     fun init(context: Context) {
         prefs = context.getSharedPreferences("kirimrasa_theme_prefs", Context.MODE_PRIVATE)
-        val saved = prefs?.getString("theme_mode", ThemeMode.DARK.name) ?: ThemeMode.DARK.name
-        _themeMode.value = runCatching { ThemeMode.valueOf(saved) }.getOrDefault(ThemeMode.DARK)
+        val saved = prefs?.getString("theme_mode", ThemeMode.SYSTEM.name) ?: ThemeMode.SYSTEM.name
+        _themeMode.value = runCatching { ThemeMode.valueOf(saved) }.getOrDefault(ThemeMode.SYSTEM)
     }
 
     fun setThemeMode(mode: ThemeMode) {
@@ -76,25 +76,25 @@ data class NeumorphicColors(
     val surfaceContainer: Color get() = surfaceRaised
 }
 
-// Dark Apple Glassmorphic Theme
+// Legacy tokens, aligned with AppleColors so screens not yet restyled still match
 val DarkNeumorphicColors = NeumorphicColors(
-    background = Color(0xFF0B0F17),
-    surface = Color(0x8C1E293B),        // 55% translucent slate frosted glass
-    surfaceRaised = Color(0xB31E293B),  // 70% translucent slate
-    surfaceInset = Color(0x660F172A),   // Deep translucent inset
-    lightShadow = Color(0x1538BDF8),
+    background = Color(0xFF000000),
+    surface = Color(0xFF1C1C1E),
+    surfaceRaised = Color(0xFF2C2C2E),
+    surfaceInset = Color(0xFF2C2C2E),
+    lightShadow = Color(0x00000000),
     darkShadow = Color(0x40000000),
-    primary = Color(0xFF10B981),        // Apple Emerald
-    onPrimary = Color(0xFF003915),
-    primaryContainer = Color(0x3310B981),
-    onPrimaryContainer = Color(0xFF6EE7B7),
-    textPrimary = Color(0xFFF8FAFC),    // Slate 50 - Crisp White
-    textMuted = Color(0xFF94A3B8),      // Slate 400
-    textSubdued = Color(0xFF64748B),    // Slate 500
+    primary = Color(0xFF0A84FF),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF0B2A4F),
+    onPrimaryContainer = Color(0xFF7AB8FF),
+    textPrimary = Color(0xFFFFFFFF),
+    textMuted = Color(0xFFAEAEB2),
+    textSubdued = Color(0xFF8E8E93),
     borderBevel = Brush.verticalGradient(
         listOf(
-            Color(0x4D94A3B8),          // Top specular rim
-            Color(0x1A475569)           // Bottom diffuse border
+            Color(0x33FFFFFF),
+            Color(0x14FFFFFF)
         )
     ),
     isDark = true
@@ -102,23 +102,23 @@ val DarkNeumorphicColors = NeumorphicColors(
 
 // Light Apple Glassmorphic Theme (High contrast, crystal clear)
 val LightNeumorphicColors = NeumorphicColors(
-    background = Color(0xFFF4F7FB),
-    surface = Color(0xEBFFFFFF),        // 92% translucent white frosted glass
-    surfaceRaised = Color(0xF5F8FAFC),  // 96% white
-    surfaceInset = Color(0xCCF1F5F9),   // Light slate inset
+    background = Color(0xFFF2F2F7),
+    surface = Color(0xFFFFFFFF),
+    surfaceRaised = Color(0xFFF4F5F8),
+    surfaceInset = Color(0xFFF4F5F8),
     lightShadow = Color(0x80FFFFFF),
-    darkShadow = Color(0x0F0F172A),
-    primary = Color(0xFF059669),        // Emerald 600
+    darkShadow = Color(0x0F000000),
+    primary = Color(0xFF007AFF),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFD1FAE5),
-    onPrimaryContainer = Color(0xFF065F46),
-    textPrimary = Color(0xFF0F172A),    // Slate 900 - Deep, readable text
-    textMuted = Color(0xFF475569),      // Slate 600
-    textSubdued = Color(0xFF64748B),    // Slate 500
+    primaryContainer = Color(0xFFEAF2FF),
+    onPrimaryContainer = Color(0xFF0A5FD6),
+    textPrimary = Color(0xFF1C1C1E),
+    textMuted = Color(0xFF5C5C61),
+    textSubdued = Color(0xFF8E8E93),
     borderBevel = Brush.verticalGradient(
         listOf(
-            Color(0xCCFFFFFF),          // Crisp light highlight
-            Color(0x40CBD5E1)           // Subtle slate border
+            Color(0x00FFFFFF),
+            Color(0x1F3C3C43)
         )
     ),
     isDark = false

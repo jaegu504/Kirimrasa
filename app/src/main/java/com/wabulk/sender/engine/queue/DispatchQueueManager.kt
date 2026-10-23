@@ -1,5 +1,6 @@
 package com.wabulk.sender.engine.queue
 
+import com.wabulk.sender.domain.model.MediaAttachment
 import com.wabulk.sender.data.locale.LocalizationManager
 import android.content.Context
 import android.content.Intent
@@ -291,7 +292,11 @@ class DispatchQueueManager private constructor(
 
                 // Resolve engine for this node
                 val sessionManager = WhatsAppSessionManager.getInstance()
-                val engine = sessionManager.getEngineForNode(nextItem.nodeUsed, context)
+                // Dual-account mode: skip an account that is not connected when the other one is
+                val nodeForItem = nextItem.fallbackNode
+                    ?.takeIf { !sessionManager.isConnected(nextItem.nodeUsed) && sessionManager.isConnected(it) }
+                    ?: nextItem.nodeUsed
+                val engine = sessionManager.getEngineForNode(nodeForItem, context)
 
                 // Phase: Typing simulation
                 _currentTypingContact.value = nextItem.recipientName
@@ -314,49 +319,19 @@ class DispatchQueueManager private constructor(
                 }
                 if (!_isRunning.value) break
 
-                // Phase: Send Message (Supporting Split Messages & Media Attachments)
+                // Phase: Send Message. Each file goes out with the bubble it is placed on (bubble text as
+                // caption); files placed "separate" go alone after the last bubble.
                 var overallSuccess = true
                 var lastErrorMessage: String? = null
-
-                if (nextItem.mediaUris.isNotEmpty()) {
-                    // Send media first. If there are bubbles, first bubble is used as caption
-                    val firstBubble = nextItem.bubbleTexts.firstOrNull() ?: ""
-                    val mediaResult = engine.sendMessage(
-                        recipientPhone = nextItem.phoneNumber,
-                        messageText = firstBubble,
-                        mediaUrls = nextItem.mediaUris
-                    )
-                    if (!mediaResult.isSuccess) {
+                val steps = buildSendSteps(nextItem)
+                for ((stepIdx, step) in steps.withIndex()) {
+                    if (!_isRunning.value) break
+                    while (_isPaused.value && _isRunning.value) delay(500)
+                    if (stepIdx > 0 && !skipDelayForTesting) bubblePause(engine, nextItem.phoneNumber, antiBan)
+                    val res = engine.sendMessage(nextItem.phoneNumber, step.text, listOfNotNull(step.mediaUri))
+                    if (!res.isSuccess) {
                         overallSuccess = false
-                        lastErrorMessage = mediaResult.errorMessage
-                    }
-
-                    // Send remaining split message bubbles after media
-                    val remainingBubbles = if (firstBubble.isNotEmpty()) nextItem.bubbleTexts.drop(1) else nextItem.bubbleTexts
-                    for (bubble in remainingBubbles) {
-                        if (!_isRunning.value) break
-                        while (_isPaused.value && _isRunning.value) delay(500)
-                        if (!skipDelayForTesting) bubblePause(engine, nextItem.phoneNumber, antiBan)
-                        val bubbleRes = engine.sendMessage(nextItem.phoneNumber, bubble, emptyList())
-                        if (!bubbleRes.isSuccess) {
-                            overallSuccess = false
-                            lastErrorMessage = bubbleRes.errorMessage
-                        }
-                    }
-                } else {
-                    // No media: Send each bubble as a distinct split message
-                    val bubblesToSend = nextItem.bubbleTexts.ifEmpty { listOf("") }
-                    for ((bIdx, bubble) in bubblesToSend.withIndex()) {
-                        if (!_isRunning.value) break
-                        while (_isPaused.value && _isRunning.value) delay(500)
-                        if (bIdx > 0 && !skipDelayForTesting) {
-                            bubblePause(engine, nextItem.phoneNumber, antiBan)
-                        }
-                        val bubbleRes = engine.sendMessage(nextItem.phoneNumber, bubble, emptyList())
-                        if (!bubbleRes.isSuccess) {
-                            overallSuccess = false
-                            lastErrorMessage = bubbleRes.errorMessage
-                        }
+                        lastErrorMessage = res.errorMessage
                     }
                 }
 
@@ -404,6 +379,29 @@ class DispatchQueueManager private constructor(
                 )
             }
         }
+    }
+
+    internal data class SendStep(val text: String, val mediaUri: String?)
+
+    internal fun buildSendSteps(item: QueueItem): List<SendStep> {
+        val bubbles = item.bubbleTexts
+        // No placement recorded = first bubble (old behaviour); a placement past the last bubble = separate
+        val placement = { i: Int ->
+            val p = item.mediaPlacements.getOrNull(i) ?: 0
+            if (p in bubbles.indices) p else MediaAttachment.SEPARATE_AFTER
+        }
+        val mediaByBubble = item.mediaUris.indices.groupBy(placement)
+        val steps = mutableListOf<SendStep>()
+        bubbles.forEachIndexed { b, text ->
+            val media = mediaByBubble[b].orEmpty()
+            if (media.isEmpty()) {
+                steps += SendStep(text, null)
+            } else {
+                media.forEachIndexed { k, m -> steps += SendStep(if (k == 0) text else "", item.mediaUris[m]) }
+            }
+        }
+        mediaByBubble[MediaAttachment.SEPARATE_AFTER].orEmpty().forEach { m -> steps += SendStep("", item.mediaUris[m]) }
+        return steps.ifEmpty { listOf(SendStep("", null)) }
     }
 
     // 3–6 s between bubbles to one contact, shown as "typing..." when typing simulation is on
@@ -482,10 +480,12 @@ class DispatchQueueManager private constructor(
         fun buildQueueItem(
             contact: ContactEntity,
             bubbles: List<MessageBubble>,
-            defaultCompany: String = "KirimRasa",
-            defaultCustom1: String = "PROMO30",
+            defaultCompany: String = "",
+            defaultCustom1: String = "",
             nodeUsed: AccountNode = AccountNode.PERSONAL,
-            mediaUris: List<String> = emptyList()
+            mediaUris: List<String> = emptyList(),
+            mediaPlacements: List<Int> = emptyList(),
+            fallbackNode: AccountNode? = null
         ): QueueItem {
             val nick = contact.customNickname.ifEmpty { ContactRepository.extractSmartNickname(contact.rawName) }
             val effectiveCompany = contact.company.ifBlank { defaultCompany }
@@ -504,7 +504,9 @@ class DispatchQueueManager private constructor(
                 phoneNumber = contact.phoneNumber,
                 bubbleTexts = evaluatedBubbles,
                 mediaUris = mediaUris,
+                mediaPlacements = mediaPlacements,
                 nodeUsed = nodeUsed,
+                fallbackNode = fallbackNode,
                 status = QueueTaskStatus.PENDING
             )
         }

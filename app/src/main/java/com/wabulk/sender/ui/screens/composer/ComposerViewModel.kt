@@ -82,6 +82,10 @@ class ComposerViewModel(
         return mediaManager.addAttachment(attachment)
     }
 
+    fun setAttachmentPlacement(attachmentId: String, bubbleIndex: Int) {
+        mediaManager.setPlacement(attachmentId, bubbleIndex)
+    }
+
     fun removeAttachment(attachmentId: String) {
         mediaManager.removeAttachment(attachmentId)
     }

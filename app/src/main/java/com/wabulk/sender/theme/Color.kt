@@ -13,7 +13,8 @@ val EmeraldDarkSurfaceHighest = Color(0xFF30353B)
 val EmeraldDarkSurfaceBright = Color(0xFF353A3F)
 
 // Signature Emerald & Green Functional Indicators
-val EmeraldPrimary = Color(0xFF4FF07F)            // Vibrant cyber emerald
+// Legacy name kept for old call sites; now Apple system blue so text stays readable in light mode
+val EmeraldPrimary = Color(0xFF007AFF)
 val EmeraldPrimaryContainer = Color(0xFF25D366)   // WhatsApp brand action green
 val EmeraldOnPrimaryContainer = Color(0xFF005523)
 val EmeraldPrimaryFixed = Color(0xFF66FF8E)

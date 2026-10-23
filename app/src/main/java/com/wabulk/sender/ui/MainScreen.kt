@@ -1,5 +1,7 @@
 package com.wabulk.sender.ui
 
+import com.wabulk.sender.theme.AppleTheme
+import com.wabulk.sender.theme.appleBackground
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -114,176 +116,8 @@ fun MainScreen(
         Scaffold(
             modifier = modifier
                 .fillMaxSize()
-                .appleGlassBackground(neuColors.isDark),
+                .appleBackground(AppleTheme.colors),
             containerColor = Color.Transparent,
-            topBar = {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(neuColors.surface.copy(alpha = 0.85f))
-                        .border(width = 0.5.dp, brush = neuColors.borderBevel, shape = androidx.compose.ui.graphics.RectangleShape)
-                        .statusBarsPadding()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Left: Clean Apple iOS Title with status dot (No logo)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(neuColors.accentPrimary)
-                                    .pulseGlow()
-                            )
-
-                            Text(
-                                text = when (currentTab) {
-                                    ScreenTab.COMPOSE -> strings.navCompose
-                                    ScreenTab.CONTACTS -> strings.navContacts
-                                    ScreenTab.QUEUE -> strings.navQueue
-                                    ScreenTab.SETTINGS -> strings.navSettings
-                                },
-                                color = neuColors.textPrimary,
-                                fontSize = 19.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = PlusJakartaSansFamily,
-                                letterSpacing = (-0.3).sp
-                            )
-                        }
-
-                        // Right: Quick Tutorial + Quick Theme Toggle + Quick Language Toggle Pill
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            // Quick Tutorial / Guide Button
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(neuColors.surfaceContainer)
-                                    .border(0.8.dp, neuColors.borderBevel, CircleShape)
-                                    .springClickable { showTutorial = true },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.HelpOutline,
-                                    contentDescription = strings.tutorialMenuDesc,
-                                    tint = neuColors.accentPrimary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                            // Quick Theme Toggle Button
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(neuColors.surfaceContainer)
-                                    .border(0.8.dp, neuColors.borderBevel, CircleShape)
-                                    .springClickable {
-                                        val nextMode = when (currentThemeMode) {
-                                            ThemeMode.DARK -> ThemeMode.LIGHT
-                                            ThemeMode.LIGHT -> ThemeMode.SYSTEM
-                                            ThemeMode.SYSTEM -> ThemeMode.DARK
-                                        }
-                                        ThemeManager.setThemeMode(nextMode)
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = when (currentThemeMode) {
-                                        ThemeMode.DARK -> Icons.Default.DarkMode
-                                        ThemeMode.LIGHT -> Icons.Default.LightMode
-                                        ThemeMode.SYSTEM -> Icons.Default.BrightnessAuto
-                                    },
-                                    contentDescription = strings.toggleThemeDesc,
-                                    tint = neuColors.accentPrimary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-
-                            // Quick Language Switcher pill in Top Bar (Vector Icon only, no emoji flags)
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(neuColors.surfaceContainer)
-                                    .border(0.8.dp, neuColors.borderBevel, RoundedCornerShape(12.dp))
-                                    .springClickable {
-                                        val nextLang = if (currentLanguage == AppLanguage.INDONESIAN) {
-                                            AppLanguage.TURKISH
-                                        } else {
-                                            AppLanguage.INDONESIAN
-                                        }
-                                        localizationManager.setLanguage(nextLang)
-                                    }
-                                    .padding(horizontal = 8.dp, vertical = 5.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Language,
-                                        contentDescription = null,
-                                        tint = neuColors.accentPrimary,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                    Text(
-                                        text = currentLanguage.code.uppercase(),
-                                        color = neuColors.accentPrimary,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-
-                            // Shield (Quick link to Security Settings)
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(neuColors.surfaceContainer)
-                                    .border(0.8.dp, neuColors.borderBevel, CircleShape)
-                                    .springClickable { currentTab = ScreenTab.SETTINGS },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Shield,
-                                    contentDescription = "Shield",
-                                    tint = neuColors.textSecondary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-
-                            // User Avatar (Quick link to Settings)
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(neuColors.accentPrimary)
-                                    .springClickable { currentTab = ScreenTab.SETTINGS },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = "Profile",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            },
             bottomBar = {
                 EmeraldBottomNav(
                     currentTab = currentTab,
@@ -311,22 +145,26 @@ fun MainScreen(
                 },
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
+                    .padding(innerPadding)
+                    .statusBarsPadding(),
                 label = "tabTransition"
             ) { tab ->
                 when (tab) {
                     ScreenTab.COMPOSE -> ComposerScreen(
                         viewModel = composerViewModel,
+                        onOpenHelp = { showTutorial = true },
                         selectedContactCount = selectedCount,
                         onLaunchCampaign = {
                             scope.launch {
                                 val targetContacts = contactViewModel.getTargetContactsForCampaign()
                                 if (targetContacts.isEmpty()) return@launch
 
-                                val companyVal = composerViewModel.uiState.value.customVariables["Company"] ?: "KirimRasa"
-                                val custom1Val = composerViewModel.uiState.value.customVariables["Custom_1"] ?: "PROMO30"
+                                val companyVal = composerViewModel.uiState.value.customVariables["Company"].orEmpty()
+                                val custom1Val = composerViewModel.uiState.value.customVariables["Custom_1"].orEmpty()
                                 val bubbles = composerViewModel.uiState.value.bubbles.filter { it.text.isNotBlank() }
-                                val mediaUris = composerViewModel.attachments.value.map { it.uriString }
+                                val attachments = composerViewModel.attachments.value
+                                val mediaUris = attachments.map { it.uriString }
+                                val mediaPlacements = attachments.map { it.bubbleIndex }
                                 // Nothing to send: never fall back to a template that would reach real contacts
                                 if (bubbles.isEmpty() && mediaUris.isEmpty()) return@launch
                                 com.wabulk.sender.data.LastMessageStore.save(bubbles.map { it.text })
@@ -343,7 +181,11 @@ fun MainScreen(
                                         defaultCompany = companyVal,
                                         defaultCustom1 = custom1Val,
                                         nodeUsed = chosenNode,
-                                        mediaUris = mediaUris
+                                        mediaUris = mediaUris,
+                                        mediaPlacements = mediaPlacements,
+                                        fallbackNode = if (selectedAccount == AccountNode.DUAL_SYNC) {
+                                            if (chosenNode == AccountNode.PERSONAL) AccountNode.BUSINESS else AccountNode.PERSONAL
+                                        } else null
                                     )
                                 }
                                 val formattedDate = java.text.SimpleDateFormat("dd MMM HH:mm", java.util.Locale.getDefault()).format(java.util.Date())

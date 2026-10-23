@@ -223,6 +223,11 @@ class WhatsAppSessionManager(
         }
     }
 
+    fun isConnected(nodeType: AccountNode): Boolean = when (nodeType) {
+        AccountNode.PERSONAL -> _node1Session.value.status == NodeStatus.CONNECTED
+        AccountNode.BUSINESS, AccountNode.DUAL_SYNC -> _node2Session.value.status == NodeStatus.CONNECTED
+    }
+
     fun disconnectNode(nodeType: AccountNode) {
         when (nodeType) {
             AccountNode.PERSONAL -> {

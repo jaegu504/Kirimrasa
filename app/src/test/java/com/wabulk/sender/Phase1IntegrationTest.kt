@@ -37,9 +37,9 @@ class Phase1IntegrationTest {
         // Default Indonesian
         assertEquals(AppLanguage.INDONESIAN, manager.currentLanguage.value)
         var s = manager.getStrings()
-        assertEquals("Buat Pesan", s.navCompose)
+        assertEquals("Kirim", s.navCompose)
         assertEquals("Kontak", s.navContacts)
-        assertEquals("Antrean", s.navQueue)
+        assertEquals("Status", s.navQueue)
         assertEquals("Pengaturan", s.navSettings)
         assertEquals("Peracik Pesan", s.composerTitle)
         assertEquals("Pengelola Kontak", s.contactsTitle)
@@ -50,9 +50,9 @@ class Phase1IntegrationTest {
         manager.setLanguage(AppLanguage.TURKISH)
         assertEquals(AppLanguage.TURKISH, manager.currentLanguage.value)
         s = manager.getStrings()
-        assertEquals("Mesaj Oluştur", s.navCompose)
+        assertEquals("Gönder", s.navCompose)
         assertEquals("Kişiler", s.navContacts)
-        assertEquals("Sıra", s.navQueue)
+        assertEquals("Durum", s.navQueue)
         assertEquals("Ayarlar", s.navSettings)
         assertEquals("Mesaj Hazırla", s.composerTitle)
         assertEquals("Kişi Yönetimi", s.contactsTitle)
@@ -64,7 +64,7 @@ class Phase1IntegrationTest {
         manager.setLanguage(AppLanguage.INDONESIAN)
         assertEquals(AppLanguage.INDONESIAN, manager.currentLanguage.value)
         s = manager.getStrings()
-        assertEquals("Buat Pesan", s.navCompose)
+        assertEquals("Kirim", s.navCompose)
     }
 
     @Test

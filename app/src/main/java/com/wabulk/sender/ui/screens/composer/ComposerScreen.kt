@@ -89,6 +89,7 @@ import com.wabulk.sender.theme.springClickable
 
 @Composable
 fun ComposerScreen(
+    onOpenHelp: () -> Unit = {},
     viewModel: ComposerViewModel,
     selectedContactCount: Int = 0,
     modifier: Modifier = Modifier,

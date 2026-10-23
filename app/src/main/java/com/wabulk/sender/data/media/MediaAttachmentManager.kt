@@ -10,6 +10,10 @@ class MediaAttachmentManager(private val maxAttachments: Int = 5) {
     private val _attachments = MutableStateFlow<List<MediaAttachment>>(emptyList())
     val attachments: StateFlow<List<MediaAttachment>> = _attachments.asStateFlow()
 
+    fun setPlacement(attachmentId: String, bubbleIndex: Int) {
+        _attachments.value = _attachments.value.map { if (it.id == attachmentId) it.copy(bubbleIndex = bubbleIndex) else it }
+    }
+
     fun addAttachment(attachment: MediaAttachment): Boolean {
         if (_attachments.value.size >= maxAttachments) {
             return false

@@ -97,6 +97,7 @@ fun KirimrasaTheme(
 
     CompositionLocalProvider(
         LocalNeumorphicColors provides neumorphicColors,
+        LocalAppleColors provides if (isDark) DarkAppleColors else LightAppleColors,
         LocalTextStyle provides TextStyle(fontFamily = PlusJakartaSansFamily)
     ) {
         MaterialTheme(

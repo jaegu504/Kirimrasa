@@ -15,11 +15,11 @@ class LocalizationTest {
     fun testLanguageSelection() {
         val manager = LocalizationManager(null)
         assertEquals(AppLanguage.INDONESIAN, manager.currentLanguage.value)
-        assertEquals("Buat Pesan", manager.getStrings().navCompose)
+        assertEquals("Kirim", manager.getStrings().navCompose)
 
         manager.setLanguage(AppLanguage.TURKISH)
         assertEquals(AppLanguage.TURKISH, manager.currentLanguage.value)
-        assertEquals("Mesaj Oluştur", manager.getStrings().navCompose)
+        assertEquals("Gönder", manager.getStrings().navCompose)
     }
 
     @Test

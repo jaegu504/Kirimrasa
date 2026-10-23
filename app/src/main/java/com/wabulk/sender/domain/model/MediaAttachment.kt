@@ -14,8 +14,14 @@ data class MediaAttachment(
     val uriString: String,
     val fileName: String,
     val mimeType: String,
-    val sizeBytes: Long
+    val sizeBytes: Long,
+    /** Bubble (0-based) this file is sent with as caption; [SEPARATE_AFTER] = alone after all bubbles. */
+    val bubbleIndex: Int = 0
 ) {
+    companion object {
+        const val SEPARATE_AFTER = -1
+    }
+
     val mediaType: MediaType
         get() = when {
             mimeType.startsWith("image/") -> MediaType.IMAGE
