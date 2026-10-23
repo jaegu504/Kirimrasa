@@ -254,6 +254,32 @@ class BaileysBridgeTest {
     }
 
     @Test
+    fun `send to unlinked node returns clear localized message`() = runBlocking {
+        val testHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(400)
+                    .message("Bad Request")
+                    .body("""{"error":"Node x belum terhubung ke WhatsApp. Silakan hubungkan dulu.","code":"NOT_CONNECTED"}""".toResponseBody("application/json".toMediaType()))
+                    .build()
+            }
+            .build()
+        val client = BaileysBridgeClient(
+            node = testNode.copy(id = "node-unlinked-test"),
+            configProvider = { BaileysConfig(gatewayUrl = "http://10.0.2.2:3000", isEnabled = true) },
+            httpClient = testHttpClient
+        )
+
+        val result = client.sendMessage("+628111", "Halo", emptyList())
+
+        assertFalse(result.isSuccess)
+        val strings = com.wabulk.sender.data.locale.LocalizationManager.activeStrings
+        assertEquals(strings.accountNotLinked(strings.settingsNode1Title), result.errorMessage)
+    }
+
+    @Test
     fun `ping treats CONNECTING gateway status as not connected and does not restore`() = runBlocking {
         val requests = mutableListOf<Request>()
         val testHttpClient = OkHttpClient.Builder()

@@ -1,5 +1,9 @@
 package com.wabulk.sender.ui.screens.settings
 
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.wabulk.sender.engine.queue.AntiBanConfig
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
@@ -1034,10 +1038,13 @@ fun SettingsScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp
                 )
+                var showApiKey by remember { mutableStateOf(false) }
                 BasicTextField(
                     value = baileysConfig.apiKey,
                     onValueChange = { viewModel.updateApiKey(it) },
                     singleLine = true,
+                    // Hidden by default so screenshots don't leak the key
+                    visualTransformation = if (showApiKey) VisualTransformation.None else PasswordVisualTransformation(),
                     textStyle = TextStyle(
                         color = neuColors.textPrimary,
                         fontSize = 12.sp,
@@ -1060,7 +1067,16 @@ fun SettingsScreen(
                                     fontSize = 12.sp
                                 )
                             }
-                            innerTextField()
+                            Box(modifier = Modifier.padding(end = 28.dp)) { innerTextField() }
+                            Icon(
+                                imageVector = if (showApiKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (showApiKey) strings.hideApiKeyDesc else strings.showApiKeyDesc,
+                                tint = neuColors.textSecondary,
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .size(18.dp)
+                                    .springClickable { showApiKey = !showApiKey }
+                            )
                         }
                     }
                 )

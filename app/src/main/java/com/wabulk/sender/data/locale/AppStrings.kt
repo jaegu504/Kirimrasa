@@ -366,6 +366,9 @@ interface AppStrings {
     val customDelayMaxLabel: String
     val customDelayWarning: String
     val secondsShort: (Int) -> String
+    val accountNotLinked: (String) -> String
+    val showApiKeyDesc: String
+    val hideApiKeyDesc: String
 }
 
 object IndonesianStrings : AppStrings {
@@ -726,6 +729,9 @@ object IndonesianStrings : AppStrings {
     override val customDelayMaxLabel: String = "Jeda maksimum"
     override val customDelayWarning: String = "Jeda di bawah 25 detik meningkatkan risiko nomor diblokir."
     override val secondsShort: (Int) -> String = { n -> "$n dtk" }
+    override val accountNotLinked: (String) -> String = { acc -> "$acc belum tersambung ke gateway. Buka Pengaturan, lalu tautkan ulang dengan kode pairing." }
+    override val showApiKeyDesc: String = "Tampilkan API key"
+    override val hideApiKeyDesc: String = "Sembunyikan API key"
 }
 
 object TurkishStrings : AppStrings {
@@ -1086,6 +1092,9 @@ object TurkishStrings : AppStrings {
     override val customDelayMaxLabel: String = "En uzun bekleme"
     override val customDelayWarning: String = "25 saniyeden kısa bekleme, numaranın engellenme riskini artırır."
     override val secondsShort: (Int) -> String = { n -> "$n sn" }
+    override val accountNotLinked: (String) -> String = { acc -> "$acc ağ geçidine bağlı değil. Ayarlar'dan eşleme koduyla yeniden bağlayın." }
+    override val showApiKeyDesc: String = "API anahtarını göster"
+    override val hideApiKeyDesc: String = "API anahtarını gizle"
 }
 
 val LocalAppStrings = compositionLocalOf<AppStrings> { IndonesianStrings }

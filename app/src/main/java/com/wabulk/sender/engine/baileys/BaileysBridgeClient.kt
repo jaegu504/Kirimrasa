@@ -1,5 +1,6 @@
 package com.wabulk.sender.engine.baileys
 
+import com.wabulk.sender.domain.model.AccountNode
 import com.wabulk.sender.data.locale.LocalizationManager
 import com.wabulk.sender.engine.PingResult
 import com.wabulk.sender.engine.SendResult
@@ -162,11 +163,17 @@ class BaileysBridgeClient(
                         errorMessage = null
                     )
                 } else {
-                    val errorDetail = extractErrorMessage(body) ?: "HTTP ${response.code}: ${response.message}"
-                    if ((response.code == 400 || response.code == 404) &&
-                        (errorDetail.contains("not connected", ignoreCase = true) || errorDetail.contains("DISCONNECTED", ignoreCase = true)) &&
-                        BaileysSessionVault.hasSession(context, node.id)
-                    ) {
+                    val notLinked = (response.code == 400 || response.code == 404) && (
+                        body.contains("NOT_CONNECTED") || body.contains("belum terhubung") ||
+                            body.contains("not connected", ignoreCase = true) || body.contains("DISCONNECTED")
+                        )
+                    val errorDetail = if (notLinked) {
+                        val strings = LocalizationManager.activeStrings
+                        strings.accountNotLinked(if (node.nodeType == AccountNode.PERSONAL) strings.settingsNode1Title else strings.settingsNode2Title)
+                    } else {
+                        extractErrorMessage(body) ?: "HTTP ${response.code}: ${response.message}"
+                    }
+                    if (notLinked && BaileysSessionVault.hasSession(context, node.id)) {
                         val restored = restoreSession()
                         if (restored) {
                             try {

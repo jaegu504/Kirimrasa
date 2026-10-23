@@ -404,7 +404,8 @@ app.post('/api/nodes/:nodeId/send', authMiddleware, async (req, res) => {
     const node = nodeMap.get(nodeId);
     if (!node || !node.sock || node.status !== 'CONNECTED') {
         return res.status(400).json({
-            error: `Node ${nodeId} belum terhubung ke WhatsApp. Silakan hubungkan dulu.`
+            error: `Node ${nodeId} belum terhubung ke WhatsApp. Silakan hubungkan dulu.`,
+            code: 'NOT_CONNECTED'
         });
     }
 
