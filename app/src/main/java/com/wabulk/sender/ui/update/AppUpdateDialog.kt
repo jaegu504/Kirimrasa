@@ -1,5 +1,6 @@
 package com.wabulk.sender.ui.update
 
+import com.wabulk.sender.data.locale.LocalAppStrings
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -138,8 +139,9 @@ private fun AvailableContent(
     onUpdate: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
     val neuColors = LocalNeumorphicColors.current
-    val mbSize = if (info.apkSize > 0) String.format("%.1f MB", info.apkSize / (1024f * 1024f)) else "APK Resmi"
+    val mbSize = if (info.apkSize > 0) String.format("%.1f MB", info.apkSize / (1024f * 1024f)) else strings.updateApkLabel
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -176,7 +178,7 @@ private fun AvailableContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Pembaruan Tersedia!",
+            text = strings.updateAvailableTitle,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = PlusJakartaSansFamily,
@@ -229,7 +231,7 @@ private fun AvailableContent(
                 .padding(14.dp)
         ) {
             Text(
-                text = "Catatan Rilis:",
+                text = strings.updateReleaseNotes,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = neuColors.textSecondary
@@ -241,7 +243,7 @@ private fun AvailableContent(
                     .verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    text = info.changelog.ifBlank { "Peningkatan performa dan kestabilan aplikasi." },
+                    text = info.changelog.ifBlank { strings.updateDefaultChangelog },
                     fontSize = 12.sp,
                     lineHeight = 17.sp,
                     color = neuColors.textPrimary
@@ -271,7 +273,7 @@ private fun AvailableContent(
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
-                    text = "Perbarui Sekarang",
+                    text = strings.updateNowBtn,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -286,7 +288,7 @@ private fun AvailableContent(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Nanti Saja",
+                text = strings.updateLaterBtn,
                 fontSize = 13.sp,
                 color = neuColors.textSecondary
             )
@@ -300,6 +302,7 @@ private fun DownloadingContent(
     downloadedBytes: Long,
     totalBytes: Long
 ) {
+    val strings = LocalAppStrings.current
     val neuColors = LocalNeumorphicColors.current
     val downloadedMb = String.format("%.1f", downloadedBytes / (1024f * 1024f))
     val totalMb = if (totalBytes > 0) String.format("%.1f", totalBytes / (1024f * 1024f)) else "?"
@@ -326,7 +329,7 @@ private fun DownloadingContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Mengunduh Pembaruan...",
+            text = strings.updateDownloading,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = neuColors.textPrimary
@@ -355,7 +358,7 @@ private fun DownloadingContent(
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = "Aplikasi akan otomatis membuka layar pemasangan setelah selesai.",
+            text = strings.updateDownloadHint,
             fontSize = 11.sp,
             color = neuColors.textSecondary,
             textAlign = TextAlign.Center
@@ -367,6 +370,7 @@ private fun DownloadingContent(
 private fun ReadyToInstallContent(
     onInstall: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
     val neuColors = LocalNeumorphicColors.current
 
     Column(
@@ -391,7 +395,7 @@ private fun ReadyToInstallContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Unduhan Siap Dipasang!",
+            text = strings.updateReadyTitle,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = neuColors.textPrimary
@@ -400,7 +404,7 @@ private fun ReadyToInstallContent(
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "Ketuk tombol di bawah untuk menyelesaikan pemasangan versi terbaru.",
+            text = strings.updateReadyDesc,
             fontSize = 12.sp,
             color = neuColors.textSecondary,
             textAlign = TextAlign.Center
@@ -417,7 +421,7 @@ private fun ReadyToInstallContent(
             colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
         ) {
             Text(
-                text = "Pasang Pembaruan",
+                text = strings.updateInstallBtn,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -432,6 +436,7 @@ private fun ErrorContent(
     onRetry: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
     val neuColors = LocalNeumorphicColors.current
 
     Column(
@@ -456,7 +461,7 @@ private fun ErrorContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Gagal Mengunduh",
+            text = strings.updateDownloadFailedTitle,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = neuColors.textPrimary
@@ -492,7 +497,7 @@ private fun ErrorContent(
                     modifier = Modifier.size(16.dp)
                 )
                 Text(
-                    text = "Coba Lagi",
+                    text = strings.retryBtn,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -507,7 +512,7 @@ private fun ErrorContent(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = "Tutup",
+                text = strings.contactsCloseBtn,
                 fontSize = 13.sp,
                 color = neuColors.textSecondary
             )
@@ -519,6 +524,7 @@ private fun ErrorContent(
 private fun UpToDateContent(
     onDismiss: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
     val neuColors = LocalNeumorphicColors.current
 
     Column(
@@ -543,7 +549,7 @@ private fun UpToDateContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Versi Terbaru!",
+            text = strings.updateUpToDateTitle,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = neuColors.textPrimary
@@ -552,7 +558,7 @@ private fun UpToDateContent(
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "Kirimrasa v${UpdateManager.CURRENT_VERSION} adalah versi paling mutakhir yang tersedia.",
+            text = strings.updateUpToDateDesc(UpdateManager.CURRENT_VERSION),
             fontSize = 12.sp,
             color = neuColors.textSecondary,
             textAlign = TextAlign.Center
@@ -569,7 +575,7 @@ private fun UpToDateContent(
             colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
         ) {
             Text(
-                text = "Mengerti",
+                text = strings.understoodBtn,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -580,6 +586,7 @@ private fun UpToDateContent(
 
 @Composable
 private fun CheckingContent() {
+    val strings = LocalAppStrings.current
     val neuColors = LocalNeumorphicColors.current
 
     Column(
@@ -594,7 +601,7 @@ private fun CheckingContent() {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Memeriksa Pembaruan...",
+            text = strings.updateCheckingTitle,
             fontSize = 14.sp,
             color = neuColors.textPrimary,
             fontWeight = FontWeight.Medium

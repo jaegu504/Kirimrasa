@@ -314,7 +314,7 @@ fun ComposerScreen(
                     val activePhone = when (uiState.selectedAccount) {
                         AccountNode.PERSONAL -> node1Session.phoneNumber.ifEmpty { "WhatsApp Personal" }
                         AccountNode.BUSINESS -> node2Session.phoneNumber.ifEmpty { "WhatsApp Business" }
-                        AccountNode.DUAL_SYNC -> "Sinkron Ganda"
+                        AccountNode.DUAL_SYNC -> strings.composerAccountDual
                     }
                     Text(
                         text = activePhone,
@@ -361,7 +361,7 @@ fun ComposerScreen(
                 try {
                     mediaPickerLauncher.launch("*/*")
                 } catch (e: Exception) {
-                    android.widget.Toast.makeText(context, "Gagal membuka pemilih berkas: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                    android.widget.Toast.makeText(context, strings.filePickerFailed(e.message.orEmpty()), android.widget.Toast.LENGTH_SHORT).show()
                 }
             },
             onRemoveAttachment = { viewModel.removeAttachment(it) }
@@ -594,7 +594,7 @@ fun ComposerScreen(
                                     .background(EmeraldPrimary)
                             )
                             Text(
-                                text = "Balon #${index + 1}",
+                                text = strings.composerBubbleNumbered(index + 1),
                                 color = EmeraldPrimary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
@@ -622,7 +622,7 @@ fun ComposerScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
-                                        contentDescription = "Hapus Balon",
+                                        contentDescription = strings.composerRemoveBubble,
                                         tint = StatusError,
                                         modifier = Modifier.size(13.dp)
                                     )
@@ -957,7 +957,7 @@ fun ComposerScreen(
                             modifier = Modifier.size(13.dp)
                         )
                         Text(
-                            text = if (selectedContactCount > 0) strings.composerLaunchContactsCount(selectedContactCount) else "Semua Kontak",
+                            text = if (selectedContactCount > 0) strings.composerLaunchContactsCount(selectedContactCount) else strings.allContacts,
                             color = EmeraldPrimary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -976,27 +976,27 @@ fun ComposerScreen(
         AlertDialog(
             onDismissRequest = { showHelpDialog = false },
             title = {
-                Text("Panduan Pesan & Variabel", color = neuColors.textPrimary, fontWeight = FontWeight.Bold)
+                Text(strings.composerGuideTitle, color = neuColors.textPrimary, fontWeight = FontWeight.Bold)
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        "1. Spintax {A|B|C}: Memutar variasi kata secara otomatis agar tiap pesan ke penerima berbeda dan tidak terdeteksi bot/spam.",
+                        strings.composerGuide1,
                         color = neuColors.textSecondary,
                         fontSize = 12.sp
                     )
                     Text(
-                        "2. {Nickname}: Nama panggilan unik yang otomatis diambil dari Tab Kontak.",
+                        strings.composerGuide2,
                         color = neuColors.textSecondary,
                         fontSize = 12.sp
                     )
                     Text(
-                        "3. {Company} & {Custom_1}: Variabel pengirim dan promo yang dapat Anda ubah nilainya pada menu 'Atur Nilai {Company}'.",
+                        strings.composerGuide3,
                         color = neuColors.textSecondary,
                         fontSize = 12.sp
                     )
                     Text(
-                        "4. Multi-Balon: Memecah pesan panjang menjadi 2-3 balon obrolan dengan jeda mengetik 3 detik untuk simulasi mengetik manusia.",
+                        strings.composerGuide4,
                         color = EmeraldTertiary,
                         fontSize = 11.sp
                     )
@@ -1004,7 +1004,7 @@ fun ComposerScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showHelpDialog = false }) {
-                    Text("Tutup", color = EmeraldPrimary, fontWeight = FontWeight.Bold)
+                    Text(strings.contactsCloseBtn, color = EmeraldPrimary, fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = neuColors.surface

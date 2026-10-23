@@ -1,5 +1,6 @@
 package com.wabulk.sender.service
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -36,8 +37,8 @@ class WhatsAppForegroundService : Service() {
                 acquireWakeLock()
                 val notification = NotificationHelper.buildNotification(
                     context = this,
-                    title = "WhatsApp Bulk Sender - Berjalan",
-                    content = "Menjalankan antrean pengiriman dengan pengaman anti-ban..."
+                    title = LocalizationManager.activeStrings.notifServiceTitle,
+                    content = LocalizationManager.activeStrings.notifServiceContent
                 )
                 startForeground(NotificationHelper.NOTIFICATION_ID, notification)
             }

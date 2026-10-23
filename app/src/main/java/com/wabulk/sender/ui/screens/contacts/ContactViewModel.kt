@@ -1,5 +1,6 @@
 package com.wabulk.sender.ui.screens.contacts
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -184,11 +185,11 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
             _isSyncing.value = true
             try {
                 val result = syncEngine.syncFromPhonebook()
-                _lastSyncResult.value = "+${result.newContacts} baru, ${result.updatedContacts} diperbarui"
+                _lastSyncResult.value = LocalizationManager.activeStrings.syncResult(result.newContacts, result.updatedContacts)
             } catch (e: SecurityException) {
-                _lastSyncResult.value = "Izin kontak diperlukan"
+                _lastSyncResult.value = LocalizationManager.activeStrings.contactsPermissionNeeded
             } catch (e: Exception) {
-                _lastSyncResult.value = "Gagal: ${e.message}"
+                _lastSyncResult.value = LocalizationManager.activeStrings.failedWith(e.message.orEmpty())
             } finally {
                 _isSyncing.value = false
             }
@@ -208,7 +209,7 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
                     repository.createTag(tag)
                 }
             }
-            _lastSyncResult.value = "+${result.contacts.size} diimpor dari CSV"
+            _lastSyncResult.value = LocalizationManager.activeStrings.csvImported(result.contacts.size)
         }
         result
     }
@@ -226,7 +227,7 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
                     repository.createTag(tag)
                 }
             }
-            _lastSyncResult.value = "+${result.contacts.size} diimpor dari CSV"
+            _lastSyncResult.value = LocalizationManager.activeStrings.csvImported(result.contacts.size)
         }
         result
     }

@@ -14,13 +14,25 @@ class LocalizationManager(context: Context? = null) {
     )
     val currentLanguage: StateFlow<AppLanguage> = _currentLanguage.asStateFlow()
 
+    init {
+        activeStrings = getStrings(_currentLanguage.value)
+    }
+
     fun setLanguage(language: AppLanguage) {
         _currentLanguage.value = language
+        activeStrings = getStrings(language)
         prefs?.edit()?.putString("pref_language_code", language.code)?.apply()
     }
 
     fun getStrings(language: AppLanguage = _currentLanguage.value): AppStrings = when (language) {
         AppLanguage.INDONESIAN -> IndonesianStrings
         AppLanguage.TURKISH -> TurkishStrings
+    }
+
+    companion object {
+        // For non-Compose code (view models, services, notifications) that can't read LocalAppStrings
+        @Volatile
+        var activeStrings: AppStrings = IndonesianStrings
+            private set
     }
 }

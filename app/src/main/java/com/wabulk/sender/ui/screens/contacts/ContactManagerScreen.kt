@@ -1132,7 +1132,7 @@ private fun ContactCard(
             }
 
             // Greeting Preview
-            val effectivePreviewNick = localNickname.ifBlank { "Kak" }
+            val effectivePreviewNick = localNickname.ifBlank { strings.nicknameFallback }
             Text(
                 text = strings.contactsGreetingPreview(effectivePreviewNick),
                 color = if (localNickname.isNotBlank()) neuColors.accentPrimary else neuColors.textSecondary,
@@ -1490,6 +1490,7 @@ private fun ImportCsvDialog(
     onImportFile: suspend (java.io.InputStream) -> com.wabulk.sender.data.io.CsvParseResult,
     onImportSample: suspend () -> com.wabulk.sender.data.io.CsvParseResult
 ) {
+    val strings = LocalAppStrings.current
     val neuColors = LocalNeumorphicColors.current
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -1514,17 +1515,17 @@ private fun ImportCsvDialog(
                                 }
                                 is com.wabulk.sender.data.io.CsvParseResult.Error -> {
                                     isSuccess = false
-                                    lastImportStatus = "Error: ${result.message}"
+                                    lastImportStatus = strings.failedWith(result.message)
                                 }
                             }
                         }
                     } else {
                         isSuccess = false
-                        lastImportStatus = "Failed to open CSV"
+                        lastImportStatus = strings.csvOpenFailed
                     }
                 } catch (e: Exception) {
                     isSuccess = false
-                    lastImportStatus = "Error: ${e.message}"
+                    lastImportStatus = strings.failedWith(e.message.orEmpty())
                 }
             }
         }
@@ -1555,7 +1556,7 @@ private fun ImportCsvDialog(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "CSV Import",
+                            text = strings.csvImportTitle,
                             color = neuColors.textSecondary,
                             fontSize = 11.sp
                         )
@@ -1621,7 +1622,7 @@ private fun ImportCsvDialog(
                                     lastImportStatus = strings.contactsImportResult(result.contacts.size, result.rowCount)
                                 } else if (result is com.wabulk.sender.data.io.CsvParseResult.Error) {
                                     isSuccess = false
-                                    lastImportStatus = "Error: ${result.message}"
+                                    lastImportStatus = strings.failedWith(result.message)
                                 }
                             }
                         },

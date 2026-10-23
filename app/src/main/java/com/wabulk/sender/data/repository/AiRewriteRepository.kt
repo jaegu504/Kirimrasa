@@ -1,5 +1,6 @@
 package com.wabulk.sender.data.repository
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import com.wabulk.sender.data.remote.CloudflareAiApi
 import com.wabulk.sender.data.remote.dto.AiRewriteRequest
 
@@ -59,7 +60,7 @@ class AiRewriteRepository(
                     // Token was dropped by the AI model! Re-inject into the opening bubble
                     val firstBubble = cleanedBubbles.first()
                     cleanedBubbles[0] = if (token == "{Nickname}") {
-                        "Hai {Nickname}! $firstBubble"
+                        "${LocalizationManager.activeStrings.greetingWord} {Nickname}! $firstBubble"
                     } else {
                         "$firstBubble $token"
                     }

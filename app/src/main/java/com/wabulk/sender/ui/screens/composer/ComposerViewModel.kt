@@ -1,5 +1,6 @@
 package com.wabulk.sender.ui.screens.composer
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wabulk.sender.data.media.MediaAttachmentManager
@@ -23,7 +24,7 @@ class ComposerViewModel(
             bubbles = listOf(
                 MessageBubble(
                     order = 0,
-                    text = "Halo {Nickname}! 👋\nKami dari {Company} ingin membagikan penawaran spesial minggu ini."
+                    text = LocalizationManager.activeStrings.composerSampleMessage
                 )
             )
         )
@@ -113,7 +114,7 @@ class ComposerViewModel(
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(
                         isAiRewriting = false,
-                        aiErrorMessage = error.message ?: "Gagal terhubung ke Cloudflare AI"
+                        aiErrorMessage = error.message ?: LocalizationManager.activeStrings.aiConnectFailed
                     )
                 }
             )

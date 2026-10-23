@@ -227,7 +227,7 @@ fun SettingsScreen(
                 ) {
                     Image(
                         painter = painterResource(id = com.wabulk.sender.R.drawable.ic_kirimrasa_logo),
-                        contentDescription = "Kirimrasa Logo",
+                        contentDescription = strings.appTitle,
                         modifier = Modifier.size(38.dp)
                     )
                 }
@@ -581,7 +581,7 @@ fun SettingsScreen(
                                 }
                             }
                             Text(
-                                text = if (isWaInstalled) "Terdeteksi di HP (WhatsApp Personal)" else "Aplikasi WhatsApp Belum Terpasang",
+                                text = if (isWaInstalled) strings.waPersonalDetected else strings.waPersonalMissing,
                                 color = if (isWaInstalled) EmeraldPrimary else StatusError,
                                 fontSize = 11.sp
                             )
@@ -595,7 +595,7 @@ fun SettingsScreen(
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Text(
-                            text = if (isWaInstalled) "Siap Pakai" else "Belum Ada",
+                            text = if (isWaInstalled) strings.readyLabel else strings.notAvailableLabel,
                             color = if (isWaInstalled) EmeraldPrimary else StatusError,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
@@ -606,7 +606,7 @@ fun SettingsScreen(
                 // Phone Input Field
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Nomor WhatsApp Anda:",
+                        text = strings.yourWaNumber,
                         color = neuColors.textSecondary,
                         fontSize = 10.sp
                     )
@@ -635,7 +635,7 @@ fun SettingsScreen(
                             ) {
                                 if (localNode1Phone.isEmpty()) {
                                     Text(
-                                        text = "Ketik nomor WhatsApp Anda (cth: +62 812-3456-7890)",
+                                        text = strings.waNumberHint,
                                         color = TextSubduedTertiary,
                                         fontSize = 11.sp
                                     )
@@ -673,7 +673,7 @@ fun SettingsScreen(
                                     if (launchIntent != null) {
                                         context.startActivity(launchIntent)
                                     } else {
-                                        android.widget.Toast.makeText(context, "WhatsApp Personal tidak terpasang di HP", android.widget.Toast.LENGTH_SHORT).show()
+                                        android.widget.Toast.makeText(context, strings.waPersonalNotInstalledToast, android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                 } catch (_: Exception) {}
                             },
@@ -681,7 +681,7 @@ fun SettingsScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Icon(imageVector = Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(14.dp))
-                            Text(text = "Buka WhatsApp", color = EmeraldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(text = strings.openWhatsAppBtn, color = EmeraldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -696,7 +696,7 @@ fun SettingsScreen(
                                     pingState = "Memeriksa..."
                                     val res = viewModel.pingNode(AccountNode.PERSONAL)
                                     delay(400)
-                                    pingState = if (res) "Siap Digunakan!" else "Gagal"
+                                    pingState = if (res) strings.readyToUse else strings.failedLabel
                                     delay(1500)
                                     pingState = null
                                 }
@@ -705,7 +705,7 @@ fun SettingsScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Icon(imageVector = Icons.Default.Sensors, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(14.dp))
-                            Text(text = pingState ?: "Uji Kesiapan", color = EmeraldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(text = pingState ?: strings.testReadinessBtn, color = EmeraldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -765,7 +765,7 @@ fun SettingsScreen(
                                 }
                             }
                             Text(
-                                text = if (isWbInstalled) "Terdeteksi di HP (WhatsApp Business)" else "Aplikasi WA Business Belum Terpasang",
+                                text = if (isWbInstalled) strings.waBusinessDetected else strings.waBusinessMissing,
                                 color = if (isWbInstalled) EmeraldPrimary else StatusError,
                                 fontSize = 11.sp
                             )
@@ -779,7 +779,7 @@ fun SettingsScreen(
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Text(
-                            text = if (isWbInstalled) "Siap Pakai" else "Belum Ada",
+                            text = if (isWbInstalled) strings.readyLabel else strings.notAvailableLabel,
                             color = if (isWbInstalled) EmeraldPrimary else StatusError,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
@@ -790,7 +790,7 @@ fun SettingsScreen(
                 // Phone Input Field
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Nomor WhatsApp Business Anda:",
+                        text = strings.yourWbNumber,
                         color = neuColors.textSecondary,
                         fontSize = 10.sp
                     )
@@ -819,7 +819,7 @@ fun SettingsScreen(
                             ) {
                                 if (localNode2Phone.isEmpty()) {
                                     Text(
-                                        text = "Ketik nomor WA Business Anda (cth: +62 812-3456-7890)",
+                                        text = strings.wbNumberHint,
                                         color = TextSubduedTertiary,
                                         fontSize = 11.sp
                                     )
@@ -857,7 +857,7 @@ fun SettingsScreen(
                                     if (launchIntent != null) {
                                         context.startActivity(launchIntent)
                                     } else {
-                                        android.widget.Toast.makeText(context, "WhatsApp Business tidak terpasang di HP", android.widget.Toast.LENGTH_SHORT).show()
+                                        android.widget.Toast.makeText(context, strings.waBusinessNotInstalledToast, android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                 } catch (_: Exception) {}
                             },
@@ -865,7 +865,7 @@ fun SettingsScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Icon(imageVector = Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(14.dp))
-                            Text(text = "Buka WA Business", color = EmeraldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(text = strings.openWaBusinessBtn, color = EmeraldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -880,7 +880,7 @@ fun SettingsScreen(
                                     pingStateBusiness = "Memeriksa..."
                                     val res = viewModel.pingNode(AccountNode.BUSINESS)
                                     delay(400)
-                                    pingStateBusiness = if (res) "Siap Digunakan!" else "Gagal"
+                                    pingStateBusiness = if (res) strings.readyToUse else strings.failedLabel
                                     delay(1500)
                                     pingStateBusiness = null
                                 }
@@ -889,7 +889,7 @@ fun SettingsScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Icon(imageVector = Icons.Default.Sensors, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(14.dp))
-                            Text(text = pingStateBusiness ?: "Uji Kesiapan", color = EmeraldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(text = pingStateBusiness ?: strings.testReadinessBtn, color = EmeraldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -944,7 +944,7 @@ fun SettingsScreen(
                                     .padding(horizontal = 4.dp, vertical = 1.dp)
                             ) {
                                 Text(
-                                    text = if (baileysConfig.isEnabled) "AKTIF" else "NONAKTIF",
+                                    text = if (baileysConfig.isEnabled) strings.activeLabel else strings.inactiveLabel,
                                     color = if (baileysConfig.isEnabled) EmeraldSecondary else neuColors.textSecondary,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold
@@ -973,7 +973,7 @@ fun SettingsScreen(
 
             // Description text
             Text(
-                text = "Gunakan gateway server Node.js Baileys lokal atau remote untuk pengiriman pesan massal berkecepatan tinggi dengan multi-device protocol.",
+                text = strings.gatewayDesc,
                 color = neuColors.textSecondary,
                 fontSize = 11.sp,
                 lineHeight = 15.sp
@@ -1051,7 +1051,7 @@ fun SettingsScreen(
                         ) {
                             if (baileysConfig.apiKey.isEmpty()) {
                                 Text(
-                                    text = "Bearer token atau secret key (kosongkan jika tanpa auth)",
+                                    text = strings.apiKeyHint,
                                     color = TextSubduedTertiary,
                                     fontSize = 12.sp
                                 )
@@ -1123,7 +1123,7 @@ fun SettingsScreen(
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
-                                text = if (isSuccess) "Terhubung (${gatewayTestResult!!.latencyMs}ms)" else "Gagal (${gatewayTestResult!!.message})",
+                                text = if (isSuccess) strings.gatewayConnectedLatency(gatewayTestResult!!.latencyMs) else strings.failedWith(gatewayTestResult!!.message),
                                 color = if (isSuccess) EmeraldOnPrimaryContainer else StatusError,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
@@ -1234,7 +1234,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         Icon(imageVector = Icons.Default.StackedLineChart, contentDescription = null, tint = EmeraldPrimary, modifier = Modifier.size(11.dp))
-                        Text(text = "Gaussian Distribution", color = EmeraldPrimary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        Text(text = strings.randomDelayLabel, color = EmeraldPrimary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                     }
                     Text(text = "Max: 120s", color = neuColors.textSecondary, fontSize = 10.sp)
                 }
@@ -1331,7 +1331,7 @@ fun SettingsScreen(
                                     .background(EmeraldSecondaryContainer.copy(alpha = 0.4f))
                                     .padding(horizontal = 4.dp, vertical = 1.dp)
                             ) {
-                                Text(text = "Round-Robin", color = EmeraldSecondary, fontSize = 9.sp)
+                                Text(text = strings.roundRobinLabel, color = EmeraldSecondary, fontSize = 9.sp)
                             }
                         }
                         Text(text = strings.settingsAutoRotateSubtitle, color = neuColors.textSecondary, fontSize = 10.sp)
@@ -1406,7 +1406,7 @@ fun SettingsScreen(
                                     Icon(imageVector = Icons.Default.Remove, contentDescription = null, tint = neuColors.textPrimary, modifier = Modifier.size(14.dp))
                                 }
 
-                                Text(text = "$pauseDurationMin min", color = neuColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(text = strings.minutesShort(pauseDurationMin), color = neuColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
 
                                 Box(
                                     modifier = Modifier
@@ -1448,7 +1448,7 @@ fun SettingsScreen(
                                     Icon(imageVector = Icons.Default.Remove, contentDescription = null, tint = neuColors.textPrimary, modifier = Modifier.size(14.dp))
                                 }
 
-                                Text(text = "$batchSizeMsgs msgs", color = neuColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text(text = strings.messagesShort(batchSizeMsgs), color = neuColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
 
                                 Box(
                                     modifier = Modifier
@@ -1680,17 +1680,17 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { showQrDialog = false },
             title = {
-                Text("Tautkan dengan Kode QR", color = neuColors.textPrimary, fontWeight = FontWeight.Bold)
+                Text(strings.qrLinkTitle, color = neuColors.textPrimary, fontWeight = FontWeight.Bold)
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Mode 8-Digit Pairing Code lebih direkomendasikan karena dapat dilakukan langsung di HP yang sama tanpa perlu kamera ponsel lain.",
+                        strings.qrLinkDesc1,
                         color = neuColors.textSecondary,
                         fontSize = 12.sp
                     )
                     Text(
-                        "Untuk menggunakan Kode Pairing: Klik 'Salin & Buka WhatsApp', lalu buka Pengaturan WA > Perangkat Tertaut > Tautkan dengan nomor telepon.",
+                        strings.qrLinkDesc2,
                         color = EmeraldTertiary,
                         fontSize = 11.sp
                     )
@@ -1698,7 +1698,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showQrDialog = false }) {
-                    Text("Mengerti", color = EmeraldPrimary, fontWeight = FontWeight.Bold)
+                    Text(strings.understoodBtn, color = EmeraldPrimary, fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = neuColors.surface
@@ -1714,6 +1714,7 @@ private fun NodeGatewayPairingCard(
     viewModel: SettingsViewModel,
     nodeLabel: String
 ) {
+    val strings = LocalAppStrings.current
     val neuColors = LocalNeumorphicColors.current
     val context = androidx.compose.ui.platform.LocalContext.current
     var pairingLoading by remember { mutableStateOf(false) }
@@ -1731,10 +1732,10 @@ private fun NodeGatewayPairingCard(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(Icons.Default.Check, contentDescription = null, tint = EmeraldOnPrimaryContainer, modifier = Modifier.size(16.dp))
-                Text("Terhubung via Gateway ($nodeLabel)", color = EmeraldOnPrimaryContainer, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(strings.connectedViaGateway(nodeLabel), color = EmeraldOnPrimaryContainer, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
             Text(
-                text = "Putuskan",
+                text = strings.settingsDisconnectBtn,
                 color = StatusError,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
@@ -1756,7 +1757,7 @@ private fun NodeGatewayPairingCard(
                             result.onSuccess { code ->
                                 gatewayCode = code
                             }.onFailure { err ->
-                                android.widget.Toast.makeText(context, "Gagal: ${err.message}", android.widget.Toast.LENGTH_LONG).show()
+                                android.widget.Toast.makeText(context, strings.failedWith(err.message.orEmpty()), android.widget.Toast.LENGTH_LONG).show()
                             }
                         }
                     }
@@ -1774,7 +1775,7 @@ private fun NodeGatewayPairingCard(
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = "Minta Kode Pairing 8-Digit Resmi",
+                        text = strings.requestPairingCodeBtn,
                         color = if (phoneNumber.isNotBlank()) Color.White else neuColors.textSecondary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
@@ -1793,7 +1794,7 @@ private fun NodeGatewayPairingCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text("Kode Pairing WhatsApp Anda:", color = neuColors.textSecondary, fontSize = 10.sp)
+                Text(strings.yourPairingCode, color = neuColors.textSecondary, fontSize = 10.sp)
                 Text(
                     text = gatewayCode ?: "",
                     color = EmeraldPrimary,
@@ -1813,7 +1814,7 @@ private fun NodeGatewayPairingCard(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Salin Kode & Buka WhatsApp", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(strings.copyCodeOpenWaBtn, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

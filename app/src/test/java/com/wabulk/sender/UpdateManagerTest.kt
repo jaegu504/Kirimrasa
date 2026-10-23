@@ -1,6 +1,7 @@
 package com.wabulk.sender
 
 import com.wabulk.sender.update.UpdateManager
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -32,5 +33,11 @@ class UpdateManagerTest {
         // Extended semantic versions
         assertTrue(UpdateManager.isNewerVersion("v1.1.1.1", "1.1.1"))
         assertFalse(UpdateManager.isNewerVersion("1.1.1", "1.1.1.1"))
+    }
+
+    @Test
+    fun currentVersionMatchesBuildVersionName() {
+        assertEquals(com.wabulk.sender.BuildConfig.VERSION_NAME, UpdateManager.CURRENT_VERSION)
+        assertFalse(UpdateManager.isNewerVersion("v${com.wabulk.sender.BuildConfig.VERSION_NAME}", UpdateManager.CURRENT_VERSION))
     }
 }

@@ -1,5 +1,6 @@
 package com.wabulk.sender.ui.screens.settings
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import android.app.Application
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -117,7 +118,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 _gatewayTestResult.value = PingResult(
                     isSuccess = false,
                     latencyMs = 0L,
-                    message = e.message ?: "Koneksi gateway gagal"
+                    message = e.message ?: LocalizationManager.activeStrings.gatewayConnectFailed
                 )
             } finally {
                 _isTestingGateway.value = false
@@ -175,7 +176,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("WhatsApp Pairing Code", code)
         clipboard.setPrimaryClip(clip)
-        Toast.makeText(context, "Kode $code disalin ke clipboard!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, LocalizationManager.activeStrings.codeCopied(code), Toast.LENGTH_SHORT).show()
 
         // 2. Open WhatsApp intent
         try {
@@ -185,7 +186,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(launchIntent)
         } catch (_: Exception) {
-            Toast.makeText(context, "WhatsApp tidak ditemukan di perangkat ini", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, LocalizationManager.activeStrings.waNotFound, Toast.LENGTH_SHORT).show()
         }
     }
 }

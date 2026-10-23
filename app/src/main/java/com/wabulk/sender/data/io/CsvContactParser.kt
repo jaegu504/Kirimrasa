@@ -1,5 +1,6 @@
 package com.wabulk.sender.data.io
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import com.wabulk.sender.data.local.db.ContactEntity
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
@@ -85,27 +86,27 @@ object CsvContactParser {
             val text = inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
             parseCsv(text)
         } catch (e: Exception) {
-            CsvParseResult.Error("Failed to read CSV input stream: ${e.message}")
+            CsvParseResult.Error(LocalizationManager.activeStrings.csvReadFailed(e.message.orEmpty()))
         }
     }
 
     fun parseCsv(csvText: String): CsvParseResult {
         val sanitizedText = csvText.removePrefix("\uFEFF").trim()
         if (sanitizedText.isEmpty()) {
-            return CsvParseResult.Error("CSV text is empty or blank")
+            return CsvParseResult.Error(LocalizationManager.activeStrings.csvEmpty)
         }
 
         val delimiter = detectDelimiter(sanitizedText)
         val rows = parseCsvToRows(sanitizedText, delimiter)
         if (rows.isEmpty()) {
-            return CsvParseResult.Error("CSV contains no valid records")
+            return CsvParseResult.Error(LocalizationManager.activeStrings.csvNoRecords)
         }
 
         val headerRow = rows[0]
         val columnMap = mapHeadersToColumns(headerRow)
 
         val phoneIndex = columnMap[ColumnType.PHONE]
-            ?: return CsvParseResult.Error("Missing required phone number column in CSV header")
+            ?: return CsvParseResult.Error(LocalizationManager.activeStrings.csvMissingPhone)
 
         val nameIndex = columnMap[ColumnType.NAME]
         val nickIndex = columnMap[ColumnType.NICKNAME]

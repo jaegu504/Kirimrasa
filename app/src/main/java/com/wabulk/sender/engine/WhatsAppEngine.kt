@@ -1,5 +1,6 @@
 package com.wabulk.sender.engine
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import com.wabulk.sender.domain.model.AccountNode
 import com.wabulk.sender.engine.model.NodeSession
 import kotlinx.coroutines.delay
@@ -183,7 +184,7 @@ class OnDeviceWhatsAppEngine(
         } catch (e: Exception) {
             SendResult(
                 isSuccess = false,
-                errorMessage = "Gagal membuka WhatsApp: ${e.message}"
+                errorMessage = LocalizationManager.activeStrings.waOpenFailed(e.message.orEmpty())
             )
         }
     }
@@ -201,13 +202,13 @@ class OnDeviceWhatsAppEngine(
             PingResult(
                 isSuccess = true,
                 latencyMs = 5L,
-                message = "WhatsApp Terpasang di HP"
+                message = LocalizationManager.activeStrings.waInstalled
             )
         } else {
             PingResult(
                 isSuccess = false,
                 latencyMs = 0L,
-                message = "Aplikasi WhatsApp belum terpasang di HP"
+                message = LocalizationManager.activeStrings.waNotInstalled
             )
         }
     }

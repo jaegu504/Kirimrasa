@@ -1,5 +1,6 @@
 package com.wabulk.sender.engine.queue
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import android.content.Context
 import android.content.Intent
 import com.wabulk.sender.data.local.db.AppDatabase
@@ -50,7 +51,7 @@ class DispatchQueueManager private constructor(
     private val _currentTypingContact = MutableStateFlow<String?>(null)
     val currentTypingContact: StateFlow<String?> = _currentTypingContact.asStateFlow()
 
-    private val _campaignTitle = MutableStateFlow<String>("Broadcast Siap Dimulai")
+    private val _campaignTitle = MutableStateFlow<String>(LocalizationManager.activeStrings.queueReadyTitle)
     val campaignTitle: StateFlow<String> = _campaignTitle.asStateFlow()
 
     private var currentCampaignId: Long? = null
@@ -254,8 +255,8 @@ class DispatchQueueManager private constructor(
 
                     updateNotification(
                         context,
-                        "Pengiriman Selesai!",
-                        "Semua $totalCount pesan berhasil terkirim.",
+                        LocalizationManager.activeStrings.notifDoneTitle,
+                        LocalizationManager.activeStrings.notifDoneBody(totalCount),
                         totalCount,
                         sentCount
                     )
@@ -289,8 +290,8 @@ class DispatchQueueManager private constructor(
                 updateItemStatus(nextItem.id, QueueTaskStatus.TYPING)
                 updateNotification(
                     context,
-                    "Mengetik Pesan...",
-                    "Mengetik pesan untuk ${nextItem.recipientName} (${sentCount + 1}/$totalCount)",
+                    LocalizationManager.activeStrings.notifTypingTitle,
+                    LocalizationManager.activeStrings.notifTypingBody(nextItem.recipientName, sentCount + 1, totalCount),
                     totalCount,
                     sentCount
                 )
@@ -388,8 +389,8 @@ class DispatchQueueManager private constructor(
 
                 updateNotification(
                     context,
-                    "Mengirim Pesan (${percentComplete}%)",
-                    "${sentCount}/$totalCount terkirim - Lanjut ke pesan berikutnya",
+                    LocalizationManager.activeStrings.notifSendingTitle(percentComplete),
+                    LocalizationManager.activeStrings.notifSendingBody(sentCount, totalCount),
                     totalCount,
                     sentCount
                 )

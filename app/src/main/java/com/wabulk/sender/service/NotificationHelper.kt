@@ -1,5 +1,6 @@
 package com.wabulk.sender.service
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -26,20 +27,20 @@ object NotificationHelper {
 
             val broadcastChannel = NotificationChannel(
                 CHANNEL_ID,
-                CHANNEL_NAME,
+                LocalizationManager.activeStrings.notifSendingChannel,
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Notifikasi status berjalan untuk proses pengiriman pesan massal WhatsApp"
+                description = LocalizationManager.activeStrings.notifSendingChannelDesc
                 setShowBadge(false)
             }
             manager.createNotificationChannel(broadcastChannel)
 
             val updateChannel = NotificationChannel(
                 UPDATE_CHANNEL_ID,
-                UPDATE_CHANNEL_NAME,
+                LocalizationManager.activeStrings.notifUpdateChannel,
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Notifikasi ketersediaan versi baru aplikasi Kirimrasa"
+                description = LocalizationManager.activeStrings.notifUpdateChannelDesc
                 setShowBadge(true)
                 enableVibration(true)
             }
@@ -66,16 +67,16 @@ object NotificationHelper {
         )
 
         val snippet = if (changelog.isNotBlank()) {
-            changelog.lines().firstOrNull { it.isNotBlank() } ?: "Pembaruan fitur & peningkatan performa."
+            changelog.lines().firstOrNull { it.isNotBlank() } ?: LocalizationManager.activeStrings.updateDefaultChangelog
         } else {
-            "Pembaruan fitur & peningkatan performa."
+            LocalizationManager.activeStrings.updateDefaultChangelog
         }
 
         val notification = NotificationCompat.Builder(context, UPDATE_CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Pembaruan Kirimrasa $latestVersion Tersedia!")
+            .setContentTitle(LocalizationManager.activeStrings.notifUpdateTitle(latestVersion))
             .setContentText(snippet)
-            .setStyle(NotificationCompat.BigTextStyle().bigText("Versi baru ($latestVersion) telah dirilis:\n$snippet\n\nKetuk untuk mengunduh dan memasang langsung."))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(LocalizationManager.activeStrings.notifUpdateBody(latestVersion, snippet)))
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -88,7 +89,7 @@ object NotificationHelper {
     fun buildNotification(
         context: Context,
         title: String = "WhatsApp Bulk Sender",
-        content: String = "Layanan pengiriman aktif...",
+        content: String = LocalizationManager.activeStrings.notifServiceRunning,
         progressMax: Int = 0,
         progressCurrent: Int = 0,
         isIndeterminate: Boolean = false

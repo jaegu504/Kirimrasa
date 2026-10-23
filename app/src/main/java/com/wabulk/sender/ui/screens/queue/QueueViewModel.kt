@@ -1,5 +1,6 @@
 package com.wabulk.sender.ui.screens.queue
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import android.app.Application
 import android.content.Context
 import android.content.Intent
@@ -97,7 +98,7 @@ class QueueViewModel(application: Application) : AndroidViewModel(application) {
                     val recentCampaigns = campaignDao.getRecentCampaigns(1)
                     val camp = recentCampaigns.firstOrNull() ?: CampaignEntity(
                         id = 1L,
-                        title = "Kampanye Pesan Massal WhatsApp",
+                        title = LocalizationManager.activeStrings.campaignDefaultTitle,
                         totalRecipients = totalCount.value,
                         sentCount = sentCount.value,
                         failedCount = 0,
@@ -111,7 +112,7 @@ class QueueViewModel(application: Application) : AndroidViewModel(application) {
                     } else {
                         val currentQueue = queueManager.queueItems.value
                         currentQueue.mapIndexed { index, qItem ->
-                            val msgText = qItem.bubbleTexts.joinToString("\n\n").ifBlank { "Halo ${qItem.recipientName}" }
+                            val msgText = qItem.bubbleTexts.joinToString("\n\n").ifBlank { "${LocalizationManager.activeStrings.greetingWord} ${qItem.recipientName}" }
                             CampaignItemEntity(
                                 id = (index + 1).toLong(),
                                 campaignId = camp.id,
@@ -125,7 +126,7 @@ class QueueViewModel(application: Application) : AndroidViewModel(application) {
                                     QueueTaskStatus.TYPING -> "TYPING"
                                     QueueTaskStatus.PENDING -> "PENDING"
                                 },
-                                errorMessage = qItem.errorMessage ?: if (qItem.status == QueueTaskStatus.FAILED) "Gagal terkirim" else null,
+                                errorMessage = qItem.errorMessage ?: if (qItem.status == QueueTaskStatus.FAILED) LocalizationManager.activeStrings.sendFailed else null,
                                 sentAt = qItem.sentTimestamp ?: System.currentTimeMillis()
                             )
                         }
@@ -160,7 +161,7 @@ class QueueViewModel(application: Application) : AndroidViewModel(application) {
 
                 val sendIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/csv"
-                    putExtra(Intent.EXTRA_SUBJECT, "Laporan Kampanye ${typedCamp.title}")
+                    putExtra(Intent.EXTRA_SUBJECT, LocalizationManager.activeStrings.reportSubject(typedCamp.title))
                     putExtra(Intent.EXTRA_TEXT, typedCsv)
                     if (reportUri != null) {
                         putExtra(Intent.EXTRA_STREAM, reportUri)
@@ -169,7 +170,7 @@ class QueueViewModel(application: Application) : AndroidViewModel(application) {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
 
-                val chooser = Intent.createChooser(sendIntent, "Ekspor Laporan CSV").apply {
+                val chooser = Intent.createChooser(sendIntent, LocalizationManager.activeStrings.reportExportChooser).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     if (reportUri != null) {
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -189,10 +190,10 @@ class QueueViewModel(application: Application) : AndroidViewModel(application) {
 
                 context.startActivity(chooser)
                 val successMsg = onExportSuccess?.invoke(typedItems.size)
-                    ?: "Laporan CSV berhasil diekspor (${typedItems.size} data)"
+                    ?: LocalizationManager.activeStrings.reportExported(typedItems.size)
                 Toast.makeText(context, successMsg, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Toast.makeText(context, "Gagal mengekspor laporan: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, LocalizationManager.activeStrings.reportExportFailed(e.message.orEmpty()), Toast.LENGTH_LONG).show()
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.wabulk.sender.update
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -8,6 +9,8 @@ import android.os.Build
 import android.os.Environment
 import android.provider.Settings
 import androidx.core.content.FileProvider
+import androidx.core.app.NotificationManagerCompat
+import com.wabulk.sender.BuildConfig
 import com.wabulk.sender.service.NotificationHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,7 +45,8 @@ sealed class UpdateState {
 }
 
 object UpdateManager {
-    const val CURRENT_VERSION = "1.1.1"
+    // From build.gradle versionName; a hardcoded copy went stale and re-offered the installed version
+    val CURRENT_VERSION: String = BuildConfig.VERSION_NAME
     const val GITHUB_REPO = "jaegu504/Kirimrasa"
     private const val GITHUB_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases/latest"
 
@@ -113,7 +117,7 @@ object UpdateManager {
 
                     val json = JSONObject(responseText)
                     val tagName = json.optString("tag_name", "")
-                    val body = json.optString("body", "Pembaruan versi terbaru.")
+                    val body = json.optString("body", LocalizationManager.activeStrings.updateDefaultChangelog)
 
                     // Find APK Asset
                     var apkUrl = ""
@@ -150,11 +154,14 @@ object UpdateManager {
                         changelog = updateInfo.changelog
                     )
                 } else {
+                    // Clear a leftover "update available" notification once that version is installed
+                    NotificationManagerCompat.from(context.applicationContext)
+                        .cancel(NotificationHelper.UPDATE_NOTIFICATION_ID)
                     _updateState.value = if (isManual) UpdateState.UpToDate else UpdateState.Idle
                 }
             } catch (e: Exception) {
                 if (isManual) {
-                    _updateState.value = UpdateState.Error(e.message ?: "Gagal memeriksa pembaruan")
+                    _updateState.value = UpdateState.Error(e.message ?: LocalizationManager.activeStrings.updateCheckFailed)
                 } else {
                     _updateState.value = UpdateState.Idle
                 }
@@ -239,7 +246,7 @@ object UpdateManager {
                     installApk(context, apkFile)
                 }
             } catch (e: Exception) {
-                _updateState.value = UpdateState.Error("Gagal mengunduh: ${e.message}")
+                _updateState.value = UpdateState.Error(LocalizationManager.activeStrings.updateDownloadError(e.message.orEmpty()))
             }
         }
     }
@@ -250,7 +257,7 @@ object UpdateManager {
     fun installApk(context: Context, file: File? = downloadedApkFile) {
         val target = file ?: downloadedApkFile ?: return
         if (!target.exists() || target.length() == 0L) {
-            _updateState.value = UpdateState.Error("File APK tidak ditemukan atau rusak.")
+            _updateState.value = UpdateState.Error(LocalizationManager.activeStrings.updateApkMissing)
             return
         }
 
@@ -284,7 +291,7 @@ object UpdateManager {
             }
             context.startActivity(installIntent)
         } catch (e: Exception) {
-            _updateState.value = UpdateState.Error("Gagal memasang APK: ${e.message}")
+            _updateState.value = UpdateState.Error(LocalizationManager.activeStrings.updateInstallError(e.message.orEmpty()))
         }
     }
 }

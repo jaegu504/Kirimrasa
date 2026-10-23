@@ -236,6 +236,131 @@ interface AppStrings {
     val settingsCheckUpdateBtn: String
     val settingsCheckingUpdates: String
     val settingsAppUpToDate: String
+
+    // Extracted from hardcoded UI text
+    val updateApkLabel: String
+    val updateAvailableTitle: String
+    val updateReleaseNotes: String
+    val updateDefaultChangelog: String
+    val updateNowBtn: String
+    val updateLaterBtn: String
+    val updateDownloading: String
+    val updateDownloadHint: String
+    val updateReadyTitle: String
+    val updateReadyDesc: String
+    val updateInstallBtn: String
+    val updateDownloadFailedTitle: String
+    val retryBtn: String
+    val updateUpToDateTitle: String
+    val updateUpToDateDesc: (String) -> String
+    val updateCheckingTitle: String
+    val updateCheckFailed: String
+    val updateDownloadError: (String) -> String
+    val updateApkMissing: String
+    val updateInstallError: (String) -> String
+    val notifSendingChannel: String
+    val notifSendingChannelDesc: String
+    val notifUpdateChannel: String
+    val notifUpdateChannelDesc: String
+    val notifUpdateTitle: (String) -> String
+    val notifUpdateBody: (String, String) -> String
+    val notifServiceRunning: String
+    val notifServiceTitle: String
+    val notifServiceContent: String
+    val notifDoneTitle: String
+    val notifDoneBody: (Int) -> String
+    val notifTypingTitle: String
+    val notifTypingBody: (String, Int, Int) -> String
+    val notifSendingTitle: (Int) -> String
+    val notifSendingBody: (Int, Int) -> String
+    val queueReadyTitle: String
+    val gatewayConnecting: String
+    val gatewayNotLinked: String
+    val gatewayAlreadyLinked: String
+    val waOpenFailed: (String) -> String
+    val waInstalled: String
+    val waNotInstalled: String
+    val csvReadFailed: (String) -> String
+    val csvEmpty: String
+    val csvNoRecords: String
+    val csvMissingPhone: String
+    val gatewayConnectFailed: String
+    val codeCopied: (String) -> String
+    val waNotFound: String
+    val composerSampleMessage: String
+    val aiConnectFailed: String
+    val filePickerFailed: (String) -> String
+    val allContacts: String
+    val composerGuideTitle: String
+    val composerGuide1: String
+    val composerGuide2: String
+    val composerGuide3: String
+    val composerGuide4: String
+    val syncResult: (Int, Int) -> String
+    val contactsPermissionNeeded: String
+    val failedWith: (String) -> String
+    val csvImported: (Int) -> String
+    val csvOpenFailed: String
+    val csvImportTitle: String
+    val queueStatePaused: String
+    val queueStateSending: String
+    val queueStateIdle: String
+    val queueDone: String
+    val queueTypingTo: (String) -> String
+    val queuePausedBanner: String
+    val queueWaitingSafeDelay: (Int) -> String
+    val queueReadyToSend: String
+    val queueEmpty: String
+    val queueFilterEmpty: String
+    val queueTypingBadge: String
+    val campaignDefaultTitle: String
+    val sendFailed: String
+    val reportSubject: (String) -> String
+    val reportExportChooser: String
+    val reportExported: (Int) -> String
+    val reportExportFailed: (String) -> String
+    val tutorialMenuDesc: String
+    val toggleThemeDesc: String
+    val fallbackBroadcastMessage: String
+    val waPersonalDetected: String
+    val waPersonalMissing: String
+    val readyLabel: String
+    val notAvailableLabel: String
+    val yourWaNumber: String
+    val waNumberHint: String
+    val waPersonalNotInstalledToast: String
+    val openWhatsAppBtn: String
+    val readyToUse: String
+    val failedLabel: String
+    val testReadinessBtn: String
+    val waBusinessDetected: String
+    val waBusinessMissing: String
+    val yourWbNumber: String
+    val wbNumberHint: String
+    val waBusinessNotInstalledToast: String
+    val openWaBusinessBtn: String
+    val activeLabel: String
+    val inactiveLabel: String
+    val gatewayDesc: String
+    val apiKeyHint: String
+    val gatewayConnectedLatency: (Long) -> String
+    val minutesShort: (Int) -> String
+    val messagesShort: (Int) -> String
+    val randomDelayLabel: String
+    val qrLinkTitle: String
+    val qrLinkDesc1: String
+    val qrLinkDesc2: String
+    val connectedViaGateway: (String) -> String
+    val requestPairingCodeBtn: String
+    val yourPairingCode: String
+    val copyCodeOpenWaBtn: String
+    val nicknameFallback: String
+    val greetingWord: String
+    val understoodBtn: String
+    val roundRobinLabel: String
+    val queueBadgeWaiting: String
+    val queueBadgeFailed: String
+    val queueBadgeSent: String
 }
 
 object IndonesianStrings : AppStrings {
@@ -466,66 +591,191 @@ object IndonesianStrings : AppStrings {
     override val settingsCheckUpdateBtn = "Periksa Pembaruan"
     override val settingsCheckingUpdates = "Memeriksa..."
     override val settingsAppUpToDate = "Aplikasi Anda sudah versi terbaru ✓"
+
+    // Extracted from hardcoded UI text
+    override val updateApkLabel: String = "APK Resmi"
+    override val updateAvailableTitle: String = "Pembaruan Tersedia!"
+    override val updateReleaseNotes: String = "Catatan Rilis:"
+    override val updateDefaultChangelog: String = "Peningkatan performa dan kestabilan aplikasi."
+    override val updateNowBtn: String = "Perbarui Sekarang"
+    override val updateLaterBtn: String = "Nanti Saja"
+    override val updateDownloading: String = "Mengunduh Pembaruan..."
+    override val updateDownloadHint: String = "Aplikasi akan otomatis membuka layar pemasangan setelah selesai."
+    override val updateReadyTitle: String = "Unduhan Siap Dipasang!"
+    override val updateReadyDesc: String = "Ketuk tombol di bawah untuk menyelesaikan pemasangan versi terbaru."
+    override val updateInstallBtn: String = "Pasang Pembaruan"
+    override val updateDownloadFailedTitle: String = "Gagal Mengunduh"
+    override val retryBtn: String = "Coba Lagi"
+    override val updateUpToDateTitle: String = "Versi Terbaru!"
+    override val updateUpToDateDesc: (String) -> String = { v -> "Kirimrasa v$v adalah versi paling mutakhir yang tersedia." }
+    override val updateCheckingTitle: String = "Memeriksa Pembaruan..."
+    override val updateCheckFailed: String = "Gagal memeriksa pembaruan"
+    override val updateDownloadError: (String) -> String = { m -> "Gagal mengunduh: $m" }
+    override val updateApkMissing: String = "File APK tidak ditemukan atau rusak."
+    override val updateInstallError: (String) -> String = { m -> "Gagal memasang APK: $m" }
+    override val notifSendingChannel: String = "Pengiriman Massal WhatsApp"
+    override val notifSendingChannelDesc: String = "Notifikasi status berjalan untuk proses pengiriman pesan massal WhatsApp"
+    override val notifUpdateChannel: String = "Pembaruan Kirimrasa"
+    override val notifUpdateChannelDesc: String = "Notifikasi ketersediaan versi baru aplikasi Kirimrasa"
+    override val notifUpdateTitle: (String) -> String = { v -> "Pembaruan Kirimrasa $v Tersedia!" }
+    override val notifUpdateBody: (String, String) -> String = { v, s -> "Versi baru ($v) telah dirilis:\n$s\n\nKetuk untuk mengunduh dan memasang langsung." }
+    override val notifServiceRunning: String = "Layanan pengiriman aktif..."
+    override val notifServiceTitle: String = "Kirimrasa - Berjalan"
+    override val notifServiceContent: String = "Menjalankan antrean pengiriman dengan pengaman anti-ban..."
+    override val notifDoneTitle: String = "Pengiriman Selesai!"
+    override val notifDoneBody: (Int) -> String = { n -> "Semua $n pesan berhasil terkirim." }
+    override val notifTypingTitle: String = "Mengetik Pesan..."
+    override val notifTypingBody: (String, Int, Int) -> String = { name, i, n -> "Mengetik pesan untuk $name ($i/$n)" }
+    override val notifSendingTitle: (Int) -> String = { p -> "Mengirim Pesan ($p%)" }
+    override val notifSendingBody: (Int, Int) -> String = { s, n -> "$s/$n terkirim - Lanjut ke pesan berikutnya" }
+    override val queueReadyTitle: String = "Broadcast Siap Dimulai"
+    override val gatewayConnecting: String = "Menyambungkan ke WhatsApp..."
+    override val gatewayNotLinked: String = "WhatsApp belum terhubung (Minta kode pairing di Pengaturan)"
+    override val gatewayAlreadyLinked: String = "WhatsApp sudah terhubung di perangkat ini"
+    override val waOpenFailed: (String) -> String = { m -> "Gagal membuka WhatsApp: $m" }
+    override val waInstalled: String = "WhatsApp Terpasang di HP"
+    override val waNotInstalled: String = "Aplikasi WhatsApp belum terpasang di HP"
+    override val csvReadFailed: (String) -> String = { m -> "Gagal membaca file CSV: $m" }
+    override val csvEmpty: String = "File CSV kosong"
+    override val csvNoRecords: String = "Tidak ada data kontak yang valid di CSV"
+    override val csvMissingPhone: String = "Kolom nomor telepon tidak ditemukan di baris judul CSV"
+    override val gatewayConnectFailed: String = "Koneksi gateway gagal"
+    override val codeCopied: (String) -> String = { c -> "Kode $c disalin ke clipboard!" }
+    override val waNotFound: String = "WhatsApp tidak ditemukan di perangkat ini"
+    override val composerSampleMessage: String = "Halo {Nickname}! 👋\nKami dari {Company} ingin membagikan penawaran spesial minggu ini."
+    override val aiConnectFailed: String = "Gagal terhubung ke layanan AI"
+    override val filePickerFailed: (String) -> String = { m -> "Gagal membuka pemilih berkas: $m" }
+    override val allContacts: String = "Semua Kontak"
+    override val composerGuideTitle: String = "Panduan Pesan & Variabel"
+    override val composerGuide1: String = "1. Spintax {A|B|C}: Memutar variasi kata secara otomatis agar tiap pesan ke penerima berbeda dan tidak terdeteksi bot/spam."
+    override val composerGuide2: String = "2. {Nickname}: Nama panggilan unik yang otomatis diambil dari Tab Kontak."
+    override val composerGuide3: String = "3. {Company} & {Custom_1}: Variabel pengirim dan promo yang dapat Anda ubah nilainya pada menu 'Atur Nilai {Company}'."
+    override val composerGuide4: String = "4. Multi-Balon: Memecah pesan panjang menjadi 2-3 balon obrolan dengan jeda mengetik 3 detik untuk simulasi mengetik manusia."
+    override val syncResult: (Int, Int) -> String = { a, b -> "+$a baru, $b diperbarui" }
+    override val contactsPermissionNeeded: String = "Izin kontak diperlukan"
+    override val failedWith: (String) -> String = { m -> "Gagal: $m" }
+    override val csvImported: (Int) -> String = { n -> "+$n diimpor dari CSV" }
+    override val csvOpenFailed: String = "Gagal membuka file CSV"
+    override val csvImportTitle: String = "Impor CSV"
+    override val queueStatePaused: String = "DIJEDA"
+    override val queueStateSending: String = "MENGIRIM"
+    override val queueStateIdle: String = "SIAGA"
+    override val queueDone: String = "Selesai"
+    override val queueTypingTo: (String) -> String = { n -> "Mengetik: $n" }
+    override val queuePausedBanner: String = "Antrean sedang dijeda"
+    override val queueWaitingSafeDelay: (Int) -> String = { s -> "Menunggu jeda aman (${s}d)" }
+    override val queueReadyToSend: String = "Siap mengirim"
+    override val queueEmpty: String = "Belum ada antrean broadcast. Susun pesan di tab 'Buat Pesan' dan tekan 'Mulai Kirim Massal' untuk memulai pengiriman."
+    override val queueFilterEmpty: String = "Tidak ada kontak dalam filter ini"
+    override val queueTypingBadge: String = "MENGETIK (2d)"
+    override val campaignDefaultTitle: String = "Kampanye Pesan Massal WhatsApp"
+    override val sendFailed: String = "Gagal terkirim"
+    override val reportSubject: (String) -> String = { t -> "Laporan Kampanye $t" }
+    override val reportExportChooser: String = "Ekspor Laporan CSV"
+    override val reportExported: (Int) -> String = { n -> "Laporan CSV berhasil diekspor ($n data)" }
+    override val reportExportFailed: (String) -> String = { m -> "Gagal mengekspor laporan: $m" }
+    override val tutorialMenuDesc: String = "Panduan & Tutorial"
+    override val toggleThemeDesc: String = "Ganti Tema"
+    override val fallbackBroadcastMessage: String = "Halo {Nickname}, penawaran spesial minggu ini dari {Company}! Gunakan kode {Custom_1}."
+    override val waPersonalDetected: String = "Terdeteksi di HP (WhatsApp Personal)"
+    override val waPersonalMissing: String = "Aplikasi WhatsApp Belum Terpasang"
+    override val readyLabel: String = "Siap Pakai"
+    override val notAvailableLabel: String = "Belum Ada"
+    override val yourWaNumber: String = "Nomor WhatsApp Anda:"
+    override val waNumberHint: String = "Ketik nomor WhatsApp Anda (cth: +62 812-3456-7890)"
+    override val waPersonalNotInstalledToast: String = "WhatsApp Personal tidak terpasang di HP"
+    override val openWhatsAppBtn: String = "Buka WhatsApp"
+    override val readyToUse: String = "Siap Digunakan!"
+    override val failedLabel: String = "Gagal"
+    override val testReadinessBtn: String = "Uji Kesiapan"
+    override val waBusinessDetected: String = "Terdeteksi di HP (WhatsApp Business)"
+    override val waBusinessMissing: String = "Aplikasi WA Business Belum Terpasang"
+    override val yourWbNumber: String = "Nomor WhatsApp Business Anda:"
+    override val wbNumberHint: String = "Ketik nomor WA Business Anda (cth: +62 812-3456-7890)"
+    override val waBusinessNotInstalledToast: String = "WhatsApp Business tidak terpasang di HP"
+    override val openWaBusinessBtn: String = "Buka WA Business"
+    override val activeLabel: String = "AKTIF"
+    override val inactiveLabel: String = "NONAKTIF"
+    override val gatewayDesc: String = "Gunakan server gateway untuk mengirim pesan massal lewat WhatsApp yang sudah ditautkan."
+    override val apiKeyHint: String = "Kunci API gateway (kosongkan jika tidak ada)"
+    override val gatewayConnectedLatency: (Long) -> String = { ms -> "Terhubung (${ms}ms)" }
+    override val minutesShort: (Int) -> String = { n -> "$n mnt" }
+    override val messagesShort: (Int) -> String = { n -> "$n pesan" }
+    override val randomDelayLabel: String = "Jeda Acak"
+    override val qrLinkTitle: String = "Tautkan dengan Kode QR"
+    override val qrLinkDesc1: String = "Mode 8-Digit Pairing Code lebih direkomendasikan karena dapat dilakukan langsung di HP yang sama tanpa perlu kamera ponsel lain."
+    override val qrLinkDesc2: String = "Untuk menggunakan Kode Pairing: Klik 'Salin & Buka WhatsApp', lalu buka Pengaturan WA > Perangkat Tertaut > Tautkan dengan nomor telepon."
+    override val connectedViaGateway: (String) -> String = { n -> "Terhubung via Gateway ($n)" }
+    override val requestPairingCodeBtn: String = "Minta Kode Pairing 8-Digit"
+    override val yourPairingCode: String = "Kode Pairing WhatsApp Anda:"
+    override val copyCodeOpenWaBtn: String = "Salin Kode & Buka WhatsApp"
+    override val nicknameFallback: String = "Kak"
+    override val greetingWord: String = "Hai"
+    override val understoodBtn: String = "Mengerti"
+    override val roundRobinLabel: String = "Bergantian"
+    override val queueBadgeWaiting: String = "MENUNGGU"
+    override val queueBadgeFailed: String = "GAGAL"
+    override val queueBadgeSent: String = "TERKIRIM"
 }
 
 object TurkishStrings : AppStrings {
     override val navCompose = "Mesaj Oluştur"
     override val navContacts = "Kişiler"
-    override val navQueue = "Kuyruk"
+    override val navQueue = "Sıra"
     override val navSettings = "Ayarlar"
 
     override val appTitle = "Kirimrasa"
     override val livePulseStatus = "Aktif"
-    override val antiBanLevel3 = "Anti-Ban: Seviye 3"
+    override val antiBanLevel3 = "Ban Koruması: Seviye 3"
     override val campaignTagDraft = "#104 • Taslak"
 
-    override val composerTitle = "Kampanya Oluşturucu"
-    override val composerAccountPersonal = "WA Bireysel"
-    override val composerAccountBusiness = "WA İşletme"
-    override val composerAccountDual = "Çift Senkron"
-    override val composerPrimaryNode = "(Birincil Düğüm)"
-    override val composerMediaQueue = "Medya Kuyruğu"
+    override val composerTitle = "Mesaj Hazırla"
+    override val composerAccountPersonal = "WA Kişisel"
+    override val composerAccountBusiness = "WA Business"
+    override val composerAccountDual = "İki Hesap"
+    override val composerPrimaryNode = "(Ana Hesap)"
+    override val composerMediaQueue = "Eklenen Medya"
     override val composerAutoCompressed = "(Otomatik Sıkıştırma)"
-    override val composerAttachedCount = { count: Int -> "$count Eklendi" }
+    override val composerAttachedCount = { count: Int -> "$count dosya eklendi" }
     override val composerAttachButton = "+ Ekle"
-    override val composerSpintaxTitle = "Spintax Dinamik Değişkenleri"
+    override val composerSpintaxTitle = "Değişkenler ve Spintax"
     override val composerSpintaxTapToInsert = "Eklemek için dokunun"
-    override val composerPlaceholder = "Spintax destekli kişiselleştirilmiş toplu mesajınızı yazın..."
+    override val composerPlaceholder = "Kişiye özel mesajınızı yazın (spintax desteklenir)..."
     override val composerSpintaxValidated = "Spintax Doğrulandı"
-    override val composerCharCount = { chars: Int, segments: Int -> "$chars karakter • $segments WA Segmenti" }
-    override val composerAiRewriteBtn = "Yapay Zeka Yeniden Yazım & Anti-Spam Döngüsü"
+    override val composerCharCount = { chars: Int, segments: Int -> "$chars karakter • $segments mesaj parçası" }
+    override val composerAiRewriteBtn = "Yapay Zekâ ile Yeniden Yaz ve Çeşitlendir"
     override val composerToneFriendly = "Samimi"
     override val composerToneShorter = "Kısa"
-    override val composerToneMaxVariance = "Maksimum Varyans"
+    override val composerToneMaxVariance = "En Çok Çeşitlilik"
     override val composerLivePreviewTitle = "CANLI ÖNİZLEME"
     override val composerOnlinePreview = "Çevrimiçi Önizleme"
-    override val composerDynamicJitterTitle = "Dinamik Gönderim Gecikmesi"
-    override val composerSafeDelayRange = "Güvenli Aralık: 25sn - 60sn"
+    override val composerDynamicJitterTitle = "Rastgele Bekleme Süresi"
+    override val composerSafeDelayRange = "Güvenli Bekleme: 25-60 sn"
     override val composerJitterFast = "Hızlı (Agresif)"
-    override val composerJitterMetaCompliant = "Meta Uyumlu • Rastgele Zamanlama"
-    override val composerJitterRelaxed = "Rahat"
-    override val composerLaunchBtn = "Toplu Yayını Başlat"
+    override val composerJitterMetaCompliant = "Standart • Rastgele Süre"
+    override val composerJitterRelaxed = "Yavaş"
+    override val composerLaunchBtn = "Toplu Gönderimi Başlat"
     override val composerLaunchContactsCount = { count: Int -> "$count Kişi" }
     override val composerCompanyVariableTitle = "{Company} Değeri (İşletme / Marka Adı):"
     override val composerCompanyPlaceholder = "Örnek: Kirimrasa / Butik Mağaza"
-    override val composerCustom1VariableTitle = "{Custom_1} Değeri (Promosyon Kodu / Bağlantı):"
+    override val composerCustom1VariableTitle = "{Custom_1} Değeri (Promosyon Kodu / Bağlantı / Diğer Bilgi):"
     override val composerCustom1Placeholder = "Örnek: INDIRIM30 / https://wa.me/..."
-    override val composerCustomVariablesDesc = "{Nickname} değeri Kişiler sekmesindeki takma adlardan otomatik alınır."
+    override val composerCustomVariablesDesc = "{Nickname}, Kişiler sekmesinde her kişiye verdiğiniz hitap adından otomatik alınır."
     override val composerSetVariablesBtn = "{Company} & {Custom_1} Değerlerini Ayarla"
     override val composerBubbleNumbered = { num: Int -> "Mesaj Balonu #$num" }
     override val composerRemoveBubble = "Balonu Sil"
-    override val composerAddBubbleBtn = "+ Mesaj Balonu Ekle (Maks 3)"
-    override val composerAiGenerating = "Yapay zeka & Spintax varyantları üretiliyor..."
+    override val composerAddBubbleBtn = "+ Mesaj Balonu Ekle (en fazla 3)"
+    override val composerAiGenerating = "Yapay zekâ ile mesaj çeşitleri hazırlanıyor..."
     override val composerMediaPickerError = { err: String -> "Dosya seçici açılamadı: $err" }
-    override val composerDualSyncLabel = "Çift Senkronizasyon"
+    override val composerDualSyncLabel = "İki Hesap"
 
-    override val contactsTitle = "Kişi Yöneticisi"
+    override val contactsTitle = "Kişi Yönetimi"
     override val contactsSubtitle = "Rehber Senkronizasyonu & Kişiselleştirme"
     override val contactsSyncBtn = "Senkronize Et"
-    override val contactsSyncedAgo = "2dk önce"
+    override val contactsSyncedAgo = "2 dk önce"
     override val contactsTotalMetric = "Toplam"
     override val contactsSelectedMetric = "Seçilen"
-    override val contactsNicknamesMetric = "Takma Ad"
+    override val contactsNicknamesMetric = "Hitap Adı"
     override val contactsSearchPlaceholder = "İsim, numara veya etiket ara..."
     override val contactsTagAll = { count: Int -> "Tümü ($count)" }
     override val contactsTagSelected = { count: Int -> "Seçilenler ($count)" }
@@ -533,30 +783,30 @@ object TurkishStrings : AppStrings {
     override val contactsTagFriends = { count: Int -> "Arkadaşlar ($count)" }
     override val contactsTagBusiness = { count: Int -> "İş ($count)" }
     override val contactsNewTagBtn = "Yeni Etiket"
-    override val contactsSelectAllInTag = { tag: String, count: Int -> "$tag içindeki Tümünü Seç ($count)" }
+    override val contactsSelectAllInTag = { tag: String, count: Int -> "$tag etiketli tüm kişileri seç ($count)" }
     override val contactsBulkAssignTagBtn = "Toplu Etiket Ata"
-    override val contactsCallNameLabel = "Hitap / Samimi Takma Ad"
+    override val contactsCallNameLabel = "Hitap Adı (Samimi Ad)"
     override val contactsGreetingPreview = { name: String -> "Önizleme: \"Merhaba $name! 👋\"" }
     override val contactsQuickFormat = "Hızlı format:"
     override val contactsFormatFirstName = "Sadece ilk ad"
-    override val contactsFormatRemoveNotes = "Ek notları temizle"
+    override val contactsFormatRemoveNotes = "Parantez içindeki notları sil"
     override val contactsFormatAddHello = "+ Merhaba / Selam"
     override val contactsImportCsvBtn = "CSV İçe Aktar"
-    override val contactsImportDialogTitle = "CSV Kişilerini İçe Aktar"
+    override val contactsImportDialogTitle = "Kişileri CSV'den İçe Aktar"
     override val contactsImportPickFile = "Cihazdan CSV Dosyası Seç"
-    override val contactsImportLoadSample = "Örnek CSV Yükle (5 Demo Kişi)"
+    override val contactsImportLoadSample = "Örnek Veri Yükle (5 Kişi)"
     override val contactsImportResult = { imported: Int, total: Int -> "$total satırdan $imported kişi başarıyla içe aktarıldı" }
     override val contactsSyncing = "Senkronize ediliyor..."
     override val contactsSelectAllInView = "Tümünü Seç"
-    override val contactsDeselectAllInView = "İptal"
+    override val contactsDeselectAllInView = "Seçimi Kaldır"
     override val contactsAllSelectedInViewCount = { count: Int -> "Tümü Seçildi ($count Kişi)" }
     override val contactsSelectAllInViewCount = { count: Int -> "Tüm Kişileri Seç ($count)" }
     override val contactsClearSearch = "Aramayı temizle"
-    override val contactsAutoKak = "Hitap Otomatik"
+    override val contactsAutoKak = "Otomatik: 'efendim'"
     override val contactsManageTagsTitle = "Kişi Etiketlerini Yönet"
     override val contactsManageTagsDesc = "Bu kişiye eklenecek etiket kategorilerini seçin:"
     override val contactsAddNewTagTitle = "Yeni Etiket Kategorisi Ekle"
-    override val contactsAddNewTagDesc = "Bu kişileri gruplandırmak için yeni bir etiket kategorisi oluşturun (ör: VIP, Müşteri, Bayi, Aile)."
+    override val contactsAddNewTagDesc = "Kişileri gruplandırmak için yeni bir etiket oluşturun (ör: VIP, Müşteri, Bayi, Tedarikçi)."
     override val contactsTagNamePlaceholder = "Etiket adı (ör: VIP)"
     override val contactsCancelBtn = "İptal"
     override val contactsSaveBtn = "Kaydet"
@@ -571,92 +821,92 @@ object TurkishStrings : AppStrings {
     override val contactsViewSelectedOnly = "Sadece Seçilenler"
     override val contactsViewAll = "Tümünü Göster"
 
-    override val queueTitle = "Canlı Gönderim Kuyruğu"
-    override val queueCampaignName = "Kampanya #104: Sezon Promosyon Yayını"
-    override val queueMsgPerMin = "1.2 mesaj/dk"
-    override val queueDualNodeActive = "Çift WA Düğümü • Senkronizasyon Aktif"
-    override val queueSafeBadge = "Güvenli Sv. 3"
+    override val queueTitle = "Canlı Gönderim Sırası"
+    override val queueCampaignName = "Kampanya #104: Bahar İndirimi"
+    override val queueMsgPerMin = "1,2 mesaj/dk"
+    override val queueDualNodeActive = "İki WA Hesabı • Senkronizasyon Açık"
+    override val queueSafeBadge = "Güvenli • Seviye 3"
     override val queueSentCount = { sent: Int, total: Int -> "$sent / $total Gönderildi" }
     override val queueCompletePercentage = { pct: Int -> "%$pct Tamamlandı" }
     override val queueRecipientsRemaining = { count: Int -> "$count Kalan Alıcı" }
-    override val queueEstTimeLeft = "Tahmini 14dk 10sn kaldı"
-    override val queueWaitingJitter = { sec: Int -> "Anti-ban gecikmesi bekleniyor: ${sec}sn" }
-    override val queueTypingCadenceActive = "İnsansı yazma ritmi aktif"
-    override val queueMetricSuccess = "Başarı"
-    override val queueMetricAvgDelay = "Ort. Gecikme"
+    override val queueEstTimeLeft = "Tahmini kalan süre: 14 dk 10 sn"
+    override val queueWaitingJitter = { sec: Int -> "Güvenlik beklemesi: ${sec} sn" }
+    override val queueTypingCadenceActive = "Doğal yazma hızı açık"
+    override val queueMetricSuccess = "Başarılı"
+    override val queueMetricAvgDelay = "Ort. Bekleme"
     override val queueMetricFlagAlert = "Uyarı"
-    override val queuePauseBtn = "Kuyruğu Duraklat"
-    override val queueStopBtn = "Yayını Durdur"
+    override val queuePauseBtn = "Gönderimi Duraklat"
+    override val queueStopBtn = "Gönderimi Durdur"
     override val queueExportCsvBtn = "CSV Raporunu Dışa Aktar"
     override val queueExportSuccessToast = { count: Int -> "CSV raporu başarıyla dışa aktarıldı ($count kayıt)" }
     override val queueExportFailed = { err: String -> "Rapor dışa aktarılamadı: $err" }
     override val queueFilterAll = "Tümü"
     override val queueFilterActive = "Aktif"
-    override val queueFilterDelivered = "İletildi"
+    override val queueFilterDelivered = "Gönderildi"
     override val queueFilterPending = "Bekliyor"
 
     override val settingsTitle = "Hesaplar ve Güvenlik Ayarları"
-    override val settingsSubtitle = "Anti-ban algoritmaları, çoklu düğüm yönlendirmesi & insansı tempo"
-    override val settingsShieldActive = "Seviye 3 Kalkan Aktif"
-    override val settingsGuardrailVersion = "Guardrail v4.2"
-    override val settingsEnginesTitle = "Bağlı Motorlar"
-    override val settingsEnginesCount = "2 Düğüm Yapılandırıldı"
-    override val settingsNode1Title = "WhatsApp Bireysel"
-    override val settingsNode1NodeNum = "Düğüm #1"
-    override val settingsConnected = "Bağlandı"
+    override val settingsSubtitle = "Ban koruması, çoklu hesapla gönderim ve doğal gönderim hızı"
+    override val settingsShieldActive = "Koruma Seviye 3 Açık"
+    override val settingsGuardrailVersion = "Koruma v4.2"
+    override val settingsEnginesTitle = "Bağlı Hesaplar"
+    override val settingsEnginesCount = "2 Hesap Ayarlandı"
+    override val settingsNode1Title = "WhatsApp Kişisel"
+    override val settingsNode1NodeNum = "Hesap 1"
+    override val settingsConnected = "Bağlı"
     override val settingsUptime = "Çalışma Süresi:"
-    override val settingsHealth = "Sağlık:"
+    override val settingsHealth = "Durum:"
     override val settingsTestPingBtn = "Ping Testi"
     override val settingsPinging = "Ping Gönderiliyor (18ms)..."
     override val settingsPongResult = "Pong! 18ms"
     override val settingsDisconnectBtn = "Bağlantıyı Kes"
-    override val settingsNode2Title = "WhatsApp İşletme"
-    override val settingsNode2NodeNum = "Düğüm #2"
-    override val settingsPairingReady = "Eşleşmeye Hazır"
-    override val settingsPairingDescription = "İkinci bir telefona veya QR taramaya gerek kalmadan bu cihazda anında bağlayın."
+    override val settingsNode2Title = "WhatsApp Business"
+    override val settingsNode2NodeNum = "Hesap 2"
+    override val settingsPairingReady = "Eşlemeye Hazır"
+    override val settingsPairingDescription = "İkinci bir telefona veya QR kodu taramaya gerek kalmadan bu cihazda hemen bağlayın."
     override val settingsExpiresIn = "Kalan süre"
-    override val settingsCopyOpenBtn = "Kodu Kopyala & WhatsApp'ı Aç"
+    override val settingsCopyOpenBtn = "Kodu Kopyala ve WhatsApp'ı Aç"
     override val settingsCodeCopied = "Kod Panoya Kopyalandı!"
-    override val settingsSwitchToQr = "Veya standart QR taramasına geçin"
-    override val settingsAntiBanTitle = "Anti-Ban İnsancıllaştırıcı"
+    override val settingsSwitchToQr = "Veya QR kodu ile bağlanın"
+    override val settingsAntiBanTitle = "Ban Koruması (Doğal Gönderim)"
     override val settingsRecommended = "Önerilen"
-    override val settingsJitterTitle = "Rastgele Gecikme Aralığı (Jitter)"
-    override val settingsJitterSubtitle = "Giden paketler arasında organik insansı duraklamalar"
-    override val settingsPresetConservative = "Muhafazakar (35-75sn)"
-    override val settingsPresetOptimal = "Optimal (25-65sn)"
-    override val settingsPresetTurbo = "Turbo (15-30sn)"
-    override val settingsTypingSimTitle = "Yazıyor Göstergesini Simüle Et"
-    override val settingsTypingSimSubtitle = "Gönderimden önce standart WhatsApp yazıyor durumu yayınlar"
-    override val settingsAutoRotateTitle = "Motorları Otomatik Döndür"
-    override val settingsAutoRotateSubtitle = "Mesaj gönderimini bağlı düğümler arasında eşit olarak paylaştırır (%50/%50)"
-    override val settingsAutoRotatePattern = "Aktif düzen: Düğüm #1 ➔ Düğüm #2 dönüşümü"
-    override val settingsCooldownTitle = "Grup Dinlenme Molası (Cooldown)"
-    override val settingsCooldownSubtitle = "Otomatik spam sezgisel tespitlerini önlemek için periyodik mola döngüleri"
+    override val settingsJitterTitle = "Rastgele Bekleme Aralığı"
+    override val settingsJitterSubtitle = "Mesajlar arasında doğal, rastgele bekleme"
+    override val settingsPresetConservative = "Temkinli (35-75 sn)"
+    override val settingsPresetOptimal = "Dengeli (25-65 sn)"
+    override val settingsPresetTurbo = "Turbo (15-30 sn)"
+    override val settingsTypingSimTitle = "\"Yazıyor...\" Göster"
+    override val settingsTypingSimSubtitle = "Göndermeden önce karşı tarafta \"yazıyor...\" görünür"
+    override val settingsAutoRotateTitle = "Hesaplar Arası Otomatik Geçiş"
+    override val settingsAutoRotateSubtitle = "Mesajları bağlı hesaplar arasında eşit dağıtır (%50/%50)"
+    override val settingsAutoRotatePattern = "Etkin düzen: sırayla Hesap 1 ➔ Hesap 2"
+    override val settingsCooldownTitle = "Belirli Aralıklarla Mola"
+    override val settingsCooldownSubtitle = "Otomatik spam tespitine takılmamak için düzenli aralıklarla ara verir"
     override val settingsPauseDuration = "Mola Süresi"
-    override val settingsBatchSize = "Her Grup Boyutu"
-    override val settingsCooldownNotice = { count: Int -> "Motor her $count giden mesajda otomatik olarak sessiz molaya girer" }
-    override val settingsAiToneTitle = "Varsayılan Yapay Zeka Yeniden Yazım Tonu"
+    override val settingsBatchSize = "Mola Öncesi Mesaj Sayısı"
+    override val settingsCooldownNotice = { count: Int -> "Her $count mesajda bir otomatik mola verilir" }
+    override val settingsAiToneTitle = "Varsayılan Yapay Zekâ Yazım Tonu"
     override val settingsSpintaxEngineTag = "Spintax Motoru"
     override val settingsToneCasual = "Gündelik"
     override val settingsToneFriendlyPicker = "Samimi"
     override val settingsToneFormal = "Resmi"
-    override val settingsAiToneDesc = "WhatsApp anti-spam eşiklerini geçen özgün sözdizimsel varyantlar üretmek için tek dokunuşla kullanılır."
-    override val settingsBaileysTitle = "Baileys Köprü Ağ Geçidi"
+    override val settingsAiToneDesc = "Mesaj ekranında tek dokunuşla, WhatsApp spam filtresine takılmayan farklı cümleler üretir."
+    override val settingsBaileysTitle = "Baileys Ağ Geçidi"
     override val settingsBaileysSubtitle = "Tekrar tarama gerektirmeyen çoklu cihaz ağ geçidi"
     override val settingsBaileysToggle = "Baileys Ağ Geçidini Kullan"
     override val settingsBaileysUrlLabel = "AĞ GEÇİDİ URL'Sİ"
     override val settingsBaileysKeyLabel = "API ANAHTARI (İSTEĞE BAĞLI)"
     override val settingsBaileysTestBtn = "Ağ Geçidi Bağlantısını Test Et"
-    override val settingsLanguageTitle = "Uygulama Dili (Dil Seçimi)"
+    override val settingsLanguageTitle = "Uygulama Dili (Language)"
     override val settingsLanguageSubtitle = "Arayüz dilini anında değiştirin"
     override val settingsSelectIndonesian = "Bahasa Indonesia"
     override val settingsSelectTurkish = "Türkçe"
-    override val settingsWaPersonalDetected = "Cihazda Yüklü (WhatsApp Bireysel)"
+    override val settingsWaPersonalDetected = "Telefonda yüklü (WhatsApp)"
     override val settingsWaPersonalNotDetected = "WhatsApp Uygulaması Yüklü Değil"
-    override val settingsWaBusinessDetected = "Cihazda Yüklü (WhatsApp İşletme)"
+    override val settingsWaBusinessDetected = "Telefonda yüklü (WhatsApp Business)"
     override val settingsWaBusinessNotDetected = "WhatsApp Business Yüklü Değil"
     override val settingsReadyToUse = "Kullanıma Hazır"
-    override val settingsNotAvailable = "Mevcut Değil"
+    override val settingsNotAvailable = "Henüz Yok"
     override val settingsYourWaNumber = "WhatsApp Numaranız:"
     override val settingsYourWbNumber = "WhatsApp Business Numaranız:"
     override val settingsInputPhonePlaceholder = "WhatsApp numaranızı yazın (ör: +90 555 123 4567)"
@@ -665,37 +915,162 @@ object TurkishStrings : AppStrings {
     override val settingsCheckingStatus = "Kontrol ediliyor..."
     override val settingsReadyStatus = "Kullanıma Hazır!"
     override val settingsFailedStatus = "Başarısız"
-    override val settingsTestReadinessBtn = "Hazırlık Testi"
-    override val settingsStatusActive = "AKTİF"
-    override val settingsStatusInactive = "PASİF"
+    override val settingsTestReadinessBtn = "Kontrol Et"
+    override val settingsStatusActive = "AÇIK"
+    override val settingsStatusInactive = "KAPALI"
     override val settingsBaileysExplanation = "Çoklu cihaz protokolüyle yüksek hızlı toplu mesaj gönderimi için yerel veya uzak Baileys Node.js ağ geçidini kullanın."
-    override val settingsThemeTitle = "Uygulama Teması (Görünüm)"
-    override val settingsThemeSubtitle = "Açık veya koyu Apple Glassmorphism temasını seçin"
+    override val settingsThemeTitle = "Tema ve Görünüm"
+    override val settingsThemeSubtitle = "Açık veya koyu cam görünümlü temayı seçin"
     override val settingsThemeDark = "Koyu Mod (Apple Glass)"
     override val settingsThemeLight = "Açık Mod (Apple Glass)"
     override val settingsThemeSystem = "Sistem Varsayılanı"
-    override val settingsNode1PhoneLabel = "WhatsApp Bireysel"
-    override val settingsNode2PhoneLabel = "WhatsApp İşletme"
-    override val settingsPairingCodeBtn = "8 Haneli Eşleşme Kodu İste"
+    override val settingsNode1PhoneLabel = "WhatsApp Kişisel"
+    override val settingsNode2PhoneLabel = "WhatsApp Business"
+    override val settingsPairingCodeBtn = "8 Haneli Eşleme Kodu İste"
 
-    override val tutorialTitle = "Kirimrasa Rehber & Eğitici"
+    override val tutorialTitle = "Kirimrasa Kullanım Rehberi"
     override val tutorialStep1Title = "Kirimrasa'ya Hoş Geldiniz"
-    override val tutorialStep1Desc = "Modern Apple Glassmorphic tarzıyla, mesajlarınızın bot gibi değil sıcak ve samimi hissettirmesini sağlayan kişisel WhatsApp toplu mesajlaşma uygulaması."
+    override val tutorialStep1Desc = "Modern cam görünümlü tasarımıyla, mesajlarınızın bot gibi değil sıcak ve samimi görünmesini sağlayan kişisel WhatsApp toplu mesaj uygulaması."
     override val tutorialStep2Title = "Hızlı Çoklu Cihaz Gönderimi"
     override val tutorialStep2Desc = "Sürekli karekod taraması gerekmeden arka planda toplu gönderim için yerleşik 'Çoklu Cihaz Ağ Geçidi'ni kullanın; bağlantınız her zaman kararlı ve güvende kalsın."
     override val tutorialStep3Title = "Kişisel Değişkenler & Anti-Spam"
-    override val tutorialStep3Desc = "Kişilere adlarıyla hitap etmek için {Nickname} etiketini kullanın, cümle varyasyonları için Spintax'ı açın ve numaranızı korumak için doğal insansı gecikmeler ekleyin."
+    override val tutorialStep3Desc = "Kişilere hitap adlarıyla seslenmek için {Nickname} değişkenini kullanın, cümle çeşitliliği için Spintax'ı açın ve numaranızı korumak için güvenli bekleme sürelerini açık tutun."
     override val tutorialStep4Title = "Akıllı Kişi Yönetimi"
     override val tutorialStep4Desc = "Kişileri tek dokunuşla seçin, 'Seçilenler' sekmesinde görüntüleyin ve tek bir düğmeyle aynı anda etiketleyin."
     override val tutorialNextBtn = "İleri"
-    override val tutorialStartBtn = "Kirimrasa'yı Başlat"
+    override val tutorialStartBtn = "Kullanmaya Başla"
     override val tutorialSkipBtn = "Geç"
     override val settingsReopenTutorialBtn = "Kullanım Rehberini Aç"
     override val settingsUpdateTitle = "Uygulama Güncellemesi"
     override val settingsUpdateDesc = "Kirimrasa'nın en son sürümünü kontrol edin ve anında yükleyin"
-    override val settingsCheckUpdateBtn = "Güncellemeleri Denetle"
-    override val settingsCheckingUpdates = "Denetleniyor..."
+    override val settingsCheckUpdateBtn = "Güncellemeleri Kontrol Et"
+    override val settingsCheckingUpdates = "Kontrol ediliyor..."
     override val settingsAppUpToDate = "Uygulamanız zaten güncel ✓"
+
+    // Extracted from hardcoded UI text
+    override val updateApkLabel: String = "Resmi APK"
+    override val updateAvailableTitle: String = "Güncelleme Var!"
+    override val updateReleaseNotes: String = "Yenilikler:"
+    override val updateDefaultChangelog: String = "Hız ve kararlılık iyileştirmeleri."
+    override val updateNowBtn: String = "Şimdi Güncelle"
+    override val updateLaterBtn: String = "Sonra"
+    override val updateDownloading: String = "Güncelleme indiriliyor..."
+    override val updateDownloadHint: String = "İndirme bitince kurulum ekranı kendiliğinden açılır."
+    override val updateReadyTitle: String = "Kuruluma Hazır!"
+    override val updateReadyDesc: String = "Yeni sürümü kurmak için aşağıdaki düğmeye dokunun."
+    override val updateInstallBtn: String = "Güncellemeyi Kur"
+    override val updateDownloadFailedTitle: String = "İndirilemedi"
+    override val retryBtn: String = "Tekrar Dene"
+    override val updateUpToDateTitle: String = "Uygulamanız Güncel!"
+    override val updateUpToDateDesc: (String) -> String = { v -> "Kirimrasa v$v en son sürüm." }
+    override val updateCheckingTitle: String = "Güncelleme kontrol ediliyor..."
+    override val updateCheckFailed: String = "Güncelleme kontrol edilemedi"
+    override val updateDownloadError: (String) -> String = { m -> "İndirilemedi: $m" }
+    override val updateApkMissing: String = "APK dosyası bulunamadı veya bozuk."
+    override val updateInstallError: (String) -> String = { m -> "Kurulum yapılamadı: $m" }
+    override val notifSendingChannel: String = "Toplu WhatsApp Gönderimi"
+    override val notifSendingChannelDesc: String = "Toplu mesaj gönderimi sürerken durumu gösterir"
+    override val notifUpdateChannel: String = "Kirimrasa Güncellemeleri"
+    override val notifUpdateChannelDesc: String = "Kirimrasa'nın yeni sürümü çıkınca haber verir"
+    override val notifUpdateTitle: (String) -> String = { v -> "Kirimrasa $v sürümü çıktı!" }
+    override val notifUpdateBody: (String, String) -> String = { v, s -> "Yeni sürüm ($v) yayınlandı:\n$s\n\nİndirip kurmak için dokunun." }
+    override val notifServiceRunning: String = "Gönderim hizmeti çalışıyor..."
+    override val notifServiceTitle: String = "Kirimrasa - Çalışıyor"
+    override val notifServiceContent: String = "Mesajlar güvenli aralıklarla gönderiliyor..."
+    override val notifDoneTitle: String = "Gönderim Tamamlandı!"
+    override val notifDoneBody: (Int) -> String = { n -> "$n mesajın tamamı gönderildi." }
+    override val notifTypingTitle: String = "Mesaj yazılıyor..."
+    override val notifTypingBody: (String, Int, Int) -> String = { name, i, n -> "$name için mesaj yazılıyor ($i/$n)" }
+    override val notifSendingTitle: (Int) -> String = { p -> "Mesajlar gönderiliyor (%$p)" }
+    override val notifSendingBody: (Int, Int) -> String = { s, n -> "$s/$n gönderildi - sıradaki mesaja geçiliyor" }
+    override val queueReadyTitle: String = "Gönderime hazır"
+    override val gatewayConnecting: String = "WhatsApp'a bağlanılıyor..."
+    override val gatewayNotLinked: String = "WhatsApp bağlı değil (Ayarlar'dan eşleme kodu alın)"
+    override val gatewayAlreadyLinked: String = "WhatsApp bu cihazda zaten bağlı"
+    override val waOpenFailed: (String) -> String = { m -> "WhatsApp açılamadı: $m" }
+    override val waInstalled: String = "WhatsApp telefonda yüklü"
+    override val waNotInstalled: String = "WhatsApp telefonda yüklü değil"
+    override val csvReadFailed: (String) -> String = { m -> "CSV dosyası okunamadı: $m" }
+    override val csvEmpty: String = "CSV dosyası boş"
+    override val csvNoRecords: String = "CSV'de geçerli kişi bulunamadı"
+    override val csvMissingPhone: String = "CSV başlığında telefon numarası sütunu yok"
+    override val gatewayConnectFailed: String = "Ağ geçidine bağlanılamadı"
+    override val codeCopied: (String) -> String = { c -> "$c kodu kopyalandı!" }
+    override val waNotFound: String = "Bu cihazda WhatsApp bulunamadı"
+    override val composerSampleMessage: String = "Merhaba {Nickname}! 👋\n{Company} olarak bu haftaki özel teklifimizi paylaşmak istedik."
+    override val aiConnectFailed: String = "Yapay zeka hizmetine bağlanılamadı"
+    override val filePickerFailed: (String) -> String = { m -> "Dosya seçici açılamadı: $m" }
+    override val allContacts: String = "Tüm Kişiler"
+    override val composerGuideTitle: String = "Mesaj ve Değişken Rehberi"
+    override val composerGuide1: String = "1. Spintax {A|B|C}: Her kişiye kelimelerden biri rastgele gider. Böylece mesajlar birbirinin aynısı olmaz ve spam gibi görünmez."
+    override val composerGuide2: String = "2. {Nickname}: Kişiler sekmesinde verdiğiniz hitap adı otomatik yazılır."
+    override val composerGuide3: String = "3. {Company} ve {Custom_1}: Firma adı ve kampanya bilgisi gibi değerler. '{Company} & {Custom_1} Değerlerini Ayarla' düğmesinden değiştirebilirsiniz."
+    override val composerGuide4: String = "4. Çoklu balon: Uzun mesajı 2-3 balona böler. Balonlar arasında 3 saniye \"yazıyor...\" gösterilir, gerçek biri yazıyormuş gibi olur."
+    override val syncResult: (Int, Int) -> String = { a, b -> "+$a yeni, $b güncellendi" }
+    override val contactsPermissionNeeded: String = "Rehber izni gerekli"
+    override val failedWith: (String) -> String = { m -> "Hata: $m" }
+    override val csvImported: (Int) -> String = { n -> "CSV'den +$n kişi içe aktarıldı" }
+    override val csvOpenFailed: String = "CSV dosyası açılamadı"
+    override val csvImportTitle: String = "CSV İçe Aktar"
+    override val queueStatePaused: String = "DURAKLATILDI"
+    override val queueStateSending: String = "GÖNDERİLİYOR"
+    override val queueStateIdle: String = "HAZIR"
+    override val queueDone: String = "Bitti"
+    override val queueTypingTo: (String) -> String = { n -> "Mesaj yazılıyor: $n" }
+    override val queuePausedBanner: String = "Gönderim duraklatıldı"
+    override val queueWaitingSafeDelay: (Int) -> String = { s -> "Güvenli bekleme (${s} sn)" }
+    override val queueReadyToSend: String = "Göndermeye hazır"
+    override val queueEmpty: String = "Henüz gönderim yok. 'Mesaj Oluştur' sekmesinde mesajınızı yazın ve gönderimi başlatın."
+    override val queueFilterEmpty: String = "Bu filtrede kişi yok"
+    override val queueTypingBadge: String = "YAZIYOR (2 sn)"
+    override val campaignDefaultTitle: String = "Toplu WhatsApp Gönderimi"
+    override val sendFailed: String = "Gönderilemedi"
+    override val reportSubject: (String) -> String = { t -> "Gönderim Raporu: $t" }
+    override val reportExportChooser: String = "CSV Raporunu Paylaş"
+    override val reportExported: (Int) -> String = { n -> "CSV raporu dışa aktarıldı ($n kayıt)" }
+    override val reportExportFailed: (String) -> String = { m -> "Rapor dışa aktarılamadı: $m" }
+    override val tutorialMenuDesc: String = "Kullanım Rehberi"
+    override val toggleThemeDesc: String = "Temayı Değiştir"
+    override val fallbackBroadcastMessage: String = "Merhaba {Nickname}, {Company} bu haftaya özel bir teklif sunuyor! {Custom_1} kodunu kullanın."
+    override val waPersonalDetected: String = "Telefonda yüklü (WhatsApp)"
+    override val waPersonalMissing: String = "WhatsApp yüklü değil"
+    override val readyLabel: String = "Hazır"
+    override val notAvailableLabel: String = "Henüz Yok"
+    override val yourWaNumber: String = "WhatsApp numaranız:"
+    override val waNumberHint: String = "WhatsApp numaranızı yazın (örn: +90 532 123 45 67)"
+    override val waPersonalNotInstalledToast: String = "Telefonda WhatsApp yüklü değil"
+    override val openWhatsAppBtn: String = "WhatsApp'ı Aç"
+    override val readyToUse: String = "Kullanıma hazır!"
+    override val failedLabel: String = "Başarısız"
+    override val testReadinessBtn: String = "Kontrol Et"
+    override val waBusinessDetected: String = "Telefonda yüklü (WhatsApp Business)"
+    override val waBusinessMissing: String = "WhatsApp Business yüklü değil"
+    override val yourWbNumber: String = "WhatsApp Business numaranız:"
+    override val wbNumberHint: String = "WhatsApp Business numaranızı yazın (örn: +90 532 123 45 67)"
+    override val waBusinessNotInstalledToast: String = "Telefonda WhatsApp Business yüklü değil"
+    override val openWaBusinessBtn: String = "WhatsApp Business'ı Aç"
+    override val activeLabel: String = "AÇIK"
+    override val inactiveLabel: String = "KAPALI"
+    override val gatewayDesc: String = "Toplu mesajlar, bağladığınız WhatsApp hesabı üzerinden ağ geçidi aracılığıyla gönderilir."
+    override val apiKeyHint: String = "Ağ geçidi API anahtarı (yoksa boş bırakın)"
+    override val gatewayConnectedLatency: (Long) -> String = { ms -> "Bağlı (${ms} ms)" }
+    override val minutesShort: (Int) -> String = { n -> "$n dk" }
+    override val messagesShort: (Int) -> String = { n -> "$n mesaj" }
+    override val randomDelayLabel: String = "Rastgele Bekleme"
+    override val qrLinkTitle: String = "QR Kodu ile Bağla"
+    override val qrLinkDesc1: String = "8 haneli eşleme kodunu öneriyoruz: aynı telefonda yapılır, başka bir telefonun kamerası gerekmez."
+    override val qrLinkDesc2: String = "Eşleme kodu için: 'Kodu Kopyala ve WhatsApp'ı Aç'a dokunun, sonra WhatsApp'ta Ayarlar > Bağlı cihazlar > Cihaz bağla > Bunun yerine telefon numarasıyla bağlan yolunu izleyin."
+    override val connectedViaGateway: (String) -> String = { n -> "Ağ geçidi üzerinden bağlı ($n)" }
+    override val requestPairingCodeBtn: String = "8 Haneli Eşleme Kodu Al"
+    override val yourPairingCode: String = "WhatsApp eşleme kodunuz:"
+    override val copyCodeOpenWaBtn: String = "Kodu Kopyala ve WhatsApp'ı Aç"
+    override val nicknameFallback: String = "efendim"
+    override val greetingWord: String = "Merhaba"
+    override val understoodBtn: String = "Anladım"
+    override val roundRobinLabel: String = "Sırayla"
+    override val queueBadgeWaiting: String = "BEKLİYOR"
+    override val queueBadgeFailed: String = "BAŞARISIZ"
+    override val queueBadgeSent: String = "GÖNDERİLDİ"
 }
 
 val LocalAppStrings = compositionLocalOf<AppStrings> { IndonesianStrings }

@@ -1,5 +1,6 @@
 package com.wabulk.sender.engine.baileys
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import com.wabulk.sender.engine.PingResult
 import com.wabulk.sender.engine.SendResult
 import com.wabulk.sender.engine.SimulatedWhatsAppEngine
@@ -103,7 +104,7 @@ class BaileysBridgeClient(
                     }
                     if (body.contains("ALREADY_CONNECTED")) {
                         updateConnectionStatus(NodeStatus.CONNECTED)
-                        throw IOException("WhatsApp sudah terhubung di perangkat ini")
+                        throw IOException(LocalizationManager.activeStrings.gatewayAlreadyLinked)
                     }
                 }
 
@@ -331,7 +332,7 @@ class BaileysBridgeClient(
                         return@withContext PingResult(
                             isSuccess = false,
                             latencyMs = latency,
-                            message = "Menyambungkan ke WhatsApp..."
+                            message = LocalizationManager.activeStrings.gatewayConnecting
                         )
                     } else {
                         // Check if we can auto-restore session from device vault
@@ -349,7 +350,7 @@ class BaileysBridgeClient(
                         return@withContext PingResult(
                             isSuccess = false,
                             latencyMs = latency,
-                            message = "WhatsApp belum terhubung (Minta kode pairing di Pengaturan)"
+                            message = LocalizationManager.activeStrings.gatewayNotLinked
                         )
                     }
                 } else {

@@ -177,7 +177,7 @@ fun MainScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.HelpOutline,
-                                    contentDescription = "Panduan & Tutorial",
+                                    contentDescription = strings.tutorialMenuDesc,
                                     tint = neuColors.accentPrimary,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -205,7 +205,7 @@ fun MainScreen(
                                         ThemeMode.LIGHT -> Icons.Default.LightMode
                                         ThemeMode.SYSTEM -> Icons.Default.BrightnessAuto
                                     },
-                                    contentDescription = "Toggle Theme",
+                                    contentDescription = strings.toggleThemeDesc,
                                     tint = neuColors.accentPrimary,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -326,7 +326,7 @@ fun MainScreen(
                                 val companyVal = composerViewModel.uiState.value.customVariables["Company"] ?: "KirimRasa"
                                 val custom1Val = composerViewModel.uiState.value.customVariables["Custom_1"] ?: "PROMO30"
                                 val bubbles = composerViewModel.uiState.value.bubbles.filter { it.text.isNotBlank() }.ifEmpty {
-                                    listOf(MessageBubble(text = "Halo {Nickname}, penawaran spesial minggu ini dari {Company}! Gunakan kode {Custom_1}."))
+                                    listOf(MessageBubble(text = strings.fallbackBroadcastMessage))
                                 }
                                 val mediaUris = composerViewModel.attachments.value.map { it.uriString }
                                 val selectedAccount = composerViewModel.uiState.value.selectedAccount

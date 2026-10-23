@@ -1,5 +1,6 @@
 package com.wabulk.sender.domain.spintax
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import kotlin.random.Random
 
 object SpintaxParser {
@@ -35,7 +36,7 @@ object SpintaxParser {
         nickname: String,
         variables: Map<String, String> = emptyMap()
     ): String {
-        val effectiveNickname = nickname.trim().ifEmpty { "Kak" }
+        val effectiveNickname = nickname.trim().ifEmpty { LocalizationManager.activeStrings.nicknameFallback }
         var output = text.replace("{Nickname}", effectiveNickname)
 
         for ((key, value) in variables) {

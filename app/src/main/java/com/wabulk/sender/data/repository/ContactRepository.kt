@@ -1,5 +1,6 @@
 package com.wabulk.sender.data.repository
 
+import com.wabulk.sender.data.locale.LocalizationManager
 import com.wabulk.sender.data.local.db.ContactDao
 import com.wabulk.sender.data.local.db.ContactEntity
 import com.wabulk.sender.data.local.db.TagDao
@@ -120,10 +121,10 @@ class ContactRepository(
     /**
      * Applies quick format: prepend Hey/Hello/Hai to nickname.
      */
-    suspend fun quickFormatAddGreeting(contactId: Long, greeting: String = "Hai") {
+    suspend fun quickFormatAddGreeting(contactId: Long, greeting: String = LocalizationManager.activeStrings.greetingWord) {
         val contact = contactDao.getAll().find { it.id == contactId } ?: return
         val nick = contact.customNickname.ifEmpty { extractSmartNickname(contact.rawName) }
-        val targetNick = if (nick.isNotBlank()) "$greeting $nick" else "$greeting Kak"
+        val targetNick = if (nick.isNotBlank()) "$greeting $nick" else "$greeting ${LocalizationManager.activeStrings.nicknameFallback}"
         contactDao.updateNickname(contactId, targetNick)
     }
 

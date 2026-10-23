@@ -52,11 +52,12 @@ class Phase1IntegrationTest {
         s = manager.getStrings()
         assertEquals("Mesaj Oluştur", s.navCompose)
         assertEquals("Kişiler", s.navContacts)
-        assertEquals("Kuyruk", s.navQueue)
+        assertEquals("Sıra", s.navQueue)
         assertEquals("Ayarlar", s.navSettings)
-        assertEquals("Kampanya Oluşturucu", s.composerTitle)
-        assertEquals("Kişi Yöneticisi", s.contactsTitle)
-        assertEquals("Canlı Gönderim Kuyruğu", s.queueTitle)
+        assertEquals("Mesaj Hazırla", s.composerTitle)
+        assertEquals("Kişi Yönetimi", s.contactsTitle)
+        assertEquals("Canlı Gönderim Sırası", s.queueTitle)
+        assertEquals(s, LocalizationManager.activeStrings)
         assertEquals("Hesaplar ve Güvenlik Ayarları", s.settingsTitle)
 
         // Switch back to Indonesian

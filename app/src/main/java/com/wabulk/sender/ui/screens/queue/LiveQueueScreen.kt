@@ -186,7 +186,7 @@ fun LiveQueueScreen(
                             .then(if (isRunning) Modifier.pulseGlow() else Modifier)
                     )
                     Text(
-                        text = if (isPaused) "DIPERJEDA" else if (isRunning) "DISPATCHING" else "STANDBY",
+                        text = if (isPaused) strings.queueStatePaused else if (isRunning) strings.queueStateSending else strings.queueStateIdle,
                         color = if (isRunning) neuColors.primary else neuColors.textSecondary,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
@@ -296,7 +296,7 @@ fun LiveQueueScreen(
                     fontSize = 11.sp
                 )
                 Text(
-                    text = if (remainingCount > 0) "~${remainingCount * 30}s" else "Selesai",
+                    text = if (remainingCount > 0) "~${remainingCount * 30}s" else strings.queueDone,
                     color = neuColors.textSecondary,
                     fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace
@@ -325,11 +325,11 @@ fun LiveQueueScreen(
 
                     Column {
                         val headerLabel = if (currentTypingContact != null) {
-                            "Mengetik: $currentTypingContact"
+                            strings.queueTypingTo(currentTypingContact.orEmpty())
                         } else if (isPaused) {
-                            "Antrean sedang dijeda"
+                            strings.queuePausedBanner
                         } else {
-                            "Menunggu jeda aman (${jitterCountdown}d)"
+                            strings.queueWaitingSafeDelay(jitterCountdown)
                         }
                         Text(
                             text = headerLabel,
@@ -338,7 +338,7 @@ fun LiveQueueScreen(
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = if (isRunning) strings.queueTypingCadenceActive else "Siap mengirim",
+                            text = if (isRunning) strings.queueTypingCadenceActive else strings.queueReadyToSend,
                             color = neuColors.textSecondary,
                             fontSize = 10.sp
                         )
@@ -588,9 +588,9 @@ fun LiveQueueScreen(
                 ) {
                     Text(
                         text = if (totalCount == 0)
-                            "Belum ada antrean broadcast. Susun pesan di tab 'Buat Pesan' dan tekan 'Mulai Kirim Massal' untuk memulai pengiriman."
+                            strings.queueEmpty
                         else
-                            "Tidak ada kontak dalam filter ini",
+                            strings.queueFilterEmpty,
                         color = neuColors.textSecondary,
                         fontSize = 12.sp,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -614,6 +614,7 @@ private fun QueueRecipientItem(
     timeFormat: SimpleDateFormat,
     radarRotation: Float
 ) {
+    val strings = LocalAppStrings.current
     val neuColors = LocalNeumorphicColors.current
 
     Row(
@@ -695,7 +696,7 @@ private fun QueueRecipientItem(
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "MENGETIK (2s)",
+                        text = strings.queueTypingBadge,
                         color = EmeraldOnPrimaryContainer,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold
@@ -704,7 +705,7 @@ private fun QueueRecipientItem(
             }
             QueueTaskStatus.DELIVERED -> {
                 Text(
-                    text = item.sentTimestamp?.let { timeFormat.format(Date(it)) } ?: "TERKIRIM",
+                    text = item.sentTimestamp?.let { timeFormat.format(Date(it)) } ?: strings.queueBadgeSent,
                     color = EmeraldPrimary,
                     fontSize = 10.sp,
                     fontFamily = FontFamily.Monospace,
@@ -719,7 +720,7 @@ private fun QueueRecipientItem(
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "MENUNGGU",
+                        text = strings.queueBadgeWaiting,
                         color = neuColors.textSecondary,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold
@@ -734,7 +735,7 @@ private fun QueueRecipientItem(
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "DIJEDA",
+                        text = strings.queueStatePaused,
                         color = EmeraldSecondary,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold
@@ -749,7 +750,7 @@ private fun QueueRecipientItem(
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "GAGAL",
+                        text = strings.queueBadgeFailed,
                         color = StatusError,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold
