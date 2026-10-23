@@ -19,6 +19,7 @@ class MainActivity : ComponentActivity() {
     com.wabulk.sender.theme.ThemeManager.init(applicationContext)
     com.wabulk.sender.engine.baileys.BaileysConfigManager.init(applicationContext)
     com.wabulk.sender.engine.queue.AntiBanSettings.init(applicationContext)
+    com.wabulk.sender.data.LastMessageStore.init(applicationContext)
     com.wabulk.sender.engine.WhatsAppSessionManager.getInstance(applicationContext)
 
     if (intent?.getBooleanExtra("EXTRA_OPEN_UPDATE_DIALOG", false) == true) {

@@ -1,5 +1,6 @@
 package com.wabulk.sender.ui.screens.composer
 
+import com.wabulk.sender.data.LastMessageStore
 import com.wabulk.sender.data.locale.LocalizationManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -20,13 +21,11 @@ class ComposerViewModel(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
+        // Open with the last message actually sent; a first-time user starts with one empty bubble
         ComposerState(
-            bubbles = listOf(
-                MessageBubble(
-                    order = 0,
-                    text = LocalizationManager.activeStrings.composerSampleMessage
-                )
-            )
+            bubbles = LastMessageStore.load()
+                .mapIndexed { index, text -> MessageBubble(order = index, text = text) }
+                .ifEmpty { listOf(MessageBubble(order = 0, text = "")) }
         )
     )
     val uiState: StateFlow<ComposerState> = _uiState.asStateFlow()
@@ -87,7 +86,7 @@ class ComposerViewModel(
         mediaManager.removeAttachment(attachmentId)
     }
 
-    fun triggerAiRewrite(language: String = "ID", customUrl: String? = null) {
+    fun triggerAiRewrite(language: String = LocalizationManager.activeLanguage.code.uppercase(), customUrl: String? = null) {
         val allDraftText = _uiState.value.bubbles.joinToString("\n\n") { it.text }.trim()
         if (allDraftText.isEmpty()) return
 

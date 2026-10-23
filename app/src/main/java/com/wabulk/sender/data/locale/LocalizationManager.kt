@@ -16,11 +16,13 @@ class LocalizationManager(context: Context? = null) {
 
     init {
         activeStrings = getStrings(_currentLanguage.value)
+        activeLanguage = _currentLanguage.value
     }
 
     fun setLanguage(language: AppLanguage) {
         _currentLanguage.value = language
         activeStrings = getStrings(language)
+        activeLanguage = language
         prefs?.edit()?.putString("pref_language_code", language.code)?.apply()
     }
 
@@ -33,6 +35,10 @@ class LocalizationManager(context: Context? = null) {
         // For non-Compose code (view models, services, notifications) that can't read LocalAppStrings
         @Volatile
         var activeStrings: AppStrings = IndonesianStrings
+            private set
+
+        @Volatile
+        var activeLanguage: AppLanguage = AppLanguage.INDONESIAN
             private set
     }
 }

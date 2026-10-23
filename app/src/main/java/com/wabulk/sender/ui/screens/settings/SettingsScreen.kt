@@ -1,5 +1,7 @@
 package com.wabulk.sender.ui.screens.settings
 
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.ui.text.input.VisualTransformation
@@ -904,250 +906,273 @@ fun SettingsScreen(
             }
         }
 
-        // Baileys Bridge Gateway Configuration Card
-        Column(
+        // Advanced: gateway server settings. Normal users never need these, so they start collapsed
+        var showAdvanced by remember { mutableStateOf(false) }
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
                 .background(neuColors.surface)
+                .springClickable { showAdvanced = !showAdvanced }
                 .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Header: Title + Toggle Switch
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(34.dp)
-                            .clip(CircleShape)
-                            .background(if (baileysConfig.isEnabled) EmeraldPrimary.copy(alpha = 0.15f) else neuColors.surfaceRaised),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Dns,
-                            contentDescription = null,
-                            tint = if (baileysConfig.isEnabled) EmeraldPrimary else neuColors.textSecondary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(
-                                text = strings.settingsBaileysTitle,
-                                color = neuColors.textPrimary,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(if (baileysConfig.isEnabled) EmeraldSecondaryContainer.copy(alpha = 0.4f) else neuColors.surfaceRaised)
-                                    .padding(horizontal = 4.dp, vertical = 1.dp)
-                            ) {
-                                Text(
-                                    text = if (baileysConfig.isEnabled) strings.activeLabel else strings.inactiveLabel,
-                                    color = if (baileysConfig.isEnabled) EmeraldSecondary else neuColors.textSecondary,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                        Text(
-                            text = strings.settingsBaileysSubtitle,
-                            color = neuColors.textSecondary,
-                            fontSize = 10.sp
-                        )
-                    }
-                }
-
-                Switch(
-                    checked = baileysConfig.isEnabled,
-                    onCheckedChange = { viewModel.toggleBaileysEnabled(it) },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = EmeraldPrimary,
-                        uncheckedThumbColor = neuColors.textSecondary,
-                        uncheckedTrackColor = neuColors.surfaceRaised
-                    )
-                )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = strings.advancedSettingsTitle, color = neuColors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(text = strings.advancedSettingsDesc, color = neuColors.textSecondary, fontSize = 10.sp)
             }
-
-            // Description text
-            Text(
-                text = strings.gatewayDesc,
-                color = neuColors.textSecondary,
-                fontSize = 11.sp,
-                lineHeight = 15.sp
+            Icon(
+                imageVector = if (showAdvanced) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                tint = neuColors.textSecondary
             )
-
-            // URL Gateway Input
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = strings.settingsBaileysUrlLabel,
-                    color = neuColors.textPrimary,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
-                )
-                BasicTextField(
-                    value = baileysConfig.gatewayUrl,
-                    onValueChange = { viewModel.updateGatewayUrl(it) },
-                    singleLine = true,
-                    textStyle = TextStyle(
-                        color = neuColors.textPrimary,
-                        fontSize = 12.sp,
-                        fontFamily = FontFamily.Monospace
-                    ),
-                    cursorBrush = SolidColor(EmeraldPrimary),
-                    decorationBox = { innerTextField ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(neuColors.surfaceInset)
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            if (baileysConfig.gatewayUrl.isEmpty()) {
-                                Text(
-                                    text = "http://10.0.2.2:3000",
-                                    color = TextSubduedTertiary,
-                                    fontSize = 12.sp,
-                                    fontFamily = FontFamily.Monospace
-                                )
-                            }
-                            innerTextField()
-                        }
-                    }
-                )
-            }
-
-            // API Key Input
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = strings.settingsBaileysKeyLabel,
-                    color = neuColors.textPrimary,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
-                )
-                var showApiKey by remember { mutableStateOf(false) }
-                BasicTextField(
-                    value = baileysConfig.apiKey,
-                    onValueChange = { viewModel.updateApiKey(it) },
-                    singleLine = true,
-                    // Hidden by default so screenshots don't leak the key
-                    visualTransformation = if (showApiKey) VisualTransformation.None else PasswordVisualTransformation(),
-                    textStyle = TextStyle(
-                        color = neuColors.textPrimary,
-                        fontSize = 12.sp,
-                        fontFamily = FontFamily.Monospace
-                    ),
-                    cursorBrush = SolidColor(EmeraldPrimary),
-                    decorationBox = { innerTextField ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(neuColors.surfaceInset)
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            if (baileysConfig.apiKey.isEmpty()) {
-                                Text(
-                                    text = strings.apiKeyHint,
-                                    color = TextSubduedTertiary,
-                                    fontSize = 12.sp
-                                )
-                            }
-                            Box(modifier = Modifier.padding(end = 28.dp)) { innerTextField() }
-                            Icon(
-                                imageVector = if (showApiKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (showApiKey) strings.hideApiKeyDesc else strings.showApiKeyDesc,
-                                tint = neuColors.textSecondary,
-                                modifier = Modifier
-                                    .align(Alignment.CenterEnd)
-                                    .size(18.dp)
-                                    .springClickable { showApiKey = !showApiKey }
-                            )
-                        }
-                    }
-                )
-            }
-
-            // Action: Test Gateway Connection Button & Result Pill
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        }
+        if (showAdvanced) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(neuColors.surface)
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(neuColors.surfaceRaised)
-                        .springClickable { viewModel.testGatewayConnection() }
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                    contentAlignment = Alignment.Center
+                // Header: Title + Toggle Switch
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        if (isTestingGateway) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(13.dp),
-                                color = EmeraldPrimary,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(if (baileysConfig.isEnabled) EmeraldPrimary.copy(alpha = 0.15f) else neuColors.surfaceRaised),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
-                                imageVector = Icons.Default.Sensors,
+                                imageVector = Icons.Default.Dns,
                                 contentDescription = null,
-                                tint = EmeraldPrimary,
-                                modifier = Modifier.size(14.dp)
+                                tint = if (baileysConfig.isEnabled) EmeraldPrimary else neuColors.textSecondary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
-                        Text(
-                            text = if (isTestingGateway) "Menguji..." else strings.settingsBaileysTestBtn,
-                            color = neuColors.textPrimary,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(
+                                    text = strings.settingsBaileysTitle,
+                                    color = neuColors.textPrimary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(if (baileysConfig.isEnabled) EmeraldSecondaryContainer.copy(alpha = 0.4f) else neuColors.surfaceRaised)
+                                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                                ) {
+                                    Text(
+                                        text = if (baileysConfig.isEnabled) strings.activeLabel else strings.inactiveLabel,
+                                        color = if (baileysConfig.isEnabled) EmeraldSecondary else neuColors.textSecondary,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                            Text(
+                                text = strings.settingsBaileysSubtitle,
+                                color = neuColors.textSecondary,
+                                fontSize = 10.sp
+                            )
+                        }
                     }
+
+                    Switch(
+                        checked = baileysConfig.isEnabled,
+                        onCheckedChange = { viewModel.toggleBaileysEnabled(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = EmeraldPrimary,
+                            uncheckedThumbColor = neuColors.textSecondary,
+                            uncheckedTrackColor = neuColors.surfaceRaised
+                        )
+                    )
                 }
 
-                // Result Pill
-                if (gatewayTestResult != null) {
-                    val isSuccess = gatewayTestResult!!.isSuccess
+                // Description text
+                Text(
+                    text = strings.gatewayDesc,
+                    color = neuColors.textSecondary,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp
+                )
+
+                // URL Gateway Input
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = strings.settingsBaileysUrlLabel,
+                        color = neuColors.textPrimary,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
+                    BasicTextField(
+                        value = baileysConfig.gatewayUrl,
+                        onValueChange = { viewModel.updateGatewayUrl(it) },
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            color = neuColors.textPrimary,
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.Monospace
+                        ),
+                        cursorBrush = SolidColor(EmeraldPrimary),
+                        decorationBox = { innerTextField ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(neuColors.surfaceInset)
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (baileysConfig.gatewayUrl.isEmpty()) {
+                                    Text(
+                                        text = "http://10.0.2.2:3000",
+                                        color = TextSubduedTertiary,
+                                        fontSize = 12.sp,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        }
+                    )
+                }
+
+                // API Key Input
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = strings.settingsBaileysKeyLabel,
+                        color = neuColors.textPrimary,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
+                    var showApiKey by remember { mutableStateOf(false) }
+                    BasicTextField(
+                        value = baileysConfig.apiKey,
+                        onValueChange = { viewModel.updateApiKey(it) },
+                        singleLine = true,
+                        // Hidden by default so screenshots don't leak the key
+                        visualTransformation = if (showApiKey) VisualTransformation.None else PasswordVisualTransformation(),
+                        textStyle = TextStyle(
+                            color = neuColors.textPrimary,
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.Monospace
+                        ),
+                        cursorBrush = SolidColor(EmeraldPrimary),
+                        decorationBox = { innerTextField ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(neuColors.surfaceInset)
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (baileysConfig.apiKey.isEmpty()) {
+                                    Text(
+                                        text = strings.apiKeyHint,
+                                        color = TextSubduedTertiary,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                                Box(modifier = Modifier.padding(end = 28.dp)) { innerTextField() }
+                                Icon(
+                                    imageVector = if (showApiKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (showApiKey) strings.hideApiKeyDesc else strings.showApiKeyDesc,
+                                    tint = neuColors.textSecondary,
+                                    modifier = Modifier
+                                        .align(Alignment.CenterEnd)
+                                        .size(18.dp)
+                                        .springClickable { showApiKey = !showApiKey }
+                                )
+                            }
+                        }
+                    )
+                }
+
+                // Action: Test Gateway Connection Button & Result Pill
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
                             .clip(CircleShape)
-                            .background(if (isSuccess) EmeraldPrimaryContainer else StatusErrorContainer)
-                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                            .background(neuColors.surfaceRaised)
+                            .springClickable { viewModel.testGatewayConnection() }
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(
-                                imageVector = if (isSuccess) Icons.Default.Check else Icons.Default.Close,
-                                contentDescription = null,
-                                tint = if (isSuccess) EmeraldOnPrimaryContainer else StatusError,
-                                modifier = Modifier.size(12.dp)
-                            )
+                            if (isTestingGateway) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(13.dp),
+                                    color = EmeraldPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Sensors,
+                                    contentDescription = null,
+                                    tint = EmeraldPrimary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
                             Text(
-                                text = if (isSuccess) strings.gatewayConnectedLatency(gatewayTestResult!!.latencyMs) else strings.failedWith(gatewayTestResult!!.message),
-                                color = if (isSuccess) EmeraldOnPrimaryContainer else StatusError,
-                                fontSize = 10.sp,
+                                text = if (isTestingGateway) "Menguji..." else strings.settingsBaileysTestBtn,
+                                color = neuColors.textPrimary,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
+                        }
+                    }
+
+                    // Result Pill
+                    if (gatewayTestResult != null) {
+                        val isSuccess = gatewayTestResult!!.isSuccess
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(if (isSuccess) EmeraldPrimaryContainer else StatusErrorContainer)
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isSuccess) Icons.Default.Check else Icons.Default.Close,
+                                    contentDescription = null,
+                                    tint = if (isSuccess) EmeraldOnPrimaryContainer else StatusError,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Text(
+                                    text = if (isSuccess) strings.gatewayConnectedLatency(gatewayTestResult!!.latencyMs) else strings.failedWith(gatewayTestResult!!.message),
+                                    color = if (isSuccess) EmeraldOnPrimaryContainer else StatusError,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }

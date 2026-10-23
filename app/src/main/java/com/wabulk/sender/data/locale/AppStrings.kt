@@ -287,7 +287,6 @@ interface AppStrings {
     val gatewayConnectFailed: String
     val codeCopied: (String) -> String
     val waNotFound: String
-    val composerSampleMessage: String
     val aiConnectFailed: String
     val filePickerFailed: (String) -> String
     val allContacts: String
@@ -321,7 +320,6 @@ interface AppStrings {
     val reportExportFailed: (String) -> String
     val tutorialMenuDesc: String
     val toggleThemeDesc: String
-    val fallbackBroadcastMessage: String
     val waPersonalDetected: String
     val waPersonalMissing: String
     val readyLabel: String
@@ -369,6 +367,9 @@ interface AppStrings {
     val accountNotLinked: (String) -> String
     val showApiKeyDesc: String
     val hideApiKeyDesc: String
+    val advancedSettingsTitle: String
+    val advancedSettingsDesc: String
+    val aiInvalidOutput: String
 }
 
 object IndonesianStrings : AppStrings {
@@ -650,7 +651,6 @@ object IndonesianStrings : AppStrings {
     override val gatewayConnectFailed: String = "Koneksi gateway gagal"
     override val codeCopied: (String) -> String = { c -> "Kode $c disalin ke clipboard!" }
     override val waNotFound: String = "WhatsApp tidak ditemukan di perangkat ini"
-    override val composerSampleMessage: String = "Halo {Nickname}! 👋\nKami dari {Company} ingin membagikan penawaran spesial minggu ini."
     override val aiConnectFailed: String = "Gagal terhubung ke layanan AI"
     override val filePickerFailed: (String) -> String = { m -> "Gagal membuka pemilih berkas: $m" }
     override val allContacts: String = "Semua Kontak"
@@ -684,7 +684,6 @@ object IndonesianStrings : AppStrings {
     override val reportExportFailed: (String) -> String = { m -> "Gagal mengekspor laporan: $m" }
     override val tutorialMenuDesc: String = "Panduan & Tutorial"
     override val toggleThemeDesc: String = "Ganti Tema"
-    override val fallbackBroadcastMessage: String = "Halo {Nickname}, penawaran spesial minggu ini dari {Company}! Gunakan kode {Custom_1}."
     override val waPersonalDetected: String = "Terdeteksi di HP (WhatsApp Personal)"
     override val waPersonalMissing: String = "Aplikasi WhatsApp Belum Terpasang"
     override val readyLabel: String = "Siap Pakai"
@@ -732,6 +731,9 @@ object IndonesianStrings : AppStrings {
     override val accountNotLinked: (String) -> String = { acc -> "$acc belum tersambung ke gateway. Buka Pengaturan, lalu tautkan ulang dengan kode pairing." }
     override val showApiKeyDesc: String = "Tampilkan API key"
     override val hideApiKeyDesc: String = "Sembunyikan API key"
+    override val advancedSettingsTitle: String = "Pengaturan Lanjutan"
+    override val advancedSettingsDesc: String = "Alamat server & API key. Tidak perlu diubah kecuali pakai server sendiri."
+    override val aiInvalidOutput: String = "Hasil AI kurang rapi, pesanmu tidak diubah. Coba lagi."
 }
 
 object TurkishStrings : AppStrings {
@@ -1013,7 +1015,6 @@ object TurkishStrings : AppStrings {
     override val gatewayConnectFailed: String = "Ağ geçidine bağlanılamadı"
     override val codeCopied: (String) -> String = { c -> "$c kodu kopyalandı!" }
     override val waNotFound: String = "Bu cihazda WhatsApp bulunamadı"
-    override val composerSampleMessage: String = "Merhaba {Nickname}! 👋\n{Company} olarak bu haftaki özel teklifimizi paylaşmak istedik."
     override val aiConnectFailed: String = "Yapay zeka hizmetine bağlanılamadı"
     override val filePickerFailed: (String) -> String = { m -> "Dosya seçici açılamadı: $m" }
     override val allContacts: String = "Tüm Kişiler"
@@ -1047,7 +1048,6 @@ object TurkishStrings : AppStrings {
     override val reportExportFailed: (String) -> String = { m -> "Rapor dışa aktarılamadı: $m" }
     override val tutorialMenuDesc: String = "Kullanım Rehberi"
     override val toggleThemeDesc: String = "Temayı Değiştir"
-    override val fallbackBroadcastMessage: String = "Merhaba {Nickname}, {Company} bu haftaya özel bir teklif sunuyor! {Custom_1} kodunu kullanın."
     override val waPersonalDetected: String = "Telefonda yüklü (WhatsApp)"
     override val waPersonalMissing: String = "WhatsApp yüklü değil"
     override val readyLabel: String = "Hazır"
@@ -1095,6 +1095,9 @@ object TurkishStrings : AppStrings {
     override val accountNotLinked: (String) -> String = { acc -> "$acc ağ geçidine bağlı değil. Ayarlar'dan eşleme koduyla yeniden bağlayın." }
     override val showApiKeyDesc: String = "API anahtarını göster"
     override val hideApiKeyDesc: String = "API anahtarını gizle"
+    override val advancedSettingsTitle: String = "Gelişmiş Ayarlar"
+    override val advancedSettingsDesc: String = "Sunucu adresi ve API anahtarı. Kendi sunucunuzu kullanmıyorsanız değiştirmeyin."
+    override val aiInvalidOutput: String = "Yapay zekâ düzgün bir sonuç vermedi, mesajınız değiştirilmedi. Tekrar deneyin."
 }
 
 val LocalAppStrings = compositionLocalOf<AppStrings> { IndonesianStrings }

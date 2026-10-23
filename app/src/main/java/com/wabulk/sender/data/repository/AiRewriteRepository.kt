@@ -25,14 +25,48 @@ class AiRewriteRepository(
             maxBubbles = maxBubbles
         )
 
-        val result = api.rewrite(targetUrl, request)
-        return result.map { response ->
-            enforceTokenPreservation(originalDraft, response.bubbles)
+        // One retry when the model returns something unusable; the draft is never replaced by bad output
+        repeat(2) {
+            val result = api.rewrite(targetUrl, request)
+            val bubbles = result.getOrElse { return Result.failure(it) }.bubbles
+            val cleaned = normalizeBubbles(bubbles, maxBubbles)
+            if (isValidOutput(originalDraft, cleaned)) {
+                return Result.success(enforceTokenPreservation(originalDraft, cleaned))
+            }
         }
+        return Result.failure(IllegalStateException(LocalizationManager.activeStrings.aiInvalidOutput))
     }
 
     companion object {
         private val VARIABLE_TOKEN_REGEX = Regex("""\{([A-Za-z0-9_]+)\}""")
+        private val KNOWN_VARIABLES = setOf("{Nickname}", "{Company}", "{Custom_1}")
+
+        /** Drops empty bubbles and folds any extra ones into the last allowed bubble. */
+        fun normalizeBubbles(bubbles: List<String>, maxBubbles: Int): List<String> {
+            val nonEmpty = bubbles.map { it.trim() }.filter { it.isNotEmpty() }
+            val max = maxBubbles.coerceIn(1, 3)
+            if (nonEmpty.size <= max) return nonEmpty
+            return nonEmpty.take(max - 1) + nonEmpty.drop(max - 1).joinToString("\n")
+        }
+
+        /**
+         * Rejects output that would reach recipients broken: no bubbles, an invented {Variable}
+         * (sent literally), or unbalanced/nested spintax braces.
+         */
+        fun isValidOutput(originalDraft: String, bubbles: List<String>): Boolean {
+            if (bubbles.isEmpty()) return false
+            val allowed = KNOWN_VARIABLES + VARIABLE_TOKEN_REGEX.findAll(originalDraft).map { it.value }
+            for (bubble in bubbles) {
+                if (VARIABLE_TOKEN_REGEX.findAll(bubble).any { it.value !in allowed }) return false
+                var depth = 0
+                for (c in bubble) {
+                    if (c == '{') depth++ else if (c == '}') depth--
+                    if (depth < 0 || depth > 1) return false
+                }
+                if (depth != 0) return false
+            }
+            return true
+        }
 
         /**
          * Strict Guardrail: Guarantees that any variable token (e.g. {Nickname}, {Company})

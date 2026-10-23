@@ -37,18 +37,29 @@ export default {
         });
       }
 
-      const systemPrompt = "Anda adalah asisten cerdas WhatsApp Broadcast & Anti-Ban Spintax. " +
-        "Tugas Anda: Tulis ulang pesan dan pecah menjadi 1 sampai 3 balon pesan percakapan alami. " +
-        "Gunakan variasi spintax kurung kurawal seperti {Halo|Hai|Pagi} atau {kami menawarkan|ada info spesial}. " +
-        "Variabel seperti {Nickname}, {Company}, {Custom_1} HARUS tetap ditulis apa adanya dan TIDAK BOLEH diubah atau dihapus. " +
-        "Kembalikan HANYA format JSON ARRAY murni tanpa backtick markdown. Contoh: [\"Balon 1...\", \"Balon 2...\"]";
+      // Honour what the app sends: output language, tone and bubble count (were ignored before)
+      const language = String(body.language || "ID").toUpperCase() === "TR" ? "Turkish (Türkçe)" : "Indonesian (Bahasa Indonesia)";
+      const toneGuide = {
+        friendly: "warm, friendly and casual, like texting someone you know",
+        shorter: "short and to the point; cut filler, keep the meaning",
+        max_variance: "friendly, with as many spintax alternatives as reads naturally",
+      }[body.tone] || "warm, friendly and casual";
+      const maxBubbles = Math.min(Math.max(parseInt(body.maxBubbles, 10) || 3, 1), 3);
+
+      const systemPrompt =
+        "You rewrite WhatsApp messages that a person sends to people they know. " +
+        `Write in ${language}. Tone: ${toneGuide}. ` +
+        `Split the message into 1 to ${maxBubbles} short chat bubbles that read naturally one after another. ` +
+        "Add spintax alternatives in curly braces separated by |, e.g. {Halo|Hai}, so each recipient gets slightly different wording. " +
+        "Keep these variables exactly as written and never translate, rename or remove them: {Nickname}, {Company}, {Custom_1}. " +
+        "Do not invent any other {Variable}. Every { must be closed by }. Never nest braces. " +
+        'Reply with JSON only, shaped {"bubbles": ["bubble 1", "bubble 2"]}.';
 
       // 1. PRIORITAS UTAMA: Groq LPU (OpenAI gpt-oss-120b) persis seperti Sapa CRM
       if (groqKey) {
         try {
-          const groqModel = body.model && (body.model.startsWith("openai/") || body.model.startsWith("qwen/"))
-            ? body.model
-            : "openai/gpt-oss-120b";
+          // Model is fixed server-side; callers must not pick (and pay for) other models
+          const groqModel = "openai/gpt-oss-120b";
 
           const groqResp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
@@ -68,7 +79,8 @@ export default {
                   content: prompt,
                 },
               ],
-              temperature: body.temperature ?? 0.85,
+              temperature: 0.85,
+              response_format: { type: "json_object" },
             }),
           });
 
@@ -96,7 +108,15 @@ export default {
               parts: [{ text: `${systemPrompt}\n\nDraf pesan:\n${prompt}` }],
             },
           ],
-          generationConfig: { temperature: body.temperature ?? 0.85 },
+          generationConfig: {
+            temperature: 0.85,
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: { bubbles: { type: "ARRAY", items: { type: "STRING" } } },
+              required: ["bubbles"],
+            },
+          },
         };
 
         for (const m of geminiModels) {

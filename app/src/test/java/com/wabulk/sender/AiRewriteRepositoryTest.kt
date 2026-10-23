@@ -3,6 +3,7 @@ package com.wabulk.sender
 import com.wabulk.sender.data.remote.CloudflareAiApi
 import com.wabulk.sender.data.repository.AiRewriteRepository
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -116,5 +117,21 @@ class AiRewriteRepositoryTest {
         assertEquals(2, bubbles.size)
         assertEquals("Halo {Nickname}!", bubbles[0])
         assertEquals("Pesan kedua", bubbles[1])
+    }
+
+    @Test
+    fun `validator rejects invented variables and broken spintax`() {
+        val draft = "Halo {Nickname}, promo dari {Company}"
+        assertTrue(AiRewriteRepository.isValidOutput(draft, listOf("{Halo|Hai} {Nickname}!", "Promo {Company}")))
+        assertFalse(AiRewriteRepository.isValidOutput(draft, listOf("Halo {Nama}!")))
+        assertFalse(AiRewriteRepository.isValidOutput(draft, listOf("{Halo|Hai {Nickname}")))
+        assertFalse(AiRewriteRepository.isValidOutput(draft, listOf("{Halo|{Hai}} {Nickname}")))
+        assertFalse(AiRewriteRepository.isValidOutput(draft, emptyList()))
+    }
+
+    @Test
+    fun `extra bubbles fold into the last allowed one`() {
+        val out = AiRewriteRepository.normalizeBubbles(listOf("a", " ", "b", "c", "d"), 3)
+        assertEquals(listOf("a", "b", "c\nd"), out)
     }
 }

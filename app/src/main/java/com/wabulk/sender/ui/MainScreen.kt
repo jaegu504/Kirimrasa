@@ -325,10 +325,11 @@ fun MainScreen(
 
                                 val companyVal = composerViewModel.uiState.value.customVariables["Company"] ?: "KirimRasa"
                                 val custom1Val = composerViewModel.uiState.value.customVariables["Custom_1"] ?: "PROMO30"
-                                val bubbles = composerViewModel.uiState.value.bubbles.filter { it.text.isNotBlank() }.ifEmpty {
-                                    listOf(MessageBubble(text = strings.fallbackBroadcastMessage))
-                                }
+                                val bubbles = composerViewModel.uiState.value.bubbles.filter { it.text.isNotBlank() }
                                 val mediaUris = composerViewModel.attachments.value.map { it.uriString }
+                                // Nothing to send: never fall back to a template that would reach real contacts
+                                if (bubbles.isEmpty() && mediaUris.isEmpty()) return@launch
+                                com.wabulk.sender.data.LastMessageStore.save(bubbles.map { it.text })
                                 val selectedAccount = composerViewModel.uiState.value.selectedAccount
                                 val queueItems = targetContacts.mapIndexed { idx, c ->
                                     val chosenNode = when (selectedAccount) {
