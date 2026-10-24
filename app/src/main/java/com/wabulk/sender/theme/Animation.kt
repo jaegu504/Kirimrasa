@@ -1,6 +1,15 @@
 package com.wabulk.sender.theme
 
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -15,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 
 /**
@@ -52,20 +60,37 @@ object EmeraldSpring {
 fun Modifier.springClickable(
     enabled: Boolean = true,
     pressedScale: Float = 0.96f,
+    haptic: Boolean = false,
     onClick: () -> Unit
 ): Modifier {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale = if (isPressed) pressedScale else 1f
+    // Quick squeeze on press, bouncy release, like iOS buttons
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) pressedScale else 1f,
+        animationSpec = if (isPressed) spring(stiffness = Spring.StiffnessHigh) else EmeraldSpring.Tactile,
+        label = "pressScale"
+    )
+    val hapticFeedback = LocalHapticFeedback.current
 
     return this
-        .scale(scale)
+        .graphicsLayer { scaleX = scale; scaleY = scale }
         .clickable(
             interactionSource = interactionSource,
             indication = null,
             enabled = enabled,
-            onClick = onClick
+            onClick = {
+                if (haptic) hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onClick()
+            }
         )
+}
+
+/** Odometer-style transition for changing numbers: rolls up when the value grows, down when it shrinks. */
+fun countRollTransition(initial: Int, target: Int): ContentTransform {
+    val up = target > initial
+    return (slideInVertically(spring(stiffness = Spring.StiffnessMediumLow)) { h -> if (up) h else -h } + fadeIn())
+        .togetherWith(slideOutVertically(spring(stiffness = Spring.StiffnessMediumLow)) { h -> if (up) -h else h } + fadeOut())
 }
 
 /**

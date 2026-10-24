@@ -42,6 +42,22 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.wabulk.sender.theme.countRollTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -229,13 +245,19 @@ fun ContactManagerScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = t.selectedCaption(selectedCount).uppercase(),
-                    color = c.secondaryLabel,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 0.4.sp
-                )
+                AnimatedContent(
+                    targetState = selectedCount,
+                    transitionSpec = { countRollTransition(initialState, targetState) },
+                    label = "selectedCaption"
+                ) { n ->
+                    Text(
+                        text = t.selectedCaption(n).uppercase(),
+                        color = c.secondaryLabel,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.4.sp
+                    )
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (selectedCount > 0 || allSelectedInView) {
                         TextAction(text = t.deselectAll, color = c.blue) { viewModel.selectAllContacts(false) }
@@ -295,14 +317,22 @@ fun ContactManagerScreen(
             }
         }
 
-        if (selectedCount > 0) {
+        // Keep the last count while the bar slides away, so it never flashes "0"
+        var barCount by remember { mutableIntStateOf(selectedCount) }
+        if (selectedCount > 0) barCount = selectedCount
+        AnimatedVisibility(
+            visible = selectedCount > 0,
+            enter = slideInVertically(spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)) { it } + fadeIn(),
+            exit = slideOutVertically(tween(200)) { it } + fadeOut(tween(200)),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
             SelectionBar(
-                text = t.barCount(selectedCount),
+                count = barCount,
+                countText = t.barCount,
                 labelText = t.giveLabel,
                 useText = t.use,
                 onLabel = { showBatchTagDialog = true },
-                onUse = onUseSelection,
-                modifier = Modifier.align(Alignment.BottomCenter)
+                onUse = onUseSelection
             )
         }
     }
@@ -442,6 +472,7 @@ private fun ContactRow(
         contactTags.forEach { append(" · $it") }
     }
 
+    val haptic = LocalHapticFeedback.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -453,7 +484,10 @@ private fun ContactRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 68.dp)
-                .toggleable(value = contact.isSelected, role = Role.Checkbox, onValueChange = { onToggleSelection() })
+                .toggleable(value = contact.isSelected, role = Role.Checkbox, onValueChange = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onToggleSelection()
+                })
                 .padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -567,22 +601,35 @@ private fun NicknameEditor(
 @Composable
 private fun RoundCheck(checked: Boolean) {
     val c = AppleTheme.colors
+    // Fill fades in while the tick pops with a small overshoot
+    val fill by animateColorAsState(if (checked) c.blue else Color.Transparent, tween(180), label = "checkFill")
+    val border by animateColorAsState(if (checked) c.blue else c.tertiaryLabel, tween(180), label = "checkBorder")
+    val tickScale by animateFloatAsState(
+        targetValue = if (checked) 1f else 0f,
+        animationSpec = if (checked) spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMedium) else tween(120),
+        label = "checkTick"
+    )
     Box(
         modifier = Modifier
             .size(26.dp)
             .clip(CircleShape)
-            .then(if (checked) Modifier.background(c.blue) else Modifier.border(2.dp, c.tertiaryLabel, CircleShape)),
+            .background(fill)
+            .border(2.dp, border, CircleShape),
         contentAlignment = Alignment.Center
     ) {
-        if (checked) {
-            Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-        }
+        Icon(
+            imageVector = Icons.Default.Check,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(16.dp).graphicsLayer { scaleX = tickScale; scaleY = tickScale; alpha = tickScale.coerceIn(0f, 1f) }
+        )
     }
 }
 
 @Composable
 private fun SelectionBar(
-    text: String,
+    count: Int,
+    countText: (Int) -> String,
     labelText: String,
     useText: String,
     onLabel: () -> Unit,
@@ -603,15 +650,21 @@ private fun SelectionBar(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = text,
-            color = Color.White,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
+        AnimatedContent(
+            targetState = count,
+            transitionSpec = { countRollTransition(initialState, targetState) },
+            modifier = Modifier.weight(1f),
+            label = "barCount"
+        ) { n ->
+            Text(
+                text = countText(n),
+                color = Color.White,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
         FilledButton(text = labelText, onClick = onLabel, background = Color.White.copy(alpha = 0.14f))
         FilledButton(text = useText, onClick = onUse)
     }

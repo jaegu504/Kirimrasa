@@ -3,6 +3,10 @@ package com.wabulk.sender.ui
 import com.wabulk.sender.theme.AppleTheme
 import com.wabulk.sender.theme.appleBackground
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
@@ -112,6 +116,22 @@ fun MainScreen(
         com.wabulk.sender.update.UpdateManager.checkForUpdates(context, isManual = false)
     }
 
+    // Launch: content rises and fades in, tab bar slides up from the bottom edge
+    val launchProgress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        launchProgress.animateTo(1f, spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessLow))
+    }
+    // Language switch: same layout, new words fade in, so drafts and scroll position stay
+    val languageFade = remember { Animatable(1f) }
+    var shownLanguage by remember { mutableStateOf(currentLanguage) }
+    LaunchedEffect(currentLanguage) {
+        if (currentLanguage != shownLanguage) {
+            shownLanguage = currentLanguage
+            languageFade.snapTo(0f)
+            languageFade.animateTo(1f, tween(380, easing = FastOutSlowInEasing))
+        }
+    }
+
     CompositionLocalProvider(LocalAppStrings provides strings) {
         Scaffold(
             modifier = modifier
@@ -120,6 +140,9 @@ fun MainScreen(
             containerColor = Color.Transparent,
             bottomBar = {
                 EmeraldBottomNav(
+                    modifier = Modifier.graphicsLayer {
+                        translationY = (1f - launchProgress.value) * size.height
+                    },
                     currentTab = currentTab,
                     onTabSelected = { currentTab = it },
                     queueBadgeCount = pendingQueueCount
@@ -146,7 +169,13 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .statusBarsPadding(),
+                    .statusBarsPadding()
+                    .graphicsLayer {
+                        val launch = launchProgress.value
+                        val lang = languageFade.value
+                        alpha = launch.coerceIn(0f, 1f) * (0.2f + 0.8f * lang)
+                        translationY = (1f - launch) * 48.dp.toPx() + (1f - lang) * 10.dp.toPx()
+                    },
                 label = "tabTransition"
             ) { tab ->
                 when (tab) {

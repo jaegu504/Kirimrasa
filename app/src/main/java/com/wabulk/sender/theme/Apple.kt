@@ -1,5 +1,10 @@
 package com.wabulk.sender.theme
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,13 +29,18 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -151,6 +161,31 @@ val DarkAppleColors = AppleColors(
 )
 
 val LocalAppleColors = staticCompositionLocalOf { LightAppleColors }
+
+/** Blend between the light and dark palettes; fraction 0 = light, 1 = dark. Drives the animated theme switch. */
+fun lerpAppleColors(fraction: Float): AppleColors {
+    val a = LightAppleColors
+    val b = DarkAppleColors
+    fun m(x: Color, y: Color) = lerp(x, y, fraction)
+    return AppleColors(
+        isDark = fraction >= 0.5f,
+        bgTop = m(a.bgTop, b.bgTop), bgMid = m(a.bgMid, b.bgMid), bgBottom = m(a.bgBottom, b.bgBottom),
+        card = m(a.card, b.card), cardInset = m(a.cardInset, b.cardInset), fill = m(a.fill, b.fill),
+        label = m(a.label, b.label), secondaryLabel = m(a.secondaryLabel, b.secondaryLabel),
+        tertiaryLabel = m(a.tertiaryLabel, b.tertiaryLabel), separator = m(a.separator, b.separator),
+        blue = m(a.blue, b.blue), green = m(a.green, b.green), teal = m(a.teal, b.teal),
+        orange = m(a.orange, b.orange), purple = m(a.purple, b.purple), red = m(a.red, b.red),
+        blueTint = m(a.blueTint, b.blueTint), blueOnTint = m(a.blueOnTint, b.blueOnTint),
+        greenTint = m(a.greenTint, b.greenTint), greenOnTint = m(a.greenOnTint, b.greenOnTint),
+        orangeTint = m(a.orangeTint, b.orangeTint), orangeOnTint = m(a.orangeOnTint, b.orangeOnTint),
+        purpleTint = m(a.purpleTint, b.purpleTint), purpleOnTint = m(a.purpleOnTint, b.purpleOnTint),
+        redTint = m(a.redTint, b.redTint), redOnTint = m(a.redOnTint, b.redOnTint),
+        tabBar = m(a.tabBar, b.tabBar),
+        chatWallpaperTop = m(a.chatWallpaperTop, b.chatWallpaperTop),
+        chatWallpaperBottom = m(a.chatWallpaperBottom, b.chatWallpaperBottom),
+        chatBubble = m(a.chatBubble, b.chatBubble)
+    )
+}
 
 object AppleTheme {
     val colors: AppleColors
@@ -301,7 +336,7 @@ fun ListRow(
     }
 }
 
-/** iOS segmented control. Each segment is a real selectable tab with ≥ 40 dp height. */
+/** iOS segmented control. The white thumb slides between segments on a spring; each segment is a real selectable tab ≥ 40 dp. */
 @Composable
 fun SegmentedControl(
     options: List<String>,
@@ -311,33 +346,47 @@ fun SegmentedControl(
     selectedTextColor: Color? = null
 ) {
     val c = AppleTheme.colors
+    val count = options.size.coerceAtLeast(1)
+    val thumbPosition by animateFloatAsState(
+        targetValue = selectedIndex.coerceIn(0, count - 1).toFloat(),
+        animationSpec = spring(dampingRatio = 0.72f, stiffness = Spring.StiffnessMediumLow),
+        label = "segmentThumb"
+    )
+    val thumbColor = if (c.isDark) Color(0xFF636366) else Color.White
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(c.fill)
             .padding(3.dp)
+            .drawBehind {
+                val w = size.width / count
+                val radius = CornerRadius(9.dp.toPx())
+                val left = w * thumbPosition
+                if (!c.isDark) {
+                    drawRoundRect(Color(0x14000000), Offset(left, 1.dp.toPx()), Size(w, size.height), radius)
+                }
+                drawRoundRect(thumbColor, Offset(left, 0f), Size(w, size.height), radius)
+            }
     ) {
         options.forEachIndexed { index, label ->
             val selected = index == selectedIndex
+            val textColor by animateColorAsState(
+                targetValue = if (selected) (selectedTextColor ?: c.label) else c.secondaryLabel,
+                animationSpec = tween(220),
+                label = "segmentText"
+            )
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .heightIn(min = 40.dp)
-                    .then(
-                        if (selected) Modifier
-                            .shadow(2.dp, RoundedCornerShape(9.dp))
-                            .clip(RoundedCornerShape(9.dp))
-                            .background(if (c.isDark) Color(0xFF636366) else Color.White)
-                        else Modifier
-                    )
                     .semantics { role = Role.Tab; this.selected = selected }
-                    .springClickable { onSelect(index) },
+                    .springClickable(haptic = true) { if (!selected) onSelect(index) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = label,
-                    color = if (selected) (selectedTextColor ?: c.label) else c.secondaryLabel,
+                    color = textColor,
                     fontSize = 14.sp,
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
                     maxLines = 1,

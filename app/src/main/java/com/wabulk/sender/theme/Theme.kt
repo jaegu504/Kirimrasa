@@ -1,6 +1,9 @@
 package com.wabulk.sender.theme
 
 import androidx.core.view.WindowCompat
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.runtime.SideEffect
 import android.app.Activity
@@ -108,12 +111,24 @@ fun KirimrasaTheme(
         }
     }
 
+    // Fade the whole palette instead of snapping when the theme changes
+    val darkFraction by animateFloatAsState(
+        targetValue = if (isDark) 1f else 0f,
+        animationSpec = tween(450, easing = FastOutSlowInEasing),
+        label = "themeFade"
+    )
+    val appleColors = when (darkFraction) {
+        0f -> LightAppleColors
+        1f -> DarkAppleColors
+        else -> lerpAppleColors(darkFraction)
+    }
+
     val colorScheme = if (isDark) DarkEmeraldColorScheme else LightEmeraldColorScheme
     val neumorphicColors = if (isDark) DarkNeumorphicColors else LightNeumorphicColors
 
     CompositionLocalProvider(
         LocalNeumorphicColors provides neumorphicColors,
-        LocalAppleColors provides if (isDark) DarkAppleColors else LightAppleColors,
+        LocalAppleColors provides appleColors,
         LocalTextStyle provides TextStyle(fontFamily = PlusJakartaSansFamily)
     ) {
         MaterialTheme(

@@ -14,8 +14,8 @@ android {
         applicationId = "com.wabulk.sender"
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "1.2.2"
+        versionCode = 11
+        versionName = "1.2.3"
 
         // Gateway API key comes from local.properties (gateway.apiKey) or env, never from git
         val localProps = Properties().apply {
