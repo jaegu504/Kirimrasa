@@ -295,7 +295,7 @@ interface AppStrings {
     val composerGuide2: String
     val composerGuide3: String
     val composerGuide4: String
-    val syncResult: (Int, Int) -> String
+    val syncResult: (Int, Int, Int) -> String
     val contactsPermissionNeeded: String
     val failedWith: (String) -> String
     val csvImported: (Int) -> String
@@ -659,7 +659,7 @@ object IndonesianStrings : AppStrings {
     override val composerGuide2: String = "2. {Nickname}: Nama panggilan unik yang otomatis diambil dari Tab Kontak."
     override val composerGuide3: String = "3. {Company} & {Custom_1}: Variabel pengirim dan promo yang dapat Anda ubah nilainya pada menu 'Atur Nilai {Company}'."
     override val composerGuide4: String = "4. Multi-Balon: Memecah pesan panjang menjadi 2-3 balon obrolan dengan jeda mengetik 3 detik untuk simulasi mengetik manusia."
-    override val syncResult: (Int, Int) -> String = { a, b -> "+$a baru, $b diperbarui" }
+    override val syncResult: (Int, Int, Int) -> String = { a, b, c -> "+$a baru, $b diperbarui, $c dihapus" }
     override val contactsPermissionNeeded: String = "Izin kontak diperlukan"
     override val failedWith: (String) -> String = { m -> "Gagal: $m" }
     override val csvImported: (Int) -> String = { n -> "+$n diimpor dari CSV" }
@@ -1023,7 +1023,7 @@ object TurkishStrings : AppStrings {
     override val composerGuide2: String = "2. {Nickname}: Kişiler sekmesinde verdiğiniz hitap adı otomatik yazılır."
     override val composerGuide3: String = "3. {Company} ve {Custom_1}: Firma adı ve kampanya bilgisi gibi değerler. '{Company} & {Custom_1} Değerlerini Ayarla' düğmesinden değiştirebilirsiniz."
     override val composerGuide4: String = "4. Çoklu balon: Uzun mesajı 2-3 balona böler. Balonlar arasında 3 saniye \"yazıyor...\" gösterilir, gerçek biri yazıyormuş gibi olur."
-    override val syncResult: (Int, Int) -> String = { a, b -> "+$a yeni, $b güncellendi" }
+    override val syncResult: (Int, Int, Int) -> String = { a, b, c -> "+$a yeni, $b güncellendi, $c silindi" }
     override val contactsPermissionNeeded: String = "Rehber izni gerekli"
     override val failedWith: (String) -> String = { m -> "Hata: $m" }
     override val csvImported: (Int) -> String = { n -> "CSV'den +$n kişi içe aktarıldı" }

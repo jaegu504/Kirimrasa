@@ -87,4 +87,17 @@ class ContactSyncTest {
         assertEquals("+905551234567", ContactSyncEngine.normalizePhone("+90 (555) 123-4567"))
         assertEquals("+447911123456", ContactSyncEngine.normalizePhone("+44 7911 123456"))
     }
+
+    @Test
+    fun `staleContactIds drops phonebook contacts deleted from phone but keeps CSV imports`() {
+        fun c(id: Long, phone: String, key: String) = com.wabulk.sender.data.local.db.ContactEntity(
+            id = id, systemLookupKey = key, rawName = "x", phoneNumber = phone
+        )
+        val stored = listOf(
+            c(1, "+111", "k1"),  // still in phonebook
+            c(2, "+222", "k2"),  // deleted from phonebook
+            c(3, "+333", "")     // CSV import, never in phonebook
+        )
+        assertEquals(listOf(2L), ContactSyncEngine.staleContactIds(stored, setOf("+111")))
+    }
 }

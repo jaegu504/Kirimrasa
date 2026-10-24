@@ -139,6 +139,11 @@ class FakeContactDao : ContactDao {
         updateFlow()
     }
 
+    override suspend fun deleteByIds(ids: List<Long>) {
+        contactsList.removeAll { it.id in ids }
+        updateFlow()
+    }
+
     override suspend fun getAll(): List<ContactEntity> {
         return contactsList.toList()
     }

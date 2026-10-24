@@ -11,7 +11,8 @@ import kotlinx.coroutines.withContext
 data class SyncResult(
     val newContacts: Int,
     val updatedContacts: Int,
-    val totalPhonebook: Int
+    val totalPhonebook: Int,
+    val removedContacts: Int = 0
 )
 
 class ContactSyncEngine(
@@ -26,6 +27,7 @@ class ContactSyncEngine(
      * - Preserves existing tags
      * - Preserves selection state
      * - Deduplicates by normalized phone number
+     * - Removes contacts that came from the phonebook but were deleted there (CSV imports stay)
      */
     suspend fun syncFromPhonebook(): SyncResult = withContext(Dispatchers.IO) {
         val phonebookContacts = readPhonebook()
@@ -66,10 +68,16 @@ class ContactSyncEngine(
             }
         }
 
+        // An empty read usually means a permission or provider glitch, not an empty phonebook: never wipe on it
+        val staleIds = if (phonebookContacts.isEmpty()) emptyList()
+        else staleContactIds(contactDao.getAll(), phonebookContacts.mapTo(HashSet()) { it.phone })
+        staleIds.chunked(500).forEach { contactDao.deleteByIds(it) }
+
         SyncResult(
             newContacts = newCount,
             updatedContacts = updatedCount,
-            totalPhonebook = phonebookContacts.size
+            totalPhonebook = phonebookContacts.size,
+            removedContacts = staleIds.size
         )
     }
 
@@ -121,6 +129,10 @@ class ContactSyncEngine(
     }
 
     companion object {
+        /** Phonebook-synced contacts (non-empty lookup key) whose number is gone from the phonebook. */
+        fun staleContactIds(stored: List<ContactEntity>, phonebookPhones: Set<String>): List<Long> =
+            stored.filter { it.systemLookupKey.isNotEmpty() && it.phoneNumber !in phonebookPhones }.map { it.id }
+
         /**
          * Normalizes phone numbers by stripping whitespace, dashes, and parentheses.
          * Keeps the + prefix for international numbers.

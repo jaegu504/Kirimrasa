@@ -74,6 +74,9 @@ interface ContactDao {
     @Query("DELETE FROM contacts WHERE id = :contactId")
     suspend fun delete(contactId: Long)
 
+    @Query("DELETE FROM contacts WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Long>)
+
     @Query("SELECT * FROM contacts")
     suspend fun getAll(): List<ContactEntity>
 }

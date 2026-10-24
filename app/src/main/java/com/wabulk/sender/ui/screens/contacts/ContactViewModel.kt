@@ -185,7 +185,7 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
             _isSyncing.value = true
             try {
                 val result = syncEngine.syncFromPhonebook()
-                _lastSyncResult.value = LocalizationManager.activeStrings.syncResult(result.newContacts, result.updatedContacts)
+                _lastSyncResult.value = LocalizationManager.activeStrings.syncResult(result.newContacts, result.updatedContacts, result.removedContacts)
             } catch (e: SecurityException) {
                 _lastSyncResult.value = LocalizationManager.activeStrings.contactsPermissionNeeded
             } catch (e: Exception) {
