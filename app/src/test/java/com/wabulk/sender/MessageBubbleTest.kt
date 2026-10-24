@@ -18,18 +18,18 @@ class MessageBubbleTest {
     }
 
     @Test
-    fun `adding bubble increments list up to max limit of 3`() {
+    fun `adding bubble increments list up to max limit of 5`() {
         var state = ComposerState()
         state = state.addBubble("Balon 2")
         assertEquals(2, state.bubbles.size)
         assertEquals(1, state.bubbles[1].order)
 
-        state = state.addBubble("Balon 3")
-        assertEquals(3, state.bubbles.size)
+        repeat(3) { state = state.addBubble("Balon ${it + 3}") }
+        assertEquals(5, state.bubbles.size)
 
-        // Adding 4th bubble should be rejected / ignored due to 3 bubble max limit
-        state = state.addBubble("Balon 4")
-        assertEquals(3, state.bubbles.size)
+        // A 6th bubble is ignored
+        state = state.addBubble("Balon 6")
+        assertEquals(5, state.bubbles.size)
     }
 
     @Test

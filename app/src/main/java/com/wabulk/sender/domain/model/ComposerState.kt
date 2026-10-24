@@ -6,6 +6,9 @@ enum class AccountNode {
     DUAL_SYNC
 }
 
+/** Most chat bubbles one message can have: enough to feel like real chatting, few enough not to look like spam. */
+const val MAX_BUBBLES = 5
+
 data class ComposerState(
     val bubbles: List<MessageBubble> = listOf(MessageBubble(order = 0, text = "")),
     val selectedAccount: AccountNode = AccountNode.PERSONAL,
@@ -26,7 +29,7 @@ data class ComposerState(
         get() = bubbles.sumOf { (it.text.length / 160).coerceAtLeast(1) }
 
     fun addBubble(initialText: String = ""): ComposerState {
-        if (bubbles.size >= 3) return this // Max 3 bubbles constraint
+        if (bubbles.size >= MAX_BUBBLES) return this
         val newOrder = bubbles.size
         val newBubble = MessageBubble(order = newOrder, text = initialText)
         return copy(bubbles = bubbles + newBubble)

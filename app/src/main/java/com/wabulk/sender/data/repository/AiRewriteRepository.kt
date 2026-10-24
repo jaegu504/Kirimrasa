@@ -1,5 +1,6 @@
 package com.wabulk.sender.data.repository
 
+import com.wabulk.sender.domain.model.MAX_BUBBLES
 import com.wabulk.sender.data.locale.LocalizationManager
 import com.wabulk.sender.data.remote.CloudflareAiApi
 import com.wabulk.sender.data.remote.dto.AiRewriteRequest
@@ -13,7 +14,7 @@ class AiRewriteRepository(
         originalDraft: String,
         language: String = "ID",
         tone: String = "friendly",
-        maxBubbles: Int = 3,
+        maxBubbles: Int = MAX_BUBBLES,
         endpointUrl: String? = null
     ): Result<List<String>> {
         val targetUrl = endpointUrl?.trim()?.ifEmpty { null } ?: defaultEndpointUrl
@@ -44,7 +45,7 @@ class AiRewriteRepository(
         /** Drops empty bubbles and folds any extra ones into the last allowed bubble. */
         fun normalizeBubbles(bubbles: List<String>, maxBubbles: Int): List<String> {
             val nonEmpty = bubbles.map { it.trim() }.filter { it.isNotEmpty() }
-            val max = maxBubbles.coerceIn(1, 3)
+            val max = maxBubbles.coerceIn(1, MAX_BUBBLES)
             if (nonEmpty.size <= max) return nonEmpty
             return nonEmpty.take(max - 1) + nonEmpty.drop(max - 1).joinToString("\n")
         }

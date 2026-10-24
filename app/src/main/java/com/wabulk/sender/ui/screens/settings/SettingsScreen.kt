@@ -139,7 +139,6 @@ fun SettingsScreen(
     val node1Session by viewModel.node1Session.collectAsState()
     val node2Session by viewModel.node2Session.collectAsState()
     val antiBan by viewModel.antiBanConfig.collectAsState()
-    val selectedAiTone by viewModel.selectedAiTone.collectAsState()
     val baileysConfig by viewModel.baileysConfig.collectAsState()
     val updateState by UpdateManager.updateState.collectAsState()
 
@@ -274,23 +273,6 @@ fun SettingsScreen(
                     )
                 }
             }
-        }
-
-        // AI rewrite tone
-        SectionHeader(t.sectionAi)
-        GroupCard(padding = 16.dp, spacing = 12.dp) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconTile(icon = Icons.Default.AutoAwesome, gradient = TileGradients.Purple)
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(t.toneTitle, color = c.label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                    Text(t.toneCaption, color = c.secondaryLabel, fontSize = 13.sp)
-                }
-            }
-            SegmentedControl(
-                options = listOf(strings.settingsToneCasual, strings.settingsToneFriendlyPicker, strings.settingsToneFormal),
-                selectedIndex = selectedAiTone,
-                onSelect = { viewModel.selectAiTone(it) }
-            )
         }
 
         // General

@@ -42,6 +42,9 @@ interface ComposerTexts {
     val toneFriendly: String
     val toneShorter: String
     val toneVaried: String
+    val toneHeartfelt: String
+    val toneCasual: String
+    val tonePolite: String
     val preview: String
     val typing: String
     val previewEmpty: String
@@ -109,8 +112,11 @@ object IndonesianComposerTexts : ComposerTexts {
     override val aiNeedText = "Tulis pesan dulu, lalu rapikan."
     override val aiStyle = "Gaya tulisan AI"
     override val toneFriendly = "Ramah"
-    override val toneShorter = "Lebih singkat"
+    override val toneShorter = "Singkat"
     override val toneVaried = "Banyak variasi"
+    override val toneHeartfelt = "Menyentuh"
+    override val toneCasual = "Santai"
+    override val tonePolite = "Sopan"
     override val preview = "Pratinjau"
     override val typing = "sedang mengetik…"
     override val previewEmpty = "Pesanmu akan tampil di sini"
@@ -186,8 +192,11 @@ object TurkishComposerTexts : ComposerTexts {
     override val aiNeedText = "Önce mesajı yazın, sonra düzenleyin."
     override val aiStyle = "Yapay zekâ yazım tarzı"
     override val toneFriendly = "Samimi"
-    override val toneShorter = "Daha kısa"
+    override val toneShorter = "Kısa"
     override val toneVaried = "Çok çeşitli"
+    override val toneHeartfelt = "İçten"
+    override val toneCasual = "Rahat"
+    override val tonePolite = "Kibar"
     override val preview = "Önizleme"
     override val typing = "yazıyor…"
     override val previewEmpty = "Mesajınız burada görünecek"

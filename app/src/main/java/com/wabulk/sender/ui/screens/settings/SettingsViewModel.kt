@@ -42,9 +42,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     // Anti-ban settings: persisted in AntiBanSettings and read by the dispatch queue
     val antiBanConfig: StateFlow<AntiBanConfig> = AntiBanSettings.config
 
-    private val _selectedAiTone = MutableStateFlow(1) // 0: Casual, 1: Friendly, 2: Formal
-    val selectedAiTone: StateFlow<Int> = _selectedAiTone.asStateFlow()
-
     fun selectPreset(index: Int) = AntiBanSettings.update { it.copy(preset = index) }
 
     fun adjustCustomMin(deltaSec: Int) = AntiBanSettings.update {
@@ -66,10 +63,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun incrementBatchSize() = AntiBanSettings.update { it.copy(batchSize = it.batchSize + 5) }
 
     fun decrementBatchSize() = AntiBanSettings.update { it.copy(batchSize = it.batchSize - 5) }
-
-    fun selectAiTone(toneIndex: Int) {
-        _selectedAiTone.value = toneIndex
-    }
 
     fun updateGatewayUrl(url: String) {
         BaileysConfigManager.setGatewayUrl(url)

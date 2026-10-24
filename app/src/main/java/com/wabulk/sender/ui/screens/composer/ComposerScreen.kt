@@ -1,5 +1,6 @@
 package com.wabulk.sender.ui.screens.composer
 
+import com.wabulk.sender.domain.model.MAX_BUBBLES
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.widget.Toast
@@ -380,7 +381,7 @@ fun ComposerScreen(
                 TintPill(text = t.addNickname, background = c.blueTint, content = c.blueOnTint, onClick = { viewModel.insertVariable("{Nickname}") })
                 TintPill(text = t.addCompany, background = c.orangeTint, content = c.orangeOnTint, onClick = { viewModel.insertVariable("{Company}") })
                 TintPill(text = t.addPromo, background = c.orangeTint, content = c.orangeOnTint, onClick = { viewModel.insertVariable("{Custom_1}") })
-                if (bubbles.size < 3) {
+                if (bubbles.size < MAX_BUBBLES) {
                     TintPill(text = t.addBubble, background = c.fill, content = c.label, onClick = { viewModel.addBubble("") })
                 }
             }
@@ -433,6 +434,9 @@ fun ComposerScreen(
             ) {
                 listOf(
                     "friendly" to t.toneFriendly,
+                    "heartfelt" to t.toneHeartfelt,
+                    "casual" to t.toneCasual,
+                    "polite" to t.tonePolite,
                     "shorter" to t.toneShorter,
                     "max_variance" to t.toneVaried
                 ).forEach { (key, label) ->

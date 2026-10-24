@@ -125,7 +125,8 @@ fun AttachmentCard(
 
         Text(text = t.sendFileIn, color = c.secondaryLabel, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         SegmentedControl(
-            options = (1..bubbleCount).map { t.bubble(it) } + t.separate,
+            // Up to 5 bubbles + "separate" would not fit as "Balon N", so use bare numbers then
+            options = (1..bubbleCount).map { if (bubbleCount > 3) "$it" else t.bubble(it) } + t.separate,
             selectedIndex = if (separate) bubbleCount else attachment.bubbleIndex,
             onSelect = { onPlacementChange(if (it == bubbleCount) MediaAttachment.SEPARATE_AFTER else it) },
             modifier = Modifier.padding(end = 8.dp)

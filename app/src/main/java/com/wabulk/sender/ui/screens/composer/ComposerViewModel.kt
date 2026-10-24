@@ -1,5 +1,6 @@
 package com.wabulk.sender.ui.screens.composer
 
+import com.wabulk.sender.domain.model.MAX_BUBBLES
 import com.wabulk.sender.data.LastMessageStore
 import com.wabulk.sender.data.locale.LocalizationManager
 import androidx.lifecycle.ViewModel
@@ -100,13 +101,13 @@ class ComposerViewModel(
                 originalDraft = allDraftText,
                 language = language,
                 tone = _uiState.value.selectedTone,
-                maxBubbles = 3,
+                maxBubbles = MAX_BUBBLES,
                 endpointUrl = customUrl
             )
 
             result.fold(
                 onSuccess = { rewrittenBubbles ->
-                    val newBubbles = rewrittenBubbles.take(3).mapIndexed { index, text ->
+                    val newBubbles = rewrittenBubbles.take(MAX_BUBBLES).mapIndexed { index, text ->
                         MessageBubble(order = index, text = text)
                     }
                     _uiState.value = _uiState.value.copy(
