@@ -280,6 +280,27 @@ class BaileysBridgeTest {
     }
 
     @Test
+    fun `ping treats STANDBY as connected`() = runBlocking {
+        val testHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body("""{"status":"STANDBY","registered":true}""".toResponseBody("application/json".toMediaType()))
+                    .build()
+            }
+            .build()
+        val client = BaileysBridgeClient(
+            node = testNode.copy(status = NodeStatus.DISCONNECTED),
+            configProvider = { BaileysConfig(gatewayUrl = "http://10.0.2.2:3000", isEnabled = true) },
+            httpClient = testHttpClient
+        )
+        assertTrue(client.ping().isSuccess)
+    }
+
+    @Test
     fun `ping treats CONNECTING gateway status as not connected and does not restore`() = runBlocking {
         val requests = mutableListOf<Request>()
         val testHttpClient = OkHttpClient.Builder()

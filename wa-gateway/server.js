@@ -118,6 +118,53 @@ async function markUnavailable(sock) {
     await sock.sendPresenceUpdate('unavailable');
 }
 
+// A linked device with an open socket shows as "Active" and the main phone mutes its
+// notifications, even with presence unavailable. So the socket only stays open while there is
+// work: it closes after IDLE_MS without sends and reopens on the next send ("STANDBY").
+const IDLE_MS = parseInt(process.env.IDLE_MS || '120000', 10);
+const WAKE_TIMEOUT_MS = 25000;
+
+function hasRegisteredCreds(nodeId) {
+    try {
+        const creds = JSON.parse(fs.readFileSync(path.join(SESSIONS_DIR, `node_${nodeId}`, 'creds.json'), 'utf-8'));
+        return creds?.registered === true;
+    } catch (_) {
+        return false;
+    }
+}
+
+function touchActivity(nodeId) {
+    const node = nodeMap.get(nodeId);
+    if (!node) return;
+    clearTimeout(node.idleTimer);
+    node.idleTimer = setTimeout(() => {
+        if (node.sock && node.status === 'CONNECTED') {
+            logger.info({ nodeId }, 'Idle: closing socket so the phone keeps its notifications');
+            node.idleClosing = true;
+            try { node.sock.end(undefined); } catch (_) {}
+        }
+    }, IDLE_MS);
+}
+
+/** Opens the socket from saved creds if needed and waits until WhatsApp accepts it. */
+async function ensureConnected(nodeId) {
+    let node = nodeMap.get(nodeId);
+    if (node?.sock && node.status === 'CONNECTED') {
+        touchActivity(nodeId);
+        return node;
+    }
+    if (!(node?.sock) && !hasRegisteredCreds(nodeId)) return null;
+    node = await getOrCreateSocket(nodeId);
+    const start = Date.now();
+    while (node.status !== 'CONNECTED' && Date.now() - start < WAKE_TIMEOUT_MS) {
+        await delay(300);
+        node = nodeMap.get(nodeId) || node;
+    }
+    if (node.status !== 'CONNECTED') return null;
+    touchActivity(nodeId);
+    return node;
+}
+
 // Initialize Baileys Socket for a node
 async function getOrCreateSocket(nodeId, phoneNumber = null) {
     let node = nodeMap.get(nodeId);
@@ -190,6 +237,13 @@ async function getOrCreateSocket(nodeId, phoneNumber = null) {
         const { connection, lastDisconnect } = update;
         // Ignore events from a socket that has already been replaced
         if (node.sock !== sock) return;
+        if (connection === 'close' && node.idleClosing) {
+            node.idleClosing = false;
+            node.sock = null;
+            node.status = 'STANDBY';
+            broadcastStatus(nodeId, 'STANDBY');
+            return;
+        }
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
             const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
@@ -213,6 +267,7 @@ async function getOrCreateSocket(nodeId, phoneNumber = null) {
         } else if (connection === 'open') {
             node.status = 'CONNECTED';
             broadcastStatus(nodeId, 'CONNECTED');
+            touchActivity(nodeId);
             logger.info({ nodeId }, 'WhatsApp connection established successfully!');
             // Keep companion presence as unavailable so main phone retains vibrations & notifications
             try {
@@ -231,20 +286,6 @@ async function getOrCreateSocket(nodeId, phoneNumber = null) {
 
 // REST ROUTES
 
-// 1. Health check & info
-app.get('/', (req, res) => {
-    res.json({
-        service: 'WhatsApp Bulk Gateway (Baileys)',
-        version: '1.0.0',
-        activeNodes: Array.from(nodeMap.entries()).map(([id, n]) => ({
-            id,
-            status: n.status,
-            phoneNumber: n.phoneNumber || ''
-        })),
-        uptimeSeconds: Math.floor(process.uptime())
-    });
-});
-
 // 2. Request Pairing Code (8 digits)
 app.post('/api/nodes/:nodeId/pair', authMiddleware, async (req, res) => {
     const { nodeId } = req.params;
@@ -260,6 +301,9 @@ app.post('/api/nodes/:nodeId/pair', authMiddleware, async (req, res) => {
         const sessionPath = path.join(SESSIONS_DIR, `node_${nodeId}`);
         // Not logged in yet: drop the old socket and credentials so pairing starts clean
         const existing = nodeMap.get(nodeId);
+        if (!existing?.sock && hasRegisteredCreds(nodeId)) {
+            return res.json({ success: true, status: 'ALREADY_CONNECTED', message: 'Perangkat sudah terhubung' });
+        }
         if (!existing?.sock?.authState?.creds?.registered) {
             if (existing?.sock) {
                 const oldSock = existing.sock;
@@ -308,22 +352,15 @@ app.get('/api/nodes/:nodeId/status', authMiddleware, async (req, res) => {
     const { nodeId } = req.params;
     let node = nodeMap.get(nodeId);
 
-    // No live socket (e.g. after restart or a WS-only stub): resume from session folder if present
-    if (!node?.sock) {
-        const sessionPath = path.join(SESSIONS_DIR, `node_${nodeId}`);
-        if (fs.existsSync(sessionPath)) {
-            try {
-                node = await getOrCreateSocket(nodeId);
-            } catch (_) {}
-        }
-    }
-
-    const status = node ? node.status : 'DISCONNECTED';
+    // Status checks never open the socket (that would keep the device "Active"); a logged-in
+    // account without a live socket is STANDBY and wakes on the next send
+    const sleeping = !node?.sock && hasRegisteredCreds(nodeId);
+    const status = sleeping ? 'STANDBY' : (node ? node.status : 'DISCONNECTED');
     return res.json({
         nodeId,
         status,
         phoneNumber: node?.phoneNumber || '',
-        registered: (node?.sock?.user || node?.sock?.authState?.creds?.registered) ? true : false
+        registered: (sleeping || node?.sock?.user || node?.sock?.authState?.creds?.registered) ? true : false
     });
 });
 
@@ -401,7 +438,7 @@ app.post('/api/nodes/:nodeId/send', authMiddleware, async (req, res) => {
         return res.status(400).json({ error: 'recipient phone number is required' });
     }
 
-    const node = nodeMap.get(nodeId);
+    const node = await ensureConnected(nodeId).catch(() => null);
     if (!node || !node.sock || node.status !== 'CONNECTED') {
         return res.status(400).json({
             error: `Node ${nodeId} belum terhubung ke WhatsApp. Silakan hubungkan dulu.`,
@@ -533,7 +570,7 @@ app.post('/api/nodes/:nodeId/presence', authMiddleware, async (req, res) => {
     const { nodeId } = req.params;
     const { recipient, durationMs } = req.body;
 
-    const node = nodeMap.get(nodeId);
+    const node = await ensureConnected(nodeId).catch(() => null);
     if (!node || !node.sock || node.status !== 'CONNECTED') {
         return res.json({ success: true, warning: 'Node not connected, presence skipped' });
     }
@@ -556,7 +593,8 @@ app.post('/api/nodes/:nodeId/presence', authMiddleware, async (req, res) => {
 // 6. Disconnect / Logout
 app.post('/api/nodes/:nodeId/disconnect', authMiddleware, async (req, res) => {
     const { nodeId } = req.params;
-    const node = nodeMap.get(nodeId);
+    const node = await ensureConnected(nodeId).catch(() => null) || nodeMap.get(nodeId);
+    if (node) clearTimeout(node.idleTimer);
 
     try {
         if (node?.sock) {
@@ -589,7 +627,7 @@ server.on('upgrade', (request, socket, head) => {
         wss.handleUpgrade(request, socket, head, (ws) => {
             let node = nodeMap.get(nodeId);
             if (!node) {
-                node = { wsClients: new Set(), status: 'DISCONNECTED' };
+                node = { wsClients: new Set(), status: hasRegisteredCreds(nodeId) ? 'STANDBY' : 'DISCONNECTED' };
                 nodeMap.set(nodeId, node);
             }
             node.wsClients.add(ws);

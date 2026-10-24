@@ -441,7 +441,7 @@ class BaileysBridgeClient(
                     val statusText = root["status"]?.jsonPrimitive?.content
                     if (statusText != null) {
                         when (statusText.uppercase()) {
-                            "CONNECTED" -> updateConnectionStatus(NodeStatus.CONNECTED)
+                            "CONNECTED", "STANDBY" -> updateConnectionStatus(NodeStatus.CONNECTED)
                             "PAIRING" -> updateConnectionStatus(NodeStatus.PAIRING)
                             "DISCONNECTED" -> updateConnectionStatus(NodeStatus.DISCONNECTED)
                             "ERROR" -> updateConnectionStatus(NodeStatus.ERROR)
@@ -494,9 +494,9 @@ class BaileysBridgeClient(
         }
     }
 
-    // CONNECTING (creds loaded, WhatsApp not yet open) is not connected
+    // CONNECTED, or STANDBY (logged in, socket asleep until the next send). CONNECTING is not ready yet.
     private fun isGatewayConnected(jsonString: String): Boolean {
-        return gatewayStatus(jsonString) == "CONNECTED" && !jsonString.contains("\"registered\":false")
+        return gatewayStatus(jsonString) in setOf("CONNECTED", "STANDBY") && !jsonString.contains("\"registered\":false")
     }
 
     private fun extractPairingCode(jsonString: String): String? {
