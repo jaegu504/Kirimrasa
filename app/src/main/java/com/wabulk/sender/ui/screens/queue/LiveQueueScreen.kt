@@ -1,7 +1,12 @@
 package com.wabulk.sender.ui.screens.queue
 
 import android.os.Build
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -46,6 +51,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +63,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -67,18 +74,17 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -95,10 +101,12 @@ import com.wabulk.sender.theme.PrimaryCapsuleButton
 import com.wabulk.sender.theme.RowSeparator
 import com.wabulk.sender.theme.SectionHeader
 import com.wabulk.sender.theme.TintPill
+import com.wabulk.sender.theme.countRollTransition
 import com.wabulk.sender.theme.springClickable
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 enum class QueueStatusFilter { ALL, ACTIVE, DELIVERED, PENDING, FAILED }
 
@@ -126,6 +134,21 @@ fun LiveQueueScreen(
     val pendingCount = allItems.count { it.status == QueueTaskStatus.PENDING }
     var confirmStop by rememberSaveable { mutableStateOf(false) }
     val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+
+    // Campaign done: every item delivered or failed. Checkmark springs in only on the live transition.
+    val finished = totalCount > 0 && allItems.isNotEmpty() && allItems.all {
+        it.status == QueueTaskStatus.DELIVERED || it.status == QueueTaskStatus.FAILED
+    }
+    val doneScale = remember { Animatable(if (finished) 1f else 0f) }
+    val haptic = LocalHapticFeedback.current
+    LaunchedEffect(finished) {
+        if (!finished) {
+            doneScale.snapTo(0f)
+        } else if (doneScale.value < 1f) {
+            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            doneScale.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMediumLow))
+        }
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -170,6 +193,20 @@ fun LiveQueueScreen(
             GroupCard(padding = 20.dp, spacing = 16.dp) {
                 Box(Modifier.fillMaxWidth().padding(top = 4.dp), contentAlignment = Alignment.Center) {
                     ProgressRing(sent = sentCount, total = totalCount, texts = t)
+                }
+                if (finished) {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .graphicsLayer { scaleX = doneScale.value; scaleY = doneScale.value }
+                                .clip(CircleShape)
+                                .background(c.green),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
+                        }
+                    }
                 }
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     PhasePill(
@@ -258,7 +295,7 @@ fun LiveQueueScreen(
                     bottomStart = if (last) 20.dp else 0.dp,
                     bottomEnd = if (last) 20.dp else 0.dp
                 )
-                Column(Modifier.clip(shape).background(c.card)) {
+                Column(Modifier.animateItem().clip(shape).background(c.card)) {
                     RecipientRow(item = item, isRunning = isRunning, texts = t, timeFormat = timeFormat)
                     if (!last) RowSeparator(startInset = 60.dp)
                 }
@@ -291,7 +328,7 @@ fun LiveQueueScreen(
 private fun ProgressRing(sent: Int, total: Int, texts: QueueTexts) {
     val c = AppleTheme.colors
     val target = if (total == 0) 0f else (sent.toFloat() / total).coerceIn(0f, 1f)
-    val progress by animateFloatAsState(targetValue = target, animationSpec = tween(600), label = "ringProgress")
+    val progress by animateFloatAsState(targetValue = target, animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow), label = "ringProgress")
     val ringSize = 168.dp
     val stroke = 14.dp
     // Gradient wraps back to green after the arc end so the round start cap stays green.
@@ -329,19 +366,31 @@ private fun ProgressRing(sent: Int, total: Int, texts: QueueTexts) {
             if (progress > 0f) drawRingArc(brush, progress, px)
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = buildAnnotatedString {
-                    append("$sent")
-                    withStyle(SpanStyle(fontSize = 22.sp, color = c.tertiaryLabel, fontWeight = FontWeight.Bold)) {
-                        append("/$total")
-                    }
-                },
-                color = c.label,
-                fontSize = 40.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = (-1).sp,
-                style = TextStyle(fontFeatureSettings = "tnum")
-            )
+            Row {
+                AnimatedContent(
+                    targetState = sent,
+                    transitionSpec = { countRollTransition(initialState, targetState) },
+                    modifier = Modifier.alignByBaseline(),
+                    label = "sentRoll"
+                ) { value ->
+                    Text(
+                        text = "$value",
+                        color = c.label,
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-1).sp,
+                        style = TextStyle(fontFeatureSettings = "tnum")
+                    )
+                }
+                Text(
+                    text = "/$total",
+                    color = c.tertiaryLabel,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    style = TextStyle(fontFeatureSettings = "tnum"),
+                    modifier = Modifier.alignByBaseline()
+                )
+            }
             Text(text = texts.sentWord, color = c.secondaryLabel, fontSize = 13.sp)
         }
     }
@@ -436,20 +485,59 @@ private fun RecipientRow(item: QueueItem, isRunning: Boolean, texts: QueueTexts,
         QueueTaskStatus.FAILED -> texts.rowFailed(item.errorMessage) to c.redOnTint
         QueueTaskStatus.PENDING, QueueTaskStatus.PAUSED -> texts.rowWaiting to c.secondaryLabel
     }
+    // Animate only real transitions: the first composition (incl. scrolling back in) seeds prevStatus.
+    var prevStatus by remember(item.id) { mutableStateOf(status) }
+    val flash = remember(item.id) { Animatable(0f) }
+    val shake = remember(item.id) { Animatable(0f) }
+    val iconScale = remember(item.id) { Animatable(1f) }
+    LaunchedEffect(status) {
+        if (prevStatus == status) return@LaunchedEffect
+        prevStatus = status
+        when (status) {
+            QueueTaskStatus.DELIVERED -> {
+                launch {
+                    iconScale.snapTo(0f)
+                    iconScale.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = Spring.StiffnessMedium))
+                }
+                flash.snapTo(1f)
+                flash.animateTo(0f, tween(600))
+            }
+            QueueTaskStatus.FAILED -> {
+                launch {
+                    flash.snapTo(1f)
+                    flash.animateTo(0f, tween(600))
+                }
+                shake.animateTo(0f, keyframes {
+                    durationMillis = 300
+                    8f at 50
+                    -8f at 100
+                    6f at 150
+                    -6f at 200
+                    3f at 250
+                })
+            }
+            else -> Unit
+        }
+    }
+    val flashColor = if (status == QueueTaskStatus.FAILED) c.red else c.green
     Row(
         modifier = Modifier
+            .graphicsLayer { translationX = shake.value * density }
+            .drawBehind { drawRect(flashColor.copy(alpha = 0.22f * flash.value)) }
             .fillMaxWidth()
             .heightIn(min = 56.dp)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Box(Modifier.graphicsLayer { scaleX = iconScale.value; scaleY = iconScale.value }) {
         when (status) {
             QueueTaskStatus.TYPING -> StatusCircle(c.blueTint) { TypingDots(c.blue) }
             QueueTaskStatus.DELIVERED -> StatusCircle(c.greenTint) { StatusIcon(Icons.Default.Check, c.greenOnTint) }
             QueueTaskStatus.FAILED -> StatusCircle(c.redTint) { StatusIcon(Icons.Default.PriorityHigh, c.redOnTint) }
             QueueTaskStatus.PENDING, QueueTaskStatus.PAUSED ->
                 StatusCircle(c.fill) { StatusIcon(Icons.Default.Schedule, c.secondaryLabel) }
+        }
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(text = item.recipientName, color = c.label, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)

@@ -38,13 +38,15 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.UploadFile
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -171,14 +173,9 @@ fun ContactManagerScreen(
                     IconButton(onClick = { showImportCsvDialog = true }) {
                         Icon(imageVector = Icons.Default.FileUpload, contentDescription = t.importCsv, tint = c.blue)
                     }
-                    if (isSyncing) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), color = c.blue, strokeWidth = 2.dp)
-                    }
-                    TintPill(
+                    SyncPill(
                         text = if (isSyncing) t.syncing else t.syncButton,
-                        background = c.blueTint,
-                        content = c.blueOnTint,
-                        icon = Icons.Default.Sync,
+                        syncing = isSyncing,
                         onClick = { if (!isSyncing) syncFromPhone() }
                     )
                 }
@@ -284,10 +281,21 @@ fun ContactManagerScreen(
                 }
             }
 
+            // Fade the same list in on filter change; a Crossfade would rebuild the LazyColumn and drop edits in progress
+            val listAlpha = remember { Animatable(1f) }
+            var lastTag by remember { mutableStateOf(activeTag) }
+            LaunchedEffect(activeTag) {
+                if (activeTag != lastTag) {
+                    lastTag = activeTag
+                    listAlpha.snapTo(0f)
+                    listAlpha.animateTo(1f, tween(200))
+                }
+            }
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .graphicsLayer { alpha = listAlpha.value },
                 // Room for the floating selection bar so the last row stays reachable
                 contentPadding = PaddingValues(bottom = if (selectedCount > 0) 96.dp else 16.dp)
             ) {
@@ -311,7 +319,12 @@ fun ContactManagerScreen(
                         onQuickFirstName = { viewModel.quickFormatFirstName(contact.id) },
                         onQuickRemoveNotes = { viewModel.quickFormatRemoveNotes(contact.id) },
                         onQuickAddGreeting = { viewModel.quickFormatAddGreeting(contact.id) },
-                        onManageTags = { contactForTagManagement = contact }
+                        onManageTags = { contactForTagManagement = contact },
+                        // Rows fade in when added, fade out when removed; neighbours slide to close the gap
+                        modifier = Modifier.animateItem(
+                            fadeInSpec = tween(250),
+                            fadeOutSpec = tween(200)
+                        )
                     )
                 }
             }
@@ -398,6 +411,43 @@ private fun tagColor(name: String): Color {
     return palette[Math.floorMod(name.hashCode(), palette.size)]
 }
 
+/** TintPill whose sync icon spins while syncing and eases to rest when it stops. */
+@Composable
+private fun SyncPill(text: String, syncing: Boolean, onClick: () -> Unit) {
+    val c = AppleTheme.colors
+    val spin = remember { Animatable(0f) }
+    LaunchedEffect(syncing) {
+        if (syncing) {
+            while (true) {
+                spin.animateTo(360f, tween(((360f - spin.value) / 360f * 900).toInt().coerceAtLeast(1), easing = LinearEasing))
+                spin.snapTo(0f)
+            }
+        } else if (spin.value != 0f) {
+            spin.animateTo(360f, tween(((360f - spin.value) / 360f * 500).toInt().coerceIn(150, 400), easing = LinearOutSlowInEasing))
+            spin.snapTo(0f)
+        }
+    }
+    Row(
+        modifier = Modifier
+            .heightIn(min = 40.dp)
+            .clip(CircleShape)
+            .background(c.blueTint)
+            .semantics { role = Role.Button }
+            .springClickable(onClick = onClick)
+            .padding(horizontal = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.Sync,
+            contentDescription = null,
+            tint = c.blueOnTint,
+            modifier = Modifier.size(16.dp).graphicsLayer { rotationZ = spin.value }
+        )
+        Text(text = text, color = c.blueOnTint, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+    }
+}
+
 private val AVATAR_GRADIENTS = listOf(
     TileGradients.Orange, TileGradients.Blue, TileGradients.Purple, TileGradients.Green,
     TileGradients.Pink, TileGradients.Teal, TileGradients.Indigo
@@ -413,6 +463,8 @@ private fun FilterChip(
     onClick: () -> Unit
 ) {
     val c = AppleTheme.colors
+    val bg by animateColorAsState(if (selected) c.label else idleBackground, tween(200), label = "chipBg")
+    val fg by animateColorAsState(if (selected) c.card else textColor ?: c.label, tween(200), label = "chipFg")
     // 44 dp touch target around a 36 dp pill
     Box(
         modifier = Modifier
@@ -425,7 +477,7 @@ private fun FilterChip(
             modifier = Modifier
                 .height(36.dp)
                 .clip(CircleShape)
-                .background(if (selected) c.label else idleBackground)
+                .background(bg)
                 .padding(horizontal = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -433,7 +485,7 @@ private fun FilterChip(
             if (dot != null) Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(dot))
             Text(
                 text = label,
-                color = if (selected) c.card else textColor ?: c.label,
+                color = fg,
                 fontSize = 14.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
                 maxLines = 1
@@ -456,7 +508,8 @@ private fun ContactRow(
     onQuickFirstName: () -> Unit,
     onQuickRemoveNotes: () -> Unit,
     onQuickAddGreeting: () -> Unit,
-    onManageTags: () -> Unit
+    onManageTags: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val c = AppleTheme.colors
     val contactTags = remember(contact.tagsJson) { ContactRepository.parseTagsJson(contact.tagsJson) }
@@ -474,7 +527,7 @@ private fun ContactRow(
 
     val haptic = LocalHapticFeedback.current
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(shape)
             .background(c.card)

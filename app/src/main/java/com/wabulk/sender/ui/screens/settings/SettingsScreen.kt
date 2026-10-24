@@ -1,6 +1,15 @@
 package com.wabulk.sender.ui.screens.settings
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,7 +36,6 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Remove
@@ -56,6 +64,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -80,6 +93,7 @@ import com.wabulk.sender.engine.model.NodeStatus
 import com.wabulk.sender.engine.queue.AntiBanConfig
 import com.wabulk.sender.theme.AppleSwitch
 import com.wabulk.sender.theme.AppleTheme
+import com.wabulk.sender.theme.EmeraldSpring
 import com.wabulk.sender.theme.GroupCard
 import com.wabulk.sender.theme.IconTile
 import com.wabulk.sender.theme.LargeTitle
@@ -97,6 +111,8 @@ import com.wabulk.sender.ui.tutorial.OnboardingTutorialDialog
 import com.wabulk.sender.update.UpdateManager
 import com.wabulk.sender.update.UpdateState
 import kotlinx.coroutines.delay
+import kotlin.math.PI
+import kotlin.math.sin
 import kotlinx.coroutines.launch
 
 private val PRESETS = listOf(
@@ -344,9 +360,15 @@ fun SettingsScreen(
                 showChevron = false,
                 trailing = { ExpandIcon(showAdvanced) }
             )
-            if (showAdvanced) {
-                RowSeparator(startInset = 16.dp)
-                ServerSettings(viewModel)
+            AnimatedVisibility(
+                visible = showAdvanced,
+                enter = expandVertically(tween(300)) + fadeIn(tween(250)),
+                exit = shrinkVertically(tween(250)) + fadeOut(tween(200))
+            ) {
+                Column {
+                    RowSeparator(startInset = 16.dp)
+                    ServerSettings(viewModel)
+                }
             }
         }
 
@@ -407,8 +429,21 @@ private fun AccountRow(
         }
     }
 
+    // One pulse + success haptic only on the transition into CONNECTED, not when it starts connected
+    val haptic = LocalHapticFeedback.current
+    val pulse = remember { Animatable(1f) }
+    var lastConnected by remember { mutableStateOf(connected) }
+    LaunchedEffect(connected) {
+        if (connected && !lastConnected) {
+            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            pulse.snapTo(0f)
+            pulse.animateTo(1f, tween(400))
+        }
+        lastConnected = connected
+    }
+
     val (statusText, statusColor) = when (session.status) {
-        NodeStatus.CONNECTED -> "● ${t.statusConnected}" to c.greenOnTint
+        NodeStatus.CONNECTED -> t.statusConnected to c.greenOnTint
         NodeStatus.PAIRING -> t.statusConnecting to c.orangeOnTint
         NodeStatus.ERROR -> t.statusFailed to c.redOnTint
         NodeStatus.DISCONNECTED -> t.statusNotLinked to c.secondaryLabel
@@ -418,8 +453,14 @@ private fun AccountRow(
         title = name,
         subtitle = statusText,
         subtitleColor = statusColor,
-        icon = icon,
-        iconGradient = gradient,
+        leading = {
+            Box {
+                IconTile(icon = icon, gradient = gradient)
+                if (connected) {
+                    StatusDot(progress = pulse.value, modifier = Modifier.align(Alignment.BottomEnd))
+                }
+            }
+        },
         onClick = { expanded = !expanded },
         showChevron = false,
         trailing = {
@@ -495,14 +536,7 @@ private fun AccountRow(
                         ) {
                             if (secondsLeft > 0) {
                                 Text(t.yourCode, color = c.secondaryLabel, fontSize = 13.sp)
-                                Text(
-                                    text = session.pairingCode,
-                                    color = c.label,
-                                    fontSize = 28.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = FontFamily.Monospace,
-                                    letterSpacing = 3.sp
-                                )
+                                TypedCode(session.pairingCode)
                                 Text(
                                     t.codeValidFor("%d:%02d".format(secondsLeft / 60, secondsLeft % 60)),
                                     color = c.secondaryLabel,
@@ -649,14 +683,78 @@ private fun ChoiceRow(
     }
 }
 
+/** iOS disclosure chevron: points right when collapsed, springs 90° down when expanded. */
 @Composable
 private fun ExpandIcon(expanded: Boolean) {
+    val rotation by animateFloatAsState(if (expanded) 0f else -90f, EmeraldSpring.bouncy(), label = "chevron")
     Icon(
-        imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+        imageVector = Icons.Default.KeyboardArrowDown,
         contentDescription = null,
         tint = AppleTheme.colors.tertiaryLabel,
-        modifier = Modifier.size(22.dp)
+        modifier = Modifier.size(22.dp).graphicsLayer { rotationZ = rotation }
     )
+}
+
+/** Green "connected" badge. progress 0→1 plays one pulse: dot scales 1→1.6→1 while a halo grows and fades. */
+@Composable
+private fun StatusDot(progress: Float, modifier: Modifier = Modifier) {
+    val c = AppleTheme.colors
+    Box(modifier = modifier.size(12.dp), contentAlignment = Alignment.Center) {
+        if (progress < 1f) {
+            Box(
+                Modifier
+                    .size(12.dp)
+                    .graphicsLayer {
+                        val s = 1f + 1.4f * progress
+                        scaleX = s; scaleY = s
+                        alpha = 0.5f * (1f - progress)
+                    }
+                    .background(c.green, CircleShape)
+            )
+        }
+        Box(
+            Modifier
+                .size(12.dp)
+                .graphicsLayer {
+                    val s = 1f + 0.6f * sin(PI * progress).toFloat()
+                    scaleX = s; scaleY = s
+                }
+                .background(c.card, CircleShape)
+                .padding(2.dp)
+                .background(c.green, CircleShape)
+        )
+    }
+}
+
+/** Pairing code revealed one character at a time like typing; read out as the whole code by screen readers. */
+@Composable
+private fun TypedCode(code: String) {
+    val c = AppleTheme.colors
+    var shown by remember(code) { mutableIntStateOf(0) }
+    LaunchedEffect(code) {
+        for (i in 1..code.length) {
+            delay(50)
+            shown = i
+        }
+    }
+    Row(modifier = Modifier.clearAndSetSemantics { contentDescription = code }) {
+        code.forEachIndexed { i, ch ->
+            val a by animateFloatAsState(if (i < shown) 1f else 0f, tween(180), label = "codeChar")
+            // Hidden chars keep their width, so the code never shifts while typing
+            Text(
+                text = ch.toString(),
+                color = c.label,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = 3.sp,
+                modifier = Modifier.graphicsLayer {
+                    alpha = a
+                    translationY = (1f - a) * 8.dp.toPx()
+                }
+            )
+        }
+    }
 }
 
 @Composable

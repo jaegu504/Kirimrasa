@@ -5,6 +5,22 @@ import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +35,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,7 +51,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.WarningAmber
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
@@ -43,6 +59,12 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +73,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -72,7 +105,6 @@ import com.wabulk.sender.theme.AppleTheme
 import com.wabulk.sender.theme.GroupCard
 import com.wabulk.sender.theme.IconTile
 import com.wabulk.sender.theme.LargeTitle
-import com.wabulk.sender.theme.PrimaryCapsuleButton
 import com.wabulk.sender.theme.RowSeparator
 import com.wabulk.sender.theme.SectionHeader
 import com.wabulk.sender.theme.SegmentedControl
@@ -83,6 +115,7 @@ import com.wabulk.sender.theme.springClickable
 import com.wabulk.sender.ui.screens.composer.components.AttachmentCard
 import com.wabulk.sender.ui.screens.composer.components.WhatsAppPreviewBubble
 import kotlin.math.ceil
+import kotlinx.coroutines.launch
 
 /**
  * Send tab. [selectedContactCount] 0 means "send to everyone"; [totalContactCount] null = unknown
@@ -249,8 +282,41 @@ fun ComposerScreen(
 
         // Message bubbles, each with the files sent alongside it
         SectionHeader(text = t.writeMessage)
+        // Ids from the last composition: a new id next to all old ones is a user "add";
+        // a whole new set is an AI rewrite (new ids), which only fades its text in.
+        val currentIds = bubbles.map { it.id }.toSet()
+        val prevIds = remember { currentIds.toMutableSet() }
+        val pureAdd = currentIds.size > prevIds.size && currentIds.containsAll(prevIds)
+        SideEffect { prevIds.clear(); prevIds.addAll(currentIds) }
+        // Bubbles playing their exit; counted so the last remaining one can't be removed too
+        val exiting = remember { mutableStateListOf<String>() }
+        val stayingCount = bubbles.size - exiting.count { it in currentIds }
+
         GroupCard(padding = 16.dp, spacing = 14.dp) {
             bubbles.forEachIndexed { index, bubble ->
+              key(bubble.id) {
+                val isNew = bubble.id !in prevIds
+                val enter = remember {
+                    if (pureAdd) {
+                        expandVertically(spring(stiffness = Spring.StiffnessMediumLow)) +
+                            fadeIn(tween(250)) + slideInVertically(tween(300)) { it / 4 }
+                    } else {
+                        fadeIn(tween(350))
+                    }
+                }
+                val visibleState = remember { MutableTransitionState(!isNew) }
+                LaunchedEffect(Unit) { visibleState.targetState = true }
+                // The bubble leaves the draft only after its exit animation ends. A new bubble also
+                // starts idle and hidden, so require that the user actually tapped remove.
+                if (bubble.id in exiting && visibleState.isIdle && !visibleState.currentState) {
+                    LaunchedEffect(Unit) { viewModel.removeBubble(bubble.id) }
+                }
+                AnimatedVisibility(
+                    visibleState = visibleState,
+                    enter = enter,
+                    exit = shrinkVertically(tween(250)) + fadeOut(tween(200))
+                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 if (index > 0) RowSeparator(startInset = 0.dp)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
@@ -259,8 +325,8 @@ fun ComposerScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(text = t.bubble(index + 1), color = c.blueOnTint, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        if (bubbles.size > 1) {
-                            IconButton(onClick = { viewModel.removeBubble(bubble.id) }) {
+                        if (stayingCount > 1 && bubble.id !in exiting) {
+                            IconButton(onClick = { exiting.add(bubble.id); visibleState.targetState = false }) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = t.removeBubble(index + 1),
@@ -287,11 +353,15 @@ fun ComposerScreen(
                             .fillMaxWidth()
                             .heightIn(min = 96.dp)
                             // Variable pills insert into the bubble the user last tapped
-                            .onFocusChanged { if (it.isFocused) viewModel.setActiveBubble(bubble.id) },
+                            .onFocusChanged { if (it.isFocused) viewModel.setActiveBubble(bubble.id) }
+                            .aiShimmer(uiState.isAiRewriting),
                         shape = RoundedCornerShape(14.dp),
                         colors = appleFieldColors()
                     )
                 }
+                }
+                }
+              }
             }
 
             attachments.filter { it.bubbleIndex !in bubbles.indices }.forEach { att ->
@@ -465,11 +535,10 @@ fun ComposerScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            PrimaryCapsuleButton(
+            SendButton(
                 text = if (recipients == null) t.sendAll else t.sendTo(recipients),
-                onClick = onLaunchCampaign,
-                icon = Icons.AutoMirrored.Filled.Send,
-                enabled = canSend
+                enabled = canSend,
+                onSend = onLaunchCampaign
             )
             Text(
                 text = when {
@@ -535,14 +604,109 @@ private fun ActionTile(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (loading) {
-                Box(modifier = Modifier.size(34.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(modifier = Modifier.size(22.dp), color = c.purple, strokeWidth = 2.dp)
+                // Same tile as IconTile, but the sparkle turns slowly while the AI works
+                val spin = rememberInfiniteTransition(label = "aiSpin")
+                val angle by spin.animateFloat(0f, 360f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "aiAngle")
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(34.dp * 0.3f))
+                        .background(Brush.linearGradient(gradient)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(34.dp * 0.56f).graphicsLayer { rotationZ = angle }
+                    )
                 }
             } else {
                 IconTile(icon = icon, gradient = gradient)
             }
             Text(text = text, color = c.label, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 2)
         }
+    }
+}
+
+/** Moving purple border around a field while the AI rewrites it. */
+@Composable
+private fun Modifier.aiShimmer(active: Boolean): Modifier {
+    if (!active) return this
+    val purple = AppleTheme.colors.purple
+    val sweep = rememberInfiniteTransition(label = "aiShimmer")
+    val progress by sweep.animateFloat(0f, 1f, infiniteRepeatable(tween(1400, easing = LinearEasing)), label = "aiShimmerProgress")
+    return drawWithContent {
+        drawContent()
+        val shift = progress * size.width * 2
+        drawRoundRect(
+            brush = Brush.linearGradient(
+                listOf(purple.copy(alpha = 0.15f), purple, purple.copy(alpha = 0.15f)),
+                start = Offset(shift - size.width, 0f),
+                end = Offset(shift, size.height),
+                tileMode = TileMode.Mirror
+            ),
+            cornerRadius = CornerRadius(14.dp.toPx()),
+            style = Stroke(width = 2.dp.toPx())
+        )
+    }
+}
+
+/**
+ * PrimaryCapsuleButton with a paper plane that flies off up-right before [onSend] fires.
+ * Same look as the theme button; kept here because the plane animation lives inside it.
+ */
+@Composable
+private fun SendButton(text: String, enabled: Boolean, onSend: () -> Unit) {
+    val gradient = TileGradients.Send
+    val shape = RoundedCornerShape(28.dp)
+    val scope = rememberCoroutineScope()
+    val currentOnSend by rememberUpdatedState(onSend)
+    val flight = remember { Animatable(0f) }
+    var busy by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .shadow(if (enabled) 10.dp else 0.dp, shape, ambientColor = gradient.last(), spotColor = gradient.last())
+            .clip(shape)
+            .background(if (enabled) Brush.linearGradient(gradient) else Brush.linearGradient(listOf(Color(0xFFC7C7CC), Color(0xFFAEAEB2))))
+            .semantics { role = Role.Button }
+            .then(
+                if (enabled) {
+                    Modifier.springClickable(enabled = !flight.isRunning, haptic = true) {
+                        // Send first: the flight is decoration and must never be able to cancel a send.
+                        // The busy flag blocks a fast double tap from queueing the campaign twice.
+                        if (busy) return@springClickable
+                        busy = true
+                        currentOnSend()
+                        scope.launch {
+                            flight.animateTo(1f, tween(250, easing = FastOutLinearInEasing))
+                            flight.snapTo(0f)
+                            busy = false
+                        }
+                    }
+                } else Modifier
+            ),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.Send,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier
+                .size(20.dp)
+                .graphicsLayer {
+                    val p = flight.value
+                    translationX = p * 48.dp.toPx()
+                    translationY = -p * 32.dp.toPx()
+                    rotationZ = -p * 20f
+                    alpha = 1f - p
+                }
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(text = text, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
     }
 }
 

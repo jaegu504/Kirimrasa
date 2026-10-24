@@ -1,5 +1,8 @@
 package com.wabulk.sender.ui.screens.composer.components
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -123,6 +126,8 @@ private fun ChatBubble(text: String, files: List<MediaAttachment>, time: String,
             .widthIn(max = 280.dp)
             .clip(RoundedCornerShape(topStart = 14.dp, topEnd = if (isFirst) 4.dp else 14.dp, bottomStart = 14.dp, bottomEnd = 14.dp))
             .background(c.chatBubble)
+            // After clip/background so the rounded bubble itself grows, not just its content
+            .animateContentSize(spring(stiffness = Spring.StiffnessMediumLow))
             .padding(4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
