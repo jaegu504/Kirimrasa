@@ -27,7 +27,8 @@ The gateway API key is baked in from `local.properties` (`gateway.apiKey=...`, n
 - `engine/` – `WhatsAppEngine` implementations, Baileys bridge client (`baileys`), dispatch queue and jitter (`queue`)
 - `service/` – foreground service that keeps sending alive
 - `ui/` – 4 tabs: composer, contacts, queue, settings; plus tutorial and update UI
-- `theme/` – colors, type (Plus Jakarta Sans), springs, neumorphism. Use these tokens; don't hardcode colors
+- `theme/` – `Apple.kt` is the design system: `AppleTheme.colors` (blue = actions, green = connected/send, orange = safety/delays, purple = AI, red = stop; light + dark) and shared components (GroupCard, ListRow, IconTile, SegmentedControl, PrimaryCapsuleButton, TintPill). Use these, not the legacy Emerald/neumorphic tokens or hardcoded colors
+- Screen copy lives in `data/locale/<Screen>Texts.kt` (Indonesian + Turkish objects, picked with `isTurkishUi()`); shared strings stay in `AppStrings.kt`
 - `update/` – in-app auto-update from GitHub Releases
 
 Outside the app:
