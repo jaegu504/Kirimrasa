@@ -95,6 +95,9 @@ object CsvContactParser {
         if (sanitizedText.isEmpty()) {
             return CsvParseResult.Error(LocalizationManager.activeStrings.csvEmpty)
         }
+        if (VcfContactParser.looksLikeVcf(sanitizedText)) {
+            return VcfContactParser.parse(sanitizedText)
+        }
 
         val delimiter = detectDelimiter(sanitizedText)
         val rows = parseCsvToRows(sanitizedText, delimiter)
