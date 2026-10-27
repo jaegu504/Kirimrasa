@@ -13,7 +13,7 @@ const {
     makeCacheableSignalKeyStore,
     delay,
     BufferJSON
-} = require('@whiskeysockets/baileys');
+} = require('baileys');
 
 const app = express();
 const server = http.createServer(app);
