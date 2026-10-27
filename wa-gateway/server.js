@@ -38,7 +38,26 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Logger
-const logger = pino({ level: process.env.LOG_LEVEL || 'warn' });
+// Logger: warnings go to stdout; resend/decrypt debug lines are also kept in memory
+// so GET /api/debug/retries can show why the main phone keeps "Waiting for this message".
+const retryLog = [];
+const RETRY_LOG_RE = /retry|resend|send again|decrypt|session/i;
+const logger = pino({ level: 'debug' }, pino.multistream([
+    { level: process.env.LOG_LEVEL || 'warn', stream: process.stdout },
+    {
+        level: 'debug',
+        stream: {
+            write(line) {
+                try {
+                    const rec = JSON.parse(line);
+                    if (!RETRY_LOG_RE.test(rec.msg || '')) return;
+                    retryLog.push(rec);
+                    if (retryLog.length > 300) retryLog.shift();
+                } catch (_) {}
+            }
+        }
+    }
+]));
 
 // Health & Uptime Ping Endpoints
 app.get('/', (req, res) => {
@@ -416,6 +435,15 @@ app.post('/api/nodes/:nodeId/pair', authMiddleware, async (req, res) => {
 });
 
 // 3. Node Connection Status
+app.get('/api/debug/retries', authMiddleware, (req, res) => {
+    const me = {};
+    for (const [id, node] of nodeMap) {
+        const creds = node.state?.creds;
+        me[id] = { status: node.status, id: creds?.me?.id || null, lid: creds?.me?.lid || null };
+    }
+    res.json({ me, log: retryLog });
+});
+
 app.get('/api/nodes/:nodeId/status', authMiddleware, async (req, res) => {
     const { nodeId } = req.params;
     let node = nodeMap.get(nodeId);
