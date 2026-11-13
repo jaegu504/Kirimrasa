@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,7 +24,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -84,6 +84,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -367,6 +369,10 @@ fun ContactManagerScreen(
             selectedCount = selectedCount,
             tagNames = tagNames,
             onDismiss = { showBatchTagDialog = false },
+            onRemoveTag = { tagName ->
+                viewModel.removeTagFromSelectedContacts(tagName)
+                showBatchTagDialog = false
+            },
             onApplyTag = { tagName ->
                 viewModel.addTagToSelectedContacts(tagName)
                 showBatchTagDialog = false
@@ -537,10 +543,20 @@ private fun ContactRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 68.dp)
-                .toggleable(value = contact.isSelected, role = Role.Checkbox, onValueChange = {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onToggleSelection()
-                })
+                // Tap selects; long-press opens the label sheet, like the phone's Contacts app
+                .semantics { toggleableState = ToggleableState(contact.isSelected) }
+                .combinedClickable(
+                    role = Role.Checkbox,
+                    onLongClickLabel = t.manageLabels,
+                    onLongClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onManageTags()
+                    },
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onToggleSelection()
+                    }
+                )
                 .padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -850,14 +866,20 @@ private fun DialogButtons(
     confirmText: String,
     confirmEnabled: Boolean,
     onConfirm: () -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    secondaryText: String? = null,
+    onSecondary: () -> Unit = {}
 ) {
+    val c = AppleTheme.colors
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TextAction(text = t.cancel, color = AppleTheme.colors.blue, onClick = onCancel)
+        TextAction(text = t.cancel, color = c.blue, onClick = onCancel)
+        if (secondaryText != null) {
+            FilledButton(text = secondaryText, onClick = onSecondary, background = c.redTint, content = c.redOnTint)
+        }
         FilledButton(text = confirmText, enabled = confirmEnabled, onClick = onConfirm)
     }
 }
@@ -906,6 +928,7 @@ private fun BatchTagDialog(
     selectedCount: Int,
     tagNames: List<String>,
     onDismiss: () -> Unit,
+    onRemoveTag: (String) -> Unit,
     onApplyTag: (String) -> Unit
 ) {
     var chosen by remember { mutableStateOf("") }
@@ -923,7 +946,10 @@ private fun BatchTagDialog(
             confirmText = t.save,
             confirmEnabled = effectiveTag.isNotBlank(),
             onConfirm = { onApplyTag(effectiveTag) },
-            onCancel = onDismiss
+            onCancel = onDismiss,
+            // Only an existing label can be taken off
+            secondaryText = t.removeLabel.takeIf { typed.isBlank() && chosen.isNotBlank() },
+            onSecondary = { onRemoveTag(chosen) }
         )
     }
 }

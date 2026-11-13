@@ -17,6 +17,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
@@ -160,18 +161,22 @@ class BaileysBridgeClient(
                     return@withContext SendResult(
                         isSuccess = true,
                         messageId = parsedId,
-                        errorMessage = null
+                        errorMessage = null,
+                        restrictedUntil = extractField(body, "restrictedUntil")?.toLongOrNull()
                     )
                 } else {
                     val notLinked = (response.code == 400 || response.code == 404) && (
                         body.contains("NOT_CONNECTED") || body.contains("belum terhubung") ||
                             body.contains("not connected", ignoreCase = true) || body.contains("DISCONNECTED")
                         )
-                    val errorDetail = if (notLinked) {
-                        val strings = LocalizationManager.activeStrings
-                        strings.accountNotLinked(if (node.nodeType == AccountNode.PERSONAL) strings.settingsNode1Title else strings.settingsNode2Title)
-                    } else {
-                        extractErrorMessage(body) ?: "HTTP ${response.code}: ${response.message}"
+                    val errorCode = extractField(body, "code")
+                    val strings = LocalizationManager.activeStrings
+                    val errorDetail = when {
+                        notLinked -> strings.accountNotLinked(if (node.nodeType == AccountNode.PERSONAL) strings.settingsNode1Title else strings.settingsNode2Title)
+                        errorCode == "NOT_ON_WHATSAPP" -> strings.notOnWhatsApp
+                        errorCode == "FORBIDDEN" -> strings.pausedForbidden
+                        errorCode == "REPLACED" -> strings.pausedReplaced
+                        else -> extractErrorMessage(body) ?: "HTTP ${response.code}: ${response.message}"
                     }
                     if (notLinked && BaileysSessionVault.hasSession(context, node.id)) {
                         val restored = restoreSession()
@@ -197,7 +202,8 @@ class BaileysBridgeClient(
                     } else {
                         return@withContext SendResult(
                             isSuccess = false,
-                            errorMessage = errorDetail
+                            errorMessage = errorDetail,
+                            errorCode = errorCode
                         )
                     }
                 }
@@ -417,7 +423,7 @@ class BaileysBridgeClient(
 
     fun connectWebSocket(customListener: WebSocketListener? = null): WebSocket? {
         val config = configProvider()
-        if (!config.isEnabled) return null
+        if (!config.isEnabled || config.gatewayUrl.isBlank()) return null
 
         val wsUrl = config.gatewayUrl
             .replaceFirst(Regex("^http://", RegexOption.IGNORE_CASE), "ws://")
@@ -473,7 +479,8 @@ class BaileysBridgeClient(
     }
 
     private fun buildUrl(path: String): String {
-        val base = configProvider().gatewayUrl.trimEnd('/')
+        val base = configProvider().gatewayUrl.trim().trimEnd('/')
+        check(base.isNotEmpty()) { LocalizationManager.activeStrings.serverNotSet }
         val cleanPath = if (path.startsWith("/")) path else "/$path"
         return "$base$cleanPath"
     }
@@ -516,6 +523,14 @@ class BaileysBridgeClient(
             element["messageId"]?.jsonPrimitive?.content
                 ?: element["id"]?.jsonPrimitive?.content
                 ?: element["key"]?.jsonObject?.get("id")?.jsonPrimitive?.content
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun extractField(jsonString: String, key: String): String? {
+        return try {
+            json.parseToJsonElement(jsonString).jsonObject[key]?.jsonPrimitive?.contentOrNull
         } catch (_: Exception) {
             null
         }

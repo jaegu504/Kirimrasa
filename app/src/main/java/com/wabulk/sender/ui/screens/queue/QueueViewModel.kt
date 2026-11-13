@@ -31,6 +31,7 @@ class QueueViewModel(application: Application) : AndroidViewModel(application) {
     private val queueManager = DispatchQueueManager.getInstance()
 
     val isPaused: StateFlow<Boolean> = queueManager.isPaused
+    val pauseReason: StateFlow<String?> = queueManager.pauseReason
     val isRunning: StateFlow<Boolean> = queueManager.isRunning
     val jitterCountdown: StateFlow<Int> = queueManager.jitterCountdown
     val isCoolingDown: StateFlow<Boolean> = queueManager.isCoolingDown

@@ -7,7 +7,7 @@ Android app (Kotlin, Jetpack Compose, Material 3, Room) that sends personal-feel
 Needs JDK 17 (`jvmToolchain(17)`) and the Android SDK at `~/Library/Android/sdk`. compileSdk/targetSdk 36, minSdk 26. `java_home` does not find the installed JDK; set it explicitly:
 `export JAVA_HOME=~/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home`
 
-The gateway API key is baked in from `local.properties` (`gateway.apiKey=...`, not in git) and must match `API_KEY` on Render. The gateway refuses to start in production without `API_KEY`.
+No gateway address or API key ships in the APK (a key baked into a public APK let strangers use the server). Each user enters their server address and key in Settings → Server; the key must match `API_KEY` on their Render service. The gateway refuses to start in production without `API_KEY`.
 
 ```bash
 ./gradlew assembleDebug

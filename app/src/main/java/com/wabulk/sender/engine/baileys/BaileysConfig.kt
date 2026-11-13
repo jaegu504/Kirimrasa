@@ -1,7 +1,6 @@
 package com.wabulk.sender.engine.baileys
 
 import android.content.Context
-import com.wabulk.sender.BuildConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -9,7 +8,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class BaileysConfig(
-    val gatewayUrl: String = "http://10.0.2.2:3000",
+    // No server or key ships in the APK: each user enters their own in Settings
+    val gatewayUrl: String = "",
     val apiKey: String = "",
     val isEnabled: Boolean = false,
     val timeoutSeconds: Long = 45L
@@ -22,8 +22,6 @@ object BaileysConfigManager {
     private const val KEY_ENABLED = "is_enabled"
     private const val KEY_TIMEOUT = "timeout_seconds"
 
-    const val PRODUCTION_RENDER_URL = "https://kirimrasa-gateway.onrender.com"
-
     private val _config = MutableStateFlow(BaileysConfig())
     val config: StateFlow<BaileysConfig> = _config.asStateFlow()
 
@@ -32,9 +30,9 @@ object BaileysConfigManager {
     fun init(context: Context) {
         appContext = context.applicationContext
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val rawUrl = prefs.getString(KEY_URL, PRODUCTION_RENDER_URL) ?: PRODUCTION_RENDER_URL
-        val url = if (rawUrl == "http://10.0.2.2:3000") PRODUCTION_RENDER_URL else rawUrl
-        val apiKey = prefs.getString(KEY_API_KEY, "").orEmpty().ifBlank { BuildConfig.GATEWAY_API_KEY }
+        val rawUrl = prefs.getString(KEY_URL, "").orEmpty()
+        val url = if (rawUrl == "http://10.0.2.2:3000") "" else rawUrl
+        val apiKey = prefs.getString(KEY_API_KEY, "").orEmpty()
         val isEnabled = prefs.getBoolean(KEY_ENABLED, true)
         val timeout = prefs.getLong(KEY_TIMEOUT, 45L)
         _config.value = BaileysConfig(

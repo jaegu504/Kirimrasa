@@ -123,6 +123,14 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun removeTagFromSelectedContacts(tagName: String) {
+        viewModelScope.launch {
+            val selected = repository.getSelectedContacts()
+            if (selected.isEmpty()) return@launch
+            repository.removeTagFromContacts(selected.map { it.id }, tagName)
+        }
+    }
+
     suspend fun getTargetContactsForCampaign(): List<ContactEntity> = withContext(Dispatchers.IO) {
         val selected = repository.getSelectedContacts()
         if (selected.isNotEmpty()) {

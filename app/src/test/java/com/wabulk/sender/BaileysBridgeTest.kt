@@ -50,7 +50,7 @@ class BaileysBridgeTest {
 
     @Test
     fun `BaileysConfigManager updates and resets configuration state`() {
-        assertEquals("http://10.0.2.2:3000", BaileysConfigManager.config.value.gatewayUrl)
+        assertEquals("", BaileysConfigManager.config.value.gatewayUrl)
         assertFalse(BaileysConfigManager.config.value.isEnabled)
         assertEquals("", BaileysConfigManager.config.value.apiKey)
 

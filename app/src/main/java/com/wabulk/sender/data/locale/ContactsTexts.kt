@@ -39,6 +39,8 @@ interface ContactsTexts {
     val labelNamePlaceholder: String
     val batchTitle: (Int) -> String
     val batchDesc: String
+    val removeLabel: String
+    val manageLabels: String
     val typeNewLabel: String
     val manageDesc: String
     val importDesc: String
@@ -85,7 +87,9 @@ object IndonesianContactsTexts : ContactsTexts {
     override val newLabelDesc = "Kelompokkan kontak, misalnya VIP atau Pelanggan."
     override val labelNamePlaceholder = "Nama label"
     override val batchTitle = { n: Int -> "Beri label ke $n kontak" }
-    override val batchDesc = "Pilih label, atau ketik label baru."
+    override val batchDesc = "Pilih label untuk dipasang atau dilepas, atau ketik label baru."
+    override val removeLabel = "Lepas"
+    override val manageLabels = "Atur label"
     override val typeNewLabel = "Ketik label baru"
     override val manageDesc = "Ketuk label untuk memasang atau melepasnya."
     override val importDesc = "CSV atau VCF (kontak dari HP/Google). Kolom CSV: Nama, No HP, Panggilan, Perusahaan, Custom_1, Tag"
@@ -132,7 +136,9 @@ object TurkishContactsTexts : ContactsTexts {
     override val newLabelDesc = "Kişileri gruplayın, örneğin VIP veya Müşteri."
     override val labelNamePlaceholder = "Etiket adı"
     override val batchTitle = { n: Int -> "$n kişiye etiket ver" }
-    override val batchDesc = "Bir etiket seçin veya yenisini yazın."
+    override val batchDesc = "Eklemek veya kaldırmak için bir etiket seçin ya da yenisini yazın."
+    override val removeLabel = "Kaldır"
+    override val manageLabels = "Etiketleri düzenle"
     override val typeNewLabel = "Yeni etiket yazın"
     override val manageDesc = "Eklemek veya kaldırmak için etikete dokunun."
     override val importDesc = "CSV veya VCF (telefon/Google kişileri). CSV sütunları: İsim, Telefon, Takma ad, Şirket, Özel 1, Etiket"

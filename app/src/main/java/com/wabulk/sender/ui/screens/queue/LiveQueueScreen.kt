@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
@@ -122,6 +123,7 @@ fun LiveQueueScreen(
     val allItems by viewModel.queueItems.collectAsState()
     val items by viewModel.filteredItems.collectAsState()
     val isPaused by viewModel.isPaused.collectAsState()
+    val pauseReason by viewModel.pauseReason.collectAsState()
     val isRunning by viewModel.isRunning.collectAsState()
     val jitterCountdown by viewModel.jitterCountdown.collectAsState()
     val isCoolingDown by viewModel.isCoolingDown.collectAsState()
@@ -218,6 +220,9 @@ fun LiveQueueScreen(
                         isCoolingDown = isCoolingDown,
                         pendingCount = pendingCount
                     )
+                }
+                if (isRunning && isPaused) {
+                    pauseReason?.let { PauseReason(it) }
                 }
                 if (isRunning) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -445,6 +450,24 @@ private fun PhasePill(
     ) {
         Icon(imageVector = icon, contentDescription = null, tint = colors.second, modifier = Modifier.size(16.dp))
         Text(text = text, color = colors.second, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** Why sending paused itself, so the user knows what to fix before tapping Resume. */
+@Composable
+private fun PauseReason(text: String) {
+    val c = AppleTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(c.orangeTint)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(imageVector = Icons.Default.Warning, contentDescription = null, tint = c.orangeOnTint, modifier = Modifier.size(18.dp))
+        Text(text = text, color = c.orangeOnTint, fontSize = 14.sp)
     }
 }
 

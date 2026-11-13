@@ -268,6 +268,7 @@ interface AppStrings {
     val notifServiceTitle: String
     val notifServiceContent: String
     val notifDoneTitle: String
+    val notifPausedTitle: String
     val notifDoneBody: (Int) -> String
     val notifTypingTitle: String
     val notifTypingBody: (String, Int, Int) -> String
@@ -365,6 +366,12 @@ interface AppStrings {
     val customDelayWarning: String
     val secondsShort: (Int) -> String
     val accountNotLinked: (String) -> String
+    val serverNotSet: String
+    val notOnWhatsApp: String
+    val pausedFailures: (Int) -> String
+    val pausedForbidden: String
+    val pausedReplaced: String
+    val pausedRestricted: (String) -> String
     val showApiKeyDesc: String
     val hideApiKeyDesc: String
     val advancedSettingsTitle: String
@@ -586,11 +593,11 @@ object IndonesianStrings : AppStrings {
     override val tutorialStep1Title = "Selamat Datang di Kirimrasa"
     override val tutorialStep1Desc = "Aplikasi broadcast WhatsApp personal dengan gaya Glassmorphism modern, menjaga kehangatan pesan tanpa terkesan seperti bot."
     override val tutorialStep2Title = "Pengiriman Cepat Multi-Device"
-    override val tutorialStep2Desc = "Gunakan fitur 'Gateway Multi-Device' bawaan untuk pengiriman massal di latar belakang tanpa perlu scan berulang, menjaga koneksi tetap stabil dan aman."
+    override val tutorialStep2Desc = "Isi alamat server dan kunci akses di Pengaturan → Server, lalu tautkan WhatsApp dengan kode pairing 8 digit. Setelah itu pesan terkirim di latar belakang tanpa perlu menautkan ulang."
     override val tutorialStep3Title = "Variabel Personal & Anti-Spam"
     override val tutorialStep3Desc = "Gunakan tag {Nickname} untuk menyapa nama panggilan kontak, aktifkan Spintax untuk variasi kalimat otomatis, serta jeda aman agar nomor Anda tetap terlindungi."
     override val tutorialStep4Title = "Pengelolaan Kontak Cerdas"
-    override val tutorialStep4Desc = "Pilih kontak cukup dengan sekali ketuk, gunakan segmen 'Terpilih', dan terapkan label secara serentak hanya dengan satu tombol."
+    override val tutorialStep4Desc = "Pilih kontak cukup dengan sekali ketuk, gunakan segmen 'Terpilih', lalu pasang atau lepas label untuk semuanya sekaligus. Tekan lama satu kontak untuk mengatur labelnya."
     override val tutorialNextBtn = "Lanjut"
     override val tutorialStartBtn = "Mulai Gunakan Kirimrasa"
     override val tutorialSkipBtn = "Lewati"
@@ -632,6 +639,7 @@ object IndonesianStrings : AppStrings {
     override val notifServiceTitle: String = "Kirimrasa - Berjalan"
     override val notifServiceContent: String = "Menjalankan antrean pengiriman dengan pengaman anti-ban..."
     override val notifDoneTitle: String = "Pengiriman Selesai!"
+    override val notifPausedTitle: String = "Pengiriman dijeda"
     override val notifDoneBody: (Int) -> String = { n -> "Semua $n pesan berhasil terkirim." }
     override val notifTypingTitle: String = "Mengetik Pesan..."
     override val notifTypingBody: (String, Int, Int) -> String = { name, i, n -> "Mengetik pesan untuk $name ($i/$n)" }
@@ -729,6 +737,12 @@ object IndonesianStrings : AppStrings {
     override val customDelayWarning: String = "Jeda di bawah 25 detik meningkatkan risiko nomor diblokir."
     override val secondsShort: (Int) -> String = { n -> "$n dtk" }
     override val accountNotLinked: (String) -> String = { acc -> "$acc belum tersambung ke gateway. Buka Pengaturan, lalu tautkan ulang dengan kode pairing." }
+    override val serverNotSet: String = "Alamat server belum diisi. Isi di Pengaturan → Server."
+    override val notOnWhatsApp: String = "Nomor ini tidak terdaftar di WhatsApp"
+    override val pausedFailures: (Int) -> String = { n -> "$n pesan berturut-turut gagal terkirim, jadi pengiriman dijeda. Cek sambungan akun, lalu ketuk Lanjutkan." }
+    override val pausedForbidden: String = "WhatsApp menolak akun ini (kemungkinan diblokir), jadi pengiriman dijeda."
+    override val pausedReplaced: String = "Akun ini sedang dibuka di server lain, jadi pengiriman dijeda. Tutup server lain itu, lalu ketuk Lanjutkan."
+    override val pausedRestricted: (String) -> String = { t -> "WhatsApp membatasi akun ini memulai chat baru sampai $t, jadi pengiriman dijeda." }
     override val showApiKeyDesc: String = "Tampilkan API key"
     override val hideApiKeyDesc: String = "Sembunyikan API key"
     override val advancedSettingsTitle: String = "Pengaturan Lanjutan"
@@ -950,11 +964,11 @@ object TurkishStrings : AppStrings {
     override val tutorialStep1Title = "Kirimrasa'ya Hoş Geldiniz"
     override val tutorialStep1Desc = "Modern cam görünümlü tasarımıyla, mesajlarınızın bot gibi değil sıcak ve samimi görünmesini sağlayan kişisel WhatsApp toplu mesaj uygulaması."
     override val tutorialStep2Title = "Hızlı Çoklu Cihaz Gönderimi"
-    override val tutorialStep2Desc = "Sürekli karekod taraması gerekmeden arka planda toplu gönderim için yerleşik 'Çoklu Cihaz Ağ Geçidi'ni kullanın; bağlantınız her zaman kararlı ve güvende kalsın."
+    override val tutorialStep2Desc = "Ayarlar → Sunucu bölümüne sunucu adresini ve erişim anahtarını girin, ardından WhatsApp'ı 8 haneli eşleme koduyla bağlayın. Sonrasında mesajlar yeniden bağlanmaya gerek kalmadan arka planda gönderilir."
     override val tutorialStep3Title = "Kişisel Değişkenler & Anti-Spam"
     override val tutorialStep3Desc = "Kişilere hitap adlarıyla seslenmek için {Nickname} değişkenini kullanın, cümle çeşitliliği için Spintax'ı açın ve numaranızı korumak için güvenli bekleme sürelerini açık tutun."
     override val tutorialStep4Title = "Akıllı Kişi Yönetimi"
-    override val tutorialStep4Desc = "Kişileri tek dokunuşla seçin, 'Seçilenler' sekmesinde görüntüleyin ve tek bir düğmeyle aynı anda etiketleyin."
+    override val tutorialStep4Desc = "Kişileri tek dokunuşla seçin, 'Seçilenler' sekmesinde görüntüleyin ve hepsine aynı anda etiket ekleyip kaldırın. Bir kişinin etiketlerini düzenlemek için üzerine basılı tutun."
     override val tutorialNextBtn = "İleri"
     override val tutorialStartBtn = "Kullanmaya Başla"
     override val tutorialSkipBtn = "Geç"
@@ -996,6 +1010,7 @@ object TurkishStrings : AppStrings {
     override val notifServiceTitle: String = "Kirimrasa - Çalışıyor"
     override val notifServiceContent: String = "Mesajlar güvenli aralıklarla gönderiliyor..."
     override val notifDoneTitle: String = "Gönderim Tamamlandı!"
+    override val notifPausedTitle: String = "Gönderim duraklatıldı"
     override val notifDoneBody: (Int) -> String = { n -> "$n mesajın tamamı gönderildi." }
     override val notifTypingTitle: String = "Mesaj yazılıyor..."
     override val notifTypingBody: (String, Int, Int) -> String = { name, i, n -> "$name için mesaj yazılıyor ($i/$n)" }
@@ -1093,6 +1108,12 @@ object TurkishStrings : AppStrings {
     override val customDelayWarning: String = "25 saniyeden kısa bekleme, numaranın engellenme riskini artırır."
     override val secondsShort: (Int) -> String = { n -> "$n sn" }
     override val accountNotLinked: (String) -> String = { acc -> "$acc ağ geçidine bağlı değil. Ayarlar'dan eşleme koduyla yeniden bağlayın." }
+    override val serverNotSet: String = "Sunucu adresi girilmedi. Ayarlar → Sunucu bölümünden girin."
+    override val notOnWhatsApp: String = "Bu numara WhatsApp'ta kayıtlı değil"
+    override val pausedFailures: (Int) -> String = { n -> "Üst üste $n mesaj gönderilemediği için gönderim duraklatıldı. Hesap bağlantısını kontrol edip Devam et'e dokunun." }
+    override val pausedForbidden: String = "WhatsApp bu hesabı reddetti (büyük olasılıkla engellendi), gönderim duraklatıldı."
+    override val pausedReplaced: String = "Bu hesap başka bir sunucuda açık, gönderim duraklatıldı. Diğer sunucuyu kapatıp Devam et'e dokunun."
+    override val pausedRestricted: (String) -> String = { t -> "WhatsApp bu hesabın $t saatine kadar yeni sohbet başlatmasını kısıtladı, gönderim duraklatıldı." }
     override val showApiKeyDesc: String = "API anahtarını göster"
     override val hideApiKeyDesc: String = "API anahtarını gizle"
     override val advancedSettingsTitle: String = "Gelişmiş Ayarlar"

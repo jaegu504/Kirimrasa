@@ -29,6 +29,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 class DispatchQueueManager private constructor(
@@ -43,6 +46,10 @@ class DispatchQueueManager private constructor(
 
     private val _isPaused = MutableStateFlow(false)
     val isPaused: StateFlow<Boolean> = _isPaused.asStateFlow()
+
+    private val _pauseReason = MutableStateFlow<String?>(null)
+    /** Why sending paused itself (failures in a row, account refused or restricted); null for a manual pause. */
+    val pauseReason: StateFlow<String?> = _pauseReason.asStateFlow()
 
     private val _isRunning = MutableStateFlow(false)
     val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
@@ -101,6 +108,7 @@ class DispatchQueueManager private constructor(
 
         _queueItems.value = items
         _isPaused.value = false
+        _pauseReason.value = null
         _campaignTitle.value = campaignTitle
         queueItemToDbId.clear()
         campaignStartTime = System.currentTimeMillis()
@@ -158,6 +166,7 @@ class DispatchQueueManager private constructor(
         if (_isRunning.value) return
         _isRunning.value = true
         _isPaused.value = false
+        _pauseReason.value = null
 
         if (context != null) {
             try {
@@ -181,11 +190,13 @@ class DispatchQueueManager private constructor(
 
     fun resumeDispatch() {
         _isPaused.value = false
+        _pauseReason.value = null
     }
 
     fun stopDispatch(context: Context? = null) {
         _isRunning.value = false
         _isPaused.value = false
+        _pauseReason.value = null
         _currentTypingContact.value = null
         job?.cancel()
         job = null
@@ -227,6 +238,9 @@ class DispatchQueueManager private constructor(
     private fun launchExecutionLoop(context: Context?) {
         job?.cancel()
         job = scope.launch {
+            var consecutiveFailures = 0
+            var skipNextDelay = false
+            var pausedForRestriction: Long? = null
             while (_isRunning.value) {
                 // Find next pending item
                 val currentList = _queueItems.value
@@ -280,7 +294,7 @@ class DispatchQueueManager private constructor(
                 val antiBan = AntiBanSettings.config.value
                 val processed = _queueItems.value.count { it.status == QueueTaskStatus.DELIVERED || it.status == QueueTaskStatus.FAILED }
                 val assignedJitter = when {
-                    skipDelayForTesting || processed == 0 -> 0
+                    skipDelayForTesting || processed == 0 || skipNextDelay -> 0
                     processed % antiBan.batchSize == 0 -> antiBan.pauseDurationMin * 60
                     else -> AntiBanSettings.nextContactDelaySec(antiBan)
                 }
@@ -330,16 +344,49 @@ class DispatchQueueManager private constructor(
                 // caption); files placed "separate" go alone after the last bubble.
                 var overallSuccess = true
                 var lastErrorMessage: String? = null
+                var lastErrorCode: String? = null
+                var restrictedUntil: Long? = null
                 val steps = buildSendSteps(nextItem)
                 for ((stepIdx, step) in steps.withIndex()) {
                     if (!_isRunning.value) break
                     while (_isPaused.value && _isRunning.value) delay(500)
                     if (stepIdx > 0 && !skipDelayForTesting) bubblePause(engine, nextItem.phoneNumber, antiBan)
                     val res = engine.sendMessage(nextItem.phoneNumber, step.text, listOfNotNull(step.mediaUri))
+                    res.restrictedUntil?.let { restrictedUntil = it }
                     if (!res.isSuccess) {
                         overallSuccess = false
                         lastErrorMessage = res.errorMessage
+                        lastErrorCode = res.errorCode
+                        // No WhatsApp account, or the account itself is refused: the other bubbles would fail too
+                        if (res.errorCode in STOP_CONTACT_CODES) break
                     }
+                }
+
+                // A number without WhatsApp says nothing about the account, and nothing was sent to it
+                val notOnWhatsApp = lastErrorCode == NOT_ON_WHATSAPP
+                skipNextDelay = notOnWhatsApp
+                consecutiveFailures = when {
+                    overallSuccess -> 0
+                    notOnWhatsApp -> consecutiveFailures
+                    else -> consecutiveFailures + 1
+                }
+                val strings = LocalizationManager.activeStrings
+                val autoPauseReason = when {
+                    lastErrorCode == "FORBIDDEN" -> strings.pausedForbidden
+                    lastErrorCode == "REPLACED" -> strings.pausedReplaced
+                    restrictedUntil != null && restrictedUntil != pausedForRestriction -> {
+                        pausedForRestriction = restrictedUntil
+                        strings.pausedRestricted(
+                            SimpleDateFormat("d MMM HH:mm", Locale.getDefault()).format(Date(restrictedUntil!!))
+                        )
+                    }
+                    consecutiveFailures >= MAX_CONSECUTIVE_FAILURES -> strings.pausedFailures(consecutiveFailures)
+                    else -> null
+                }
+                if (autoPauseReason != null) {
+                    consecutiveFailures = 0
+                    _pauseReason.value = autoPauseReason
+                    _isPaused.value = true
                 }
 
                 val sentTimestamp = System.currentTimeMillis()
@@ -384,6 +431,9 @@ class DispatchQueueManager private constructor(
                     totalCount,
                     sentCount
                 )
+                autoPauseReason?.let {
+                    updateNotification(context, strings.notifPausedTitle, it, totalCount, sentCount)
+                }
             }
         }
     }
@@ -464,6 +514,11 @@ class DispatchQueueManager private constructor(
     }
 
     companion object {
+        /** Failures in a row (not counting numbers without WhatsApp) that pause sending, as OpenWA's breaker does. */
+        const val MAX_CONSECUTIVE_FAILURES = 5
+        private const val NOT_ON_WHATSAPP = "NOT_ON_WHATSAPP"
+        private val STOP_CONTACT_CODES = setOf(NOT_ON_WHATSAPP, "FORBIDDEN", "REPLACED")
+
         @Volatile
         private var instance: DispatchQueueManager? = null
 

@@ -41,7 +41,7 @@ class UiEnhancementsTest {
     fun testBaileysConfigStateManagement() {
         // Initial defaults
         val initialConfig = BaileysConfigManager.config.value
-        assertEquals("http://10.0.2.2:3000", initialConfig.gatewayUrl)
+        assertEquals("", initialConfig.gatewayUrl)
         assertEquals("", initialConfig.apiKey)
         assertFalse(initialConfig.isEnabled)
 

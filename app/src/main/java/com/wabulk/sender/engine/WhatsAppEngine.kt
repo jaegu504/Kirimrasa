@@ -11,7 +11,11 @@ data class SendResult(
     val isSuccess: Boolean,
     val messageId: String? = null,
     val errorMessage: String? = null,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    /** Gateway error code, e.g. NOT_ON_WHATSAPP, FORBIDDEN, REPLACED. */
+    val errorCode: String? = null,
+    /** When set, WhatsApp blocks this account from starting new chats until this time (ms). */
+    val restrictedUntil: Long? = null
 )
 
 @Serializable

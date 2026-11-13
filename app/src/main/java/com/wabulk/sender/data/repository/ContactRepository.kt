@@ -65,6 +65,17 @@ class ContactRepository(
         }
     }
 
+    suspend fun removeTagFromContacts(contactIds: List<Long>, tagName: String) {
+        val all = contactDao.getAll()
+        for (id in contactIds) {
+            val contact = all.find { it.id == id } ?: continue
+            val currentTags = parseTagsJson(contact.tagsJson).toMutableList()
+            if (currentTags.remove(tagName)) {
+                contactDao.updateTags(id, Json.encodeToString(currentTags))
+            }
+        }
+    }
+
     suspend fun removeTagFromContact(contactId: Long, tagName: String) {
         val contact = contactDao.getAll().find { it.id == contactId } ?: return
         val currentTags = parseTagsJson(contact.tagsJson).toMutableList()

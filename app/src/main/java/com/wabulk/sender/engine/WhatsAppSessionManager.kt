@@ -89,6 +89,11 @@ class WhatsAppSessionManager(
     private var cachedNode2Engine: BaileysBridgeClient? = null
 
     @Synchronized
+    /** Tests plug in a client with a fake HTTP layer for the personal account. */
+    internal fun setPersonalEngineForTesting(client: BaileysBridgeClient?) {
+        cachedNode1Engine = client
+    }
+
     fun getOrCreateBaileysEngine(nodeType: AccountNode): BaileysBridgeClient {
         val client = when (nodeType) {
             AccountNode.PERSONAL -> {

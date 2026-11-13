@@ -89,7 +89,13 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -136,6 +142,12 @@ fun ComposerScreen(
     previewContactName: String? = null
 ) {
     val c = AppleTheme.colors
+    val variableHighlight = remember(c) {
+        VariableHighlight(
+            nickname = SpanStyle(color = c.blueOnTint, background = c.blueTint, fontWeight = FontWeight.SemiBold),
+            other = SpanStyle(color = c.orangeOnTint, background = c.orangeTint, fontWeight = FontWeight.SemiBold)
+        )
+    }
     val t = composerTexts()
     val strings = LocalAppStrings.current
     val uiState by viewModel.uiState.collectAsState()
@@ -350,6 +362,7 @@ fun ComposerScreen(
                         onValueChange = { viewModel.updateBubbleText(bubble.id, it) },
                         placeholder = { Text(text = t.placeholder, color = c.tertiaryLabel, fontSize = 16.sp) },
                         textStyle = LocalTextStyle.current.copy(fontSize = 16.sp, lineHeight = 24.sp),
+                        visualTransformation = variableHighlight,
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 96.dp)
@@ -726,4 +739,23 @@ private fun appleFieldColors(): TextFieldColors {
         unfocusedTextColor = c.label,
         cursorColor = c.blue
     )
+}
+
+private val VARIABLE_TOKEN = Regex("""\{(Nickname|Company|Custom_1)\}""", RegexOption.IGNORE_CASE)
+
+/** Colors {Nickname} blue and {Company}/{Custom_1} orange, like the pills that insert them; the text itself is unchanged. */
+private class VariableHighlight(
+    private val nickname: SpanStyle,
+    private val other: SpanStyle
+) : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val styled = buildAnnotatedString {
+            append(text)
+            VARIABLE_TOKEN.findAll(text.text).forEach { match ->
+                val style = if (match.groupValues[1].equals("Nickname", ignoreCase = true)) nickname else other
+                addStyle(style, match.range.first, match.range.last + 1)
+            }
+        }
+        return TransformedText(styled, OffsetMapping.Identity)
+    }
 }
