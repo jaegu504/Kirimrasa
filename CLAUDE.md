@@ -50,3 +50,4 @@ Use the `codebase-memory-mcp` index first (project `Users-sp-Documents-Whatsapp-
 - Room schema changes need a migration that keeps existing contacts, nicknames and tags.
 - No paid WhatsApp API. Sending goes through the Baileys gateway via an 8-digit pairing code.
 - Every clickable control must do something; no empty `{ }` handlers.
+- The gateway runs on Render free: 5 GB outbound bandwidth a month, 512 MB RAM, disk wiped on restart. Estimate anything done per contact (uploads, sends, stored messages) against these before shipping; reuse media uploads instead of re-sending bytes.
