@@ -25,6 +25,7 @@ interface ContactsTexts {
     val editContact: String
     val nicknameLabel: String
     val nicknameHint: (String) -> String
+    val nickname2Label: String
     val firstNameOnly: String
     val removeNotes: String
     val addGreeting: String
@@ -74,6 +75,7 @@ object IndonesianContactsTexts : ContactsTexts {
     override val editContact = "Ubah nama panggilan dan label"
     override val nicknameLabel = "Nama panggilan"
     override val nicknameHint = { fallback: String -> "Kosong = pakai \"$fallback\"" }
+    override val nickname2Label = "Nama panggilan kedua (opsional)"
     override val firstNameOnly = "Nama depan saja"
     override val removeNotes = "Buang catatan (…)"
     override val addGreeting = "Tambah sapaan"
@@ -123,6 +125,7 @@ object TurkishContactsTexts : ContactsTexts {
     override val editContact = "Hitap adını ve etiketleri düzenle"
     override val nicknameLabel = "Hitap adı"
     override val nicknameHint = { fallback: String -> "Boşsa \"$fallback\" kullanılır" }
+    override val nickname2Label = "İkinci hitap adı (isteğe bağlı)"
     override val firstNameOnly = "Sadece ilk ad"
     override val removeNotes = "Parantez notunu sil"
     override val addGreeting = "Selam ekle"

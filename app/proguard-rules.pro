@@ -41,6 +41,9 @@
 
 # Keep domain / network DTOs
 -keep class com.wabulk.sender.data.remote.dto.** { *; }
+# Backup file format (data/io/BackupManager.kt)
+-keep class com.wabulk.sender.data.io.Backup* { *; }
+-keep class com.wabulk.sender.data.io.KirimrasaBackup* { *; }
 -keep class com.wabulk.sender.engine.baileys.** { *; }
 
 # ------------------------------------------------------------------------------

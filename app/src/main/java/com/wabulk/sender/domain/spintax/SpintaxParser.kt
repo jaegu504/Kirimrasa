@@ -5,6 +5,8 @@ import kotlin.random.Random
 
 object SpintaxParser {
 
+    const val NICKNAME2 = "Nickname2"
+
     // Matches spintax options like {Halo|Hai|Pagi} but ignores variable tokens like {Nickname}
     private val SPINTAX_REGEX = Regex("""\{([^{}]+?\|[^{}]+?)\}""")
 
@@ -37,7 +39,9 @@ object SpintaxParser {
         variables: Map<String, String> = emptyMap()
     ): String {
         val effectiveNickname = nickname.trim().ifEmpty { LocalizationManager.activeStrings.nicknameFallback }
-        var output = text.replace("{Nickname}", effectiveNickname)
+        // {Nickname2} is the contact's second nickname; without one it reads like {Nickname}
+        val nickname2 = variables[NICKNAME2]?.trim().orEmpty().ifEmpty { effectiveNickname }
+        var output = text.replace("{$NICKNAME2}", nickname2).replace("{Nickname}", effectiveNickname)
 
         for ((key, value) in variables) {
             output = output.replace("{$key}", value)

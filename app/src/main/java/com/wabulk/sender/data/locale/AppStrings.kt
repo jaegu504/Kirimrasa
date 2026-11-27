@@ -244,6 +244,8 @@ interface AppStrings {
     val updateDefaultChangelog: String
     val updateNowBtn: String
     val updateLaterBtn: String
+    val updateReinstallSteps: String
+    val updateOpenDownloadPage: String
     val updateDownloading: String
     val updateDownloadHint: String
     val updateReadyTitle: String
@@ -615,6 +617,13 @@ object IndonesianStrings : AppStrings {
     override val updateDefaultChangelog: String = "Peningkatan performa dan kestabilan aplikasi."
     override val updateNowBtn: String = "Perbarui Sekarang"
     override val updateLaterBtn: String = "Nanti Saja"
+    override val updateReinstallSteps: String = "Versi ini memakai tanda tangan baru yang lebih aman, jadi tidak bisa diperbarui langsung:\n" +
+        "1. Cadangkan data di Pengaturan → Cadangan.\n" +
+        "2. Ketuk tombol di bawah dan unduh file APK-nya.\n" +
+        "3. Hapus aplikasi Kirimrasa yang lama.\n" +
+        "4. Buka file APK yang diunduh, lalu pasang.\n" +
+        "5. Pulihkan dari cadangan di Pengaturan → Cadangan."
+    override val updateOpenDownloadPage: String = "Buka Halaman Unduhan"
     override val updateDownloading: String = "Mengunduh Pembaruan..."
     override val updateDownloadHint: String = "Aplikasi akan otomatis membuka layar pemasangan setelah selesai."
     override val updateReadyTitle: String = "Unduhan Siap Dipasang!"
@@ -986,6 +995,13 @@ object TurkishStrings : AppStrings {
     override val updateDefaultChangelog: String = "Hız ve kararlılık iyileştirmeleri."
     override val updateNowBtn: String = "Şimdi Güncelle"
     override val updateLaterBtn: String = "Sonra"
+    override val updateReinstallSteps: String = "Bu sürüm daha güvenli yeni bir imza kullanıyor, bu yüzden doğrudan güncellenemez:\n" +
+        "1. Ayarlar → Yedekleme bölümünden verilerinizi yedekleyin.\n" +
+        "2. Aşağıdaki düğmeye dokunup APK dosyasını indirin.\n" +
+        "3. Eski Kirimrasa uygulamasını kaldırın.\n" +
+        "4. İndirilen APK dosyasını açıp yükleyin.\n" +
+        "5. Ayarlar → Yedekleme bölümünden yedeği geri yükleyin."
+    override val updateOpenDownloadPage: String = "İndirme Sayfasını Aç"
     override val updateDownloading: String = "Güncelleme indiriliyor..."
     override val updateDownloadHint: String = "İndirme bitince kurulum ekranı kendiliğinden açılır."
     override val updateReadyTitle: String = "Kuruluma Hazır!"

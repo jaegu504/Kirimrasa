@@ -40,7 +40,7 @@ class AiRewriteRepository(
 
     companion object {
         private val VARIABLE_TOKEN_REGEX = Regex("""\{([A-Za-z0-9_]+)\}""")
-        private val KNOWN_VARIABLES = setOf("{Nickname}", "{Company}", "{Custom_1}")
+        private val KNOWN_VARIABLES = setOf("{Nickname}", "{Nickname2}", "{Company}", "{Custom_1}")
 
         /** Drops empty bubbles and folds any extra ones into the last allowed bubble. */
         fun normalizeBubbles(bubbles: List<String>, maxBubbles: Int): List<String> {

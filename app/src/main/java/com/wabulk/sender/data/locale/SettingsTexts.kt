@@ -64,6 +64,18 @@ interface SettingsTexts {
     val guide: String
     val guideCaption: String
 
+    val sectionBackup: String
+    val backup: String
+    val backupCaption: String
+    val restore: String
+    val restoreCaption: String
+    val backupSaved: (Int) -> String
+    val backupInvalid: String
+    val restoreBusy: String
+    val restoredTitle: String
+    val restoredBody: (Int, Boolean) -> String
+    val restartApp: String
+
     val advanced: String
     val advancedCaption: String
     val server: String
@@ -138,6 +150,21 @@ object IndonesianSettingsTexts : SettingsTexts {
     override val guide = "Panduan"
     override val guideCaption = "Lihat lagi cara memakai aplikasi"
 
+    override val sectionBackup = "Cadangan"
+    override val backup = "Cadangkan data"
+    override val backupCaption = "Simpan kontak, nama panggilan, label, dan pengaturan ke satu file"
+    override val restore = "Pulihkan dari cadangan"
+    override val restoreCaption = "Ambil lagi data dari file cadangan"
+    override val backupSaved = { n: Int -> "Cadangan tersimpan: $n kontak" }
+    override val backupInvalid = "File ini bukan cadangan Kirimrasa."
+    override val restoreBusy = "Hentikan pengiriman dulu, baru pulihkan."
+    override val restoredTitle = "Data dipulihkan"
+    override val restoredBody = { n: Int, needsKey: Boolean ->
+        "$n kontak beserta nama panggilan, label, dan pengaturan sudah kembali. Aplikasi perlu dibuka ulang." +
+            if (needsKey) "\n\nKunci akses server tidak ikut dicadangkan. Isi lagi di Pengaturan lanjutan → Server." else ""
+    }
+    override val restartApp = "Buka ulang"
+
     override val advanced = "Pengaturan lanjutan"
     override val advancedCaption = "Hanya ubah jika diminta"
     override val server = "Server"
@@ -211,6 +238,21 @@ object TurkishSettingsTexts : SettingsTexts {
     override val updateCaption = "Yeni sürümü kontrol etmek için dokunun"
     override val guide = "Kullanım rehberi"
     override val guideCaption = "Uygulamanın nasıl kullanıldığını tekrar görün"
+
+    override val sectionBackup = "Yedekleme"
+    override val backup = "Verileri yedekle"
+    override val backupCaption = "Kişileri, hitap adlarını, etiketleri ve ayarları tek dosyaya kaydedin"
+    override val restore = "Yedekten geri yükle"
+    override val restoreCaption = "Yedek dosyasındaki verileri geri alın"
+    override val backupSaved = { n: Int -> "Yedek kaydedildi: $n kişi" }
+    override val backupInvalid = "Bu dosya bir Kirimrasa yedeği değil."
+    override val restoreBusy = "Önce gönderimi durdurun, sonra geri yükleyin."
+    override val restoredTitle = "Veriler geri yüklendi"
+    override val restoredBody = { n: Int, needsKey: Boolean ->
+        "$n kişi; hitap adları, etiketler ve ayarlarla birlikte geri geldi. Uygulamanın yeniden açılması gerekiyor." +
+            if (needsKey) "\n\nSunucu erişim anahtarı yedeğe dahil edilmez. Gelişmiş ayarlar → Sunucu bölümünden tekrar girin." else ""
+    }
+    override val restartApp = "Yeniden aç"
 
     override val advanced = "Gelişmiş ayarlar"
     override val advancedCaption = "Yalnızca istenirse değiştirin"

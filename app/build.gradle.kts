@@ -13,8 +13,22 @@ android {
         applicationId = "com.wabulk.sender"
         minSdk = 26
         targetSdk = 36
-        versionCode = 15
-        versionName = "1.2.7"
+        versionCode = 16
+        versionName = "1.2.8"
+    }
+
+    // From v2.0.0 releases are signed with the Kirimrasa release key (~/Documents/Kirimrasa-signing,
+    // passwords in ~/.gradle/gradle.properties). 1.x stays on the debug key so in-place updates keep working.
+    val usesReleaseKey = (defaultConfig.versionName ?: "0").substringBefore('.').toInt() >= 2
+    signingConfigs {
+        if (usesReleaseKey) create("release") {
+            fun prop(name: String) = providers.gradleProperty(name).orNull
+                ?: error("$name missing from ~/.gradle/gradle.properties: v2+ must be signed with the release key")
+            storeFile = file(prop("KIRIMRASA_RELEASE_STORE_FILE"))
+            storePassword = prop("KIRIMRASA_RELEASE_STORE_PASSWORD")
+            keyAlias = prop("KIRIMRASA_RELEASE_KEY_ALIAS")
+            keyPassword = prop("KIRIMRASA_RELEASE_KEY_PASSWORD")
+        }
     }
 
     buildTypes {
@@ -25,7 +39,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (usesReleaseKey) "release" else "debug")
         }
     }
     compileOptions {

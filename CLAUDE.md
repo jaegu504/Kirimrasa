@@ -15,7 +15,7 @@ No gateway address or API key ships in the APK (a key baked into a public APK le
 ./gradlew assembleRelease      # R8 minify + shrink; keep rules in app/proguard-rules.pro
 ```
 
-- Release builds are still signed with the debug key (`signingConfig = debug`). Changing the key breaks in-app updates for existing installs.
+- Signing: 1.x releases use the debug key. From v2.0.0 `app/build.gradle.kts` signs with the Kirimrasa release key (`~/Documents/Kirimrasa-signing/kirimrasa-release.jks`, alias `kirimrasa`, passwords in `~/.gradle/gradle.properties` as `KIRIMRASA_RELEASE_*`); the build fails without them. Never commit or lose the key. Debug-signed installs cannot update into 2.x in place: the 1.2.8 update dialog (`UpdateManager.needsReinstall`) guides them through Settings → Backup, uninstall, install, restore.
 - New release: bump `versionCode`/`versionName` in `app/build.gradle.kts`, tag `vX.Y.Z`, publish the APK on GitHub Releases (`jaegu504/Kirimrasa`); `update/` reads it.
 - Classes loaded by reflection or serialization (Room, kotlinx.serialization DTOs, update manager) need proguard keep rules.
 

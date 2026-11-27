@@ -318,6 +318,7 @@ fun ContactManagerScreen(
                         onToggleSelection = { viewModel.toggleContactSelection(contact.id, !contact.isSelected) },
                         onToggleExpanded = { expandedId = if (expandedId == contact.id) null else contact.id },
                         onNicknameChange = { viewModel.updateNickname(contact.id, it) },
+                        onNickname2Change = { viewModel.updateNickname2(contact.id, it) },
                         onQuickFirstName = { viewModel.quickFormatFirstName(contact.id) },
                         onQuickRemoveNotes = { viewModel.quickFormatRemoveNotes(contact.id) },
                         onQuickAddGreeting = { viewModel.quickFormatAddGreeting(contact.id) },
@@ -511,6 +512,7 @@ private fun ContactRow(
     onToggleSelection: () -> Unit,
     onToggleExpanded: () -> Unit,
     onNicknameChange: (String) -> Unit,
+    onNickname2Change: (String) -> Unit,
     onQuickFirstName: () -> Unit,
     onQuickRemoveNotes: () -> Unit,
     onQuickAddGreeting: () -> Unit,
@@ -613,7 +615,8 @@ private fun ContactRow(
                 Text(text = contact.phoneNumber, color = c.secondaryLabel, fontSize = 13.sp)
                 Text(text = t.nicknameLabel, color = c.secondaryLabel, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 NicknameEditor(
-                    contact = contact,
+                    contactId = contact.id,
+                    saved = contact.customNickname,
                     placeholder = t.nicknameHint(nicknameFallback),
                     onNicknameChange = onNicknameChange
                 )
@@ -628,6 +631,13 @@ private fun ContactRow(
                     TintPill(text = t.addGreeting, background = c.blueTint, content = c.blueOnTint, onClick = onQuickAddGreeting)
                     TintPill(text = t.labels, background = c.purpleTint, content = c.purpleOnTint, icon = Icons.Default.Sell, onClick = onManageTags)
                 }
+                Text(text = t.nickname2Label, color = c.secondaryLabel, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                NicknameEditor(
+                    contactId = contact.id,
+                    saved = contact.customNickname2,
+                    placeholder = t.nicknameHint(contact.customNickname.ifBlank { nicknameFallback }),
+                    onNicknameChange = onNickname2Change
+                )
             }
         }
     }
@@ -639,29 +649,30 @@ private fun ContactRow(
  */
 @Composable
 private fun NicknameEditor(
-    contact: ContactEntity,
+    contactId: Long,
+    saved: String,
     placeholder: String,
     onNicknameChange: (String) -> Unit
 ) {
-    var text by remember(contact.id) { mutableStateOf(contact.customNickname) }
-    var lastSent by remember(contact.id) { mutableStateOf<String?>(null) }
+    var text by remember(contactId) { mutableStateOf(saved) }
+    var lastSent by remember(contactId) { mutableStateOf<String?>(null) }
     val latestText by rememberUpdatedState(text)
-    val saved by rememberUpdatedState(contact.customNickname)
+    val savedValue by rememberUpdatedState(saved)
     val save by rememberUpdatedState(onNicknameChange)
 
     // Pick up changes made elsewhere (quick formats), but ignore the echo of our own save.
-    LaunchedEffect(contact.customNickname) {
-        if (contact.customNickname != lastSent) text = contact.customNickname
+    LaunchedEffect(saved) {
+        if (saved != lastSent) text = saved
     }
     LaunchedEffect(text) {
         delay(400)
-        if (text != saved) {
+        if (text != savedValue) {
             lastSent = text
             save(text)
         }
     }
-    DisposableEffect(contact.id) {
-        onDispose { if (latestText != saved) save(latestText) }
+    DisposableEffect(contactId) {
+        onDispose { if (latestText != savedValue) save(latestText) }
     }
 
     AppleTextField(value = text, onValueChange = { text = it }, placeholder = placeholder)

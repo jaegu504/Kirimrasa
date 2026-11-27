@@ -34,6 +34,10 @@ class ContactRepository(
         contactDao.updateNickname(contactId, nickname)
     }
 
+    suspend fun updateNickname2(contactId: Long, nickname: String) {
+        contactDao.updateNickname2(contactId, nickname)
+    }
+
     suspend fun getAllContactsList(): List<ContactEntity> = contactDao.getAll()
 
     suspend fun toggleSelection(contactId: Long, selected: Boolean) {

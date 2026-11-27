@@ -187,6 +187,7 @@ fun MainScreen(
                         previewContactName = contacts.firstOrNull { it.isSelected }?.let { c ->
                             c.customNickname.ifBlank { com.wabulk.sender.data.repository.ContactRepository.extractSmartNickname(c.rawName) }
                         },
+                        previewNickname2 = contacts.firstOrNull { it.isSelected }?.customNickname2,
                         selectedContactCount = selectedCount,
                         onLaunchCampaign = {
                             scope.launch {

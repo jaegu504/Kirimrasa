@@ -1,6 +1,9 @@
 package com.wabulk.sender.ui.screens.settings
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import java.time.LocalDate
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
@@ -31,6 +34,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DarkMode
@@ -145,6 +150,14 @@ fun SettingsScreen(
     var showBreak by remember { mutableStateOf(false) }
     var showAdvanced by remember { mutableStateOf(false) }
     var showTutorial by remember { mutableStateOf(false) }
+    val restoredCount by viewModel.restoredCount.collectAsState()
+    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        uri?.let(viewModel::exportBackup)
+    }
+    // Any type: some file managers label .json files as text or binary
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let(viewModel::restoreBackup)
+    }
 
     Column(
         modifier = modifier
@@ -331,6 +344,26 @@ fun SettingsScreen(
             )
         }
 
+        // Backup: keeps contacts, nicknames, labels and settings across a reinstall
+        SectionHeader(t.sectionBackup)
+        GroupCard {
+            ListRow(
+                title = t.backup,
+                subtitle = t.backupCaption,
+                icon = Icons.Default.Backup,
+                iconGradient = TileGradients.Green,
+                onClick = { backupLauncher.launch("kirimrasa-cadangan-${LocalDate.now()}.json") }
+            )
+            RowSeparator()
+            ListRow(
+                title = t.restore,
+                subtitle = t.restoreCaption,
+                icon = Icons.Default.Restore,
+                iconGradient = TileGradients.Blue,
+                onClick = { restoreLauncher.launch(arrayOf("*/*")) }
+            )
+        }
+
         // Advanced: server settings. Normal users never need these, so they start collapsed
         GroupCard {
             ListRow(
@@ -355,6 +388,21 @@ fun SettingsScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+    }
+
+    restoredCount?.let { count ->
+        // Not dismissable: restored settings only apply after the restart
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(t.restoredTitle, color = c.label, fontWeight = FontWeight.Bold) },
+            text = { Text(t.restoredBody(count, baileysConfig.apiKey.isBlank()), color = c.secondaryLabel, fontSize = 15.sp) },
+            confirmButton = {
+                TextButton(onClick = viewModel::restartAfterRestore) {
+                    Text(t.restartApp, color = c.blueOnTint, fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = c.card
+        )
     }
 
     if (showTutorial) {

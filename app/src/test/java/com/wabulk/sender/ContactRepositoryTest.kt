@@ -95,6 +95,12 @@ class FakeContactDao : ContactDao {
         }
     }
 
+    override suspend fun updateNickname2(contactId: Long, nickname: String) {
+        val index = contactsList.indexOfFirst { it.id == contactId }
+        if (index >= 0) contactsList[index] = contactsList[index].copy(customNickname2 = nickname)
+        updateFlow()
+    }
+
     override suspend fun updateNickname(contactId: Long, nickname: String) {
         val index = contactsList.indexOfFirst { it.id == contactId }
         if (index >= 0) {
@@ -175,6 +181,8 @@ class FakeTagDao : TagDao {
     }
 
     override fun observeAll(): Flow<List<TagEntity>> = flow
+
+    override suspend fun getAll(): List<TagEntity> = tagsList.toList()
 
     override suspend fun insert(tag: TagEntity): Long {
         val existing = tagsList.find { it.name == tag.name }

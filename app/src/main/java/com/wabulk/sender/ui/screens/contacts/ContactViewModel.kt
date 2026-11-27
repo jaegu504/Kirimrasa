@@ -146,6 +146,12 @@ class ContactViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun updateNickname2(contactId: Long, nickname: String) {
+        viewModelScope.launch {
+            repository.updateNickname2(contactId, nickname)
+        }
+    }
+
     fun quickFormatFirstName(contactId: Long) {
         viewModelScope.launch {
             repository.quickFormatFirstName(contactId)

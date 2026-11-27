@@ -12,6 +12,9 @@ interface TagDao {
     @Query("SELECT * FROM tags ORDER BY name ASC")
     fun observeAll(): Flow<List<TagEntity>>
 
+    @Query("SELECT * FROM tags ORDER BY name ASC")
+    suspend fun getAll(): List<TagEntity>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(tag: TagEntity): Long
 

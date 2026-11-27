@@ -5,6 +5,9 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import android.content.Intent
+import android.net.Uri
+import com.wabulk.sender.theme.AppleTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -93,9 +96,18 @@ fun AppUpdateDialog(
             ) { state ->
                 when (state) {
                     is UpdateState.Available -> {
+                        val reinstall = UpdateManager.needsReinstall(state.info.latestVersion)
                         AvailableContent(
                             info = state.info,
-                            onUpdate = { UpdateManager.startDownloadAndInstall(context, state.info) },
+                            reinstall = reinstall,
+                            onUpdate = {
+                                if (reinstall) {
+                                    // The old app must be removed first, so the APK is fetched in the browser instead
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(UpdateManager.RELEASES_PAGE)))
+                                } else {
+                                    UpdateManager.startDownloadAndInstall(context, state.info)
+                                }
+                            },
                             onDismiss = onDismiss
                         )
                     }
@@ -136,6 +148,7 @@ fun AppUpdateDialog(
 @Composable
 private fun AvailableContent(
     info: AppUpdateInfo,
+    reinstall: Boolean,
     onUpdate: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -251,6 +264,21 @@ private fun AvailableContent(
             }
         }
 
+        if (reinstall) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = strings.updateReinstallSteps,
+                fontSize = 13.sp,
+                lineHeight = 19.sp,
+                color = AppleTheme.colors.orangeOnTint,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(AppleTheme.colors.orangeTint)
+                    .padding(14.dp)
+            )
+        }
+
         Spacer(modifier = Modifier.height(20.dp))
 
         // Action Buttons
@@ -273,7 +301,7 @@ private fun AvailableContent(
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
-                    text = strings.updateNowBtn,
+                    text = if (reinstall) strings.updateOpenDownloadPage else strings.updateNowBtn,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White

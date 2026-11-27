@@ -37,12 +37,12 @@ function buildSystemPrompt(tone, maxBubbles) {
     "4. FORMAT: short sentences, keep the writer's emojis and add at most one more. No hashtags, no ALL CAPS, no sales language.",
     `5. BUBBLES: split into 1 to ${maxBubbles} chat bubbles, the way a person sends a few short messages in a row (greeting and how-are-you, then the news, then the request or closing). Fewer for short drafts, never pad. Each bubble is one complete thought.`,
     `6. VARIATION (so it never looks like a mass message): ${variation} Write them as {option A|option B}; every option must be natural, mean the same, be in the same language and fit the sentence.`,
-    "7. VARIABLES: keep {Nickname}, {Company} and {Custom_1} exactly as written wherever the draft uses them. Never translate, rename, remove or add them, never put them inside {..|..}, and never invent other {Words}. Every { is closed by }, never nested.",
+    "7. VARIABLES: keep {Nickname}, {Nickname2}, {Company} and {Custom_1} exactly as written wherever the draft uses them. Never translate, rename, remove or add them, never put them inside {..|..}, and never invent other {Words}. Every { is closed by }, never nested.",
     'Reply with JSON only: {"bubbles": ["bubble 1", "bubble 2"]}',
   ].join("\n");
 }
 
-const VARIABLE = /\{(Nickname|Company|Custom_1)\}/g;
+const VARIABLE = /\{(Nickname2?|Company|Custom_1)\}/g;
 const REPLY_GREETING = /wa['’]?\s?alaikum|aleyk[uü]m\s?selam/i;
 
 /** Rejects output that would reach people broken: lost variables, unbalanced braces, or a reply-greeting the draft never had. */

@@ -49,6 +49,14 @@ object UpdateManager {
     val CURRENT_VERSION: String = BuildConfig.VERSION_NAME
     const val GITHUB_REPO = "jaegu504/Kirimrasa"
     private const val GITHUB_API_URL = "https://api.github.com/repos/$GITHUB_REPO/releases/latest"
+    const val RELEASES_PAGE = "https://github.com/$GITHUB_REPO/releases/latest"
+
+    /** First version signed with the release key. Debug-signed installs cannot update into it in place. */
+    const val RELEASE_KEY_VERSION = "2.0.0"
+
+    /** True when [latest] is signed with the release key but this install is not: back up, uninstall, reinstall. */
+    fun needsReinstall(latest: String, current: String = CURRENT_VERSION): Boolean =
+        !isNewerVersion(RELEASE_KEY_VERSION, latest) && isNewerVersion(RELEASE_KEY_VERSION, current)
 
     private val scope = CoroutineScope(Dispatchers.Default)
 

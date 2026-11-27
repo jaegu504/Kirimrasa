@@ -119,6 +119,7 @@ import com.wabulk.sender.theme.StatusLabel
 import com.wabulk.sender.theme.TileGradients
 import com.wabulk.sender.theme.TintPill
 import com.wabulk.sender.theme.springClickable
+import com.wabulk.sender.domain.spintax.SpintaxParser
 import com.wabulk.sender.ui.screens.composer.components.AttachmentCard
 import com.wabulk.sender.ui.screens.composer.components.WhatsAppPreviewBubble
 import kotlin.math.ceil
@@ -139,7 +140,8 @@ fun ComposerScreen(
     onLaunchCampaign: () -> Unit = {},
     onOpenContacts: () -> Unit = {},
     totalContactCount: Int? = null,
-    previewContactName: String? = null
+    previewContactName: String? = null,
+    previewNickname2: String? = null
 ) {
     val c = AppleTheme.colors
     val variableHighlight = remember(c) {
@@ -392,6 +394,7 @@ fun ComposerScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 TintPill(text = t.addNickname, background = c.blueTint, content = c.blueOnTint, onClick = { viewModel.insertVariable("{Nickname}") })
+                TintPill(text = t.addNickname2, background = c.blueTint, content = c.blueOnTint, onClick = { viewModel.insertVariable("{Nickname2}") })
                 TintPill(text = t.addCompany, background = c.orangeTint, content = c.orangeOnTint, onClick = { viewModel.insertVariable("{Company}") })
                 TintPill(text = t.addPromo, background = c.orangeTint, content = c.orangeOnTint, onClick = { viewModel.insertVariable("{Custom_1}") })
                 if (bubbles.size < MAX_BUBBLES) {
@@ -470,7 +473,7 @@ fun ComposerScreen(
             bubbles = bubbles,
             attachments = attachments,
             contactName = previewContactName?.takeIf { it.isNotBlank() } ?: t.sampleName,
-            customVariables = uiState.customVariables
+            customVariables = uiState.customVariables + (SpintaxParser.NICKNAME2 to previewNickname2.orEmpty())
         )
 
         // More options: values for {Company}/{Custom_1}, word-variation help, delay info
@@ -741,9 +744,9 @@ private fun appleFieldColors(): TextFieldColors {
     )
 }
 
-private val VARIABLE_TOKEN = Regex("""\{(Nickname|Company|Custom_1)\}""", RegexOption.IGNORE_CASE)
+private val VARIABLE_TOKEN = Regex("""\{(Nickname2?|Company|Custom_1)\}""", RegexOption.IGNORE_CASE)
 
-/** Colors {Nickname} blue and {Company}/{Custom_1} orange, like the pills that insert them; the text itself is unchanged. */
+/** Colors {Nickname}/{Nickname2} blue and {Company}/{Custom_1} orange, like the pills that insert them; the text itself is unchanged. */
 private class VariableHighlight(
     private val nickname: SpanStyle,
     private val other: SpanStyle
@@ -752,7 +755,7 @@ private class VariableHighlight(
         val styled = buildAnnotatedString {
             append(text)
             VARIABLE_TOKEN.findAll(text.text).forEach { match ->
-                val style = if (match.groupValues[1].equals("Nickname", ignoreCase = true)) nickname else other
+                val style = if (match.groupValues[1].startsWith("Nickname", ignoreCase = true)) nickname else other
                 addStyle(style, match.range.first, match.range.last + 1)
             }
         }

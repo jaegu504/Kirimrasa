@@ -28,6 +28,10 @@ data class ContactEntity(
     @ColumnInfo(name = "custom_nickname")
     val customNickname: String = "",
 
+    // Second way to call the contact, for {Nickname2}: one bubble that names someone twice reads less like a template
+    @ColumnInfo(name = "custom_nickname2", defaultValue = "")
+    val customNickname2: String = "",
+
     @ColumnInfo(name = "company", defaultValue = "")
     val company: String = "",
 

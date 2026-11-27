@@ -47,6 +47,9 @@ interface ContactDao {
     @Query("UPDATE contacts SET custom_nickname = :nickname WHERE id = :contactId")
     suspend fun updateNickname(contactId: Long, nickname: String)
 
+    @Query("UPDATE contacts SET custom_nickname2 = :nickname WHERE id = :contactId")
+    suspend fun updateNickname2(contactId: Long, nickname: String)
+
     @Query("UPDATE contacts SET is_selected = :selected WHERE id = :contactId")
     suspend fun updateSelection(contactId: Long, selected: Boolean)
 

@@ -24,6 +24,7 @@ interface ComposerTexts {
     val removeBubble: (Int) -> String
     val placeholder: String
     val addNickname: String
+    val addNickname2: String
     val addCompany: String
     val addPromo: String
     val addBubble: String
@@ -89,6 +90,7 @@ object IndonesianComposerTexts : ComposerTexts {
     override val removeBubble = { n: Int -> "Hapus balon $n" }
     override val placeholder = "Tulis pesanmu di sini…"
     override val addNickname = "+ Nama panggilan"
+    override val addNickname2 = "+ Nama panggilan 2"
     override val addCompany = "+ Nama toko"
     override val addPromo = "+ Kode promo"
     override val addBubble = "+ Balon baru"
@@ -169,6 +171,7 @@ object TurkishComposerTexts : ComposerTexts {
     override val removeBubble = { n: Int -> "$n. balonu sil" }
     override val placeholder = "Mesajınızı buraya yazın…"
     override val addNickname = "+ Hitap adı"
+    override val addNickname2 = "+ 2. hitap adı"
     override val addCompany = "+ Mağaza adı"
     override val addPromo = "+ İndirim kodu"
     override val addBubble = "+ Yeni balon"

@@ -557,7 +557,11 @@ class DispatchQueueManager private constructor(
                 SpintaxParser.interpolateVariables(
                     text = spun,
                     nickname = nick,
-                    variables = mapOf("Company" to effectiveCompany, "Custom_1" to effectiveCustom1)
+                    variables = mapOf(
+                        "Company" to effectiveCompany,
+                        "Custom_1" to effectiveCustom1,
+                        SpintaxParser.NICKNAME2 to contact.customNickname2
+                    )
                 )
             }
             return QueueItem(

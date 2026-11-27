@@ -23,6 +23,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import com.wabulk.sender.data.io.BackupManager
+import com.wabulk.sender.data.locale.IndonesianSettingsTexts
+import com.wabulk.sender.data.locale.TurkishSettingsTexts
+import com.wabulk.sender.data.locale.isTurkishActive
+import com.wabulk.sender.engine.queue.DispatchQueueManager
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -63,6 +70,48 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun incrementBatchSize() = AntiBanSettings.update { it.copy(batchSize = it.batchSize + 5) }
 
     fun decrementBatchSize() = AntiBanSettings.update { it.copy(batchSize = it.batchSize - 5) }
+
+    /** Contact count of the backup just restored; the screen asks to restart while it is set. */
+    private val _restoredCount = MutableStateFlow<Int?>(null)
+    val restoredCount: StateFlow<Int?> = _restoredCount.asStateFlow()
+
+    fun exportBackup(uri: Uri) {
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            val message = runCatching {
+                val count = withContext(Dispatchers.IO) {
+                    app.contentResolver.openOutputStream(uri, "wt")!!.use { BackupManager.export(app, it) }
+                }
+                texts().backupSaved(count)
+            }.getOrElse { LocalizationManager.activeStrings.failedWith(it.message.orEmpty()) }
+            Toast.makeText(app, message, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun restoreBackup(uri: Uri) {
+        val app = getApplication<Application>()
+        val t = texts()
+        if (DispatchQueueManager.getInstance().isRunning.value) {
+            Toast.makeText(app, t.restoreBusy, Toast.LENGTH_LONG).show()
+            return
+        }
+        viewModelScope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    app.contentResolver.openInputStream(uri)!!.use { BackupManager.restore(app, it) }
+                }
+            }.onSuccess { count ->
+                if (count == null) Toast.makeText(app, t.backupInvalid, Toast.LENGTH_LONG).show()
+                else _restoredCount.value = count
+            }.onFailure {
+                Toast.makeText(app, LocalizationManager.activeStrings.failedWith(it.message.orEmpty()), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    fun restartAfterRestore() = BackupManager.restartApp(getApplication())
+
+    private fun texts() = if (isTurkishActive()) TurkishSettingsTexts else IndonesianSettingsTexts
 
     fun updateGatewayUrl(url: String) {
         BaileysConfigManager.setGatewayUrl(url)
