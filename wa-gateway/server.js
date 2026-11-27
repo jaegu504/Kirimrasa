@@ -5,6 +5,52 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const pino = require('pino');
+const crypto = require('crypto');
+const os = require('os');
+
+// Upload each media file to WhatsApp once and reuse it for every contact: Render bills outbound bandwidth.
+// Baileys caches uploads only for {url} media, so the buffer goes to a temp file named by its hash.
+const MEDIA_DIR = path.join(os.tmpdir(), 'kirimrasa-media');
+const MEDIA_TTL_MS = 60 * 60 * 1000;
+
+function createMediaCache() {
+    const store = new Map();
+    return {
+        get: (key) => {
+            const e = store.get(key);
+            if (!e) return undefined;
+            if (Date.now() - e.at > MEDIA_TTL_MS) { store.delete(key); return undefined; }
+            return e.value;
+        },
+        set: (key, value) => {
+            store.set(key, { value, at: Date.now() });
+            if (store.size > 200) store.delete(store.keys().next().value);
+            return true;
+        },
+        del: (key) => store.delete(key),
+        flushAll: () => store.clear()
+    };
+}
+
+function mediaSource(buffer) {
+    try {
+        fs.mkdirSync(MEDIA_DIR, { recursive: true });
+        const file = path.join(MEDIA_DIR, crypto.createHash('sha256').update(buffer).digest('hex'));
+        if (fs.existsSync(file)) {
+            const now = new Date();
+            fs.utimesSync(file, now, now);
+        } else {
+            for (const name of fs.readdirSync(MEDIA_DIR)) {
+                const old = path.join(MEDIA_DIR, name);
+                try { if (Date.now() - fs.statSync(old).mtimeMs > MEDIA_TTL_MS) fs.unlinkSync(old); } catch (_) {}
+            }
+            fs.writeFileSync(file, buffer);
+        }
+        return { url: file };
+    } catch (_) {
+        return buffer; // disk trouble: upload directly as before
+    }
+}
 const {
     default: makeWASocket,
     useMultiFileAuthState,
@@ -308,6 +354,7 @@ async function getOrCreateSocket(nodeId, phoneNumber = null) {
         retryRequestDelayMs: 250,
         markOnlineOnConnect: false,
         syncFullHistory: false,
+        mediaCache: createMediaCache(),
         getMessage: async (key) => {
             if (key?.id) {
                 return lookupSent(nodeId, key.id);
@@ -660,25 +707,25 @@ app.post('/api/nodes/:nodeId/send', authMiddleware, async (req, res) => {
 
                 if (isImage) {
                     sentMessage = await node.sock.sendMessage(jid, {
-                        image: mediaBuffer,
+                        image: mediaSource(mediaBuffer),
                         caption: message || undefined,
                         mimetype: mimeType
                     });
                 } else if (isVideo) {
                     sentMessage = await node.sock.sendMessage(jid, {
-                        video: mediaBuffer,
+                        video: mediaSource(mediaBuffer),
                         caption: message || undefined,
                         mimetype: mimeType
                     });
                 } else if (isAudio) {
                     sentMessage = await node.sock.sendMessage(jid, {
-                        audio: mediaBuffer,
+                        audio: mediaSource(mediaBuffer),
                         mimetype: mimeType,
                         ptt: false
                     });
                 } else {
                     sentMessage = await node.sock.sendMessage(jid, {
-                        document: mediaBuffer,
+                        document: mediaSource(mediaBuffer),
                         mimetype: mimeType,
                         fileName: fileName,
                         caption: message || undefined
