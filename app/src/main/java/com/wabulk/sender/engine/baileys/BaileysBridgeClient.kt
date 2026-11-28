@@ -557,7 +557,8 @@ class BaileysBridgeClient(
                 mediaStr
             } else if (ctx != null && (mediaStr.startsWith("content://") || mediaStr.startsWith("file://"))) {
                 mediaDataUrlCache.getOrPut(mediaStr) {
-                    convertUriToDataUrl(ctx, mediaStr) ?: mediaStr
+                    convertUriToDataUrl(ctx, mediaStr)
+                        ?: throw IOException(LocalizationManager.activeStrings.mediaUnreadable) // never send the text without its file
                 }
             } else {
                 mediaStr
@@ -590,6 +591,8 @@ class BaileysBridgeClient(
             }
         } catch (_: Exception) {
             null
+        } catch (_: OutOfMemoryError) {
+            null // a file too big for memory fails this send instead of closing the app
         }
     }
 

@@ -36,6 +36,7 @@ interface ComposerTexts {
     val mediaLabel: (MediaType) -> String
     val attach: String
     val attachFull: String
+    val attachTooBig: (Int) -> String
     val aiTidy: String
     val aiWorking: String
     val aiNeedText: String
@@ -109,6 +110,7 @@ object IndonesianComposerTexts : ComposerTexts {
     }
     override val attach = "Lampirkan"
     override val attachFull = "Maksimal 5 lampiran"
+    override val attachTooBig = { mb: Int -> "File terlalu besar. Maksimal $mb MB untuk video dan dokumen. Kecilkan dulu videonya." }
     override val aiTidy = "Rapikan (AI)"
     override val aiWorking = "Merapikan…"
     override val aiNeedText = "Tulis pesan dulu, lalu rapikan."
@@ -190,6 +192,7 @@ object TurkishComposerTexts : ComposerTexts {
     }
     override val attach = "Dosya ekle"
     override val attachFull = "En fazla 5 dosya eklenebilir"
+    override val attachTooBig = { mb: Int -> "Dosya çok büyük. Video ve belgeler için en fazla $mb MB. Önce videoyu küçültün." }
     override val aiTidy = "Yapay zekâ ile düzenle"
     override val aiWorking = "Düzenleniyor…"
     override val aiNeedText = "Önce mesajı yazın, sonra düzenleyin."

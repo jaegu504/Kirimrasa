@@ -7,6 +7,13 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class MediaAttachmentManager(private val maxAttachments: Int = 5) {
 
+    companion object {
+        // Non-image files travel to the gateway as base64 JSON (server limit 50 MB, phone memory); images are recompressed first.
+        const val MAX_FILE_MB = 16
+        fun isTooBig(mimeType: String, sizeBytes: Long) =
+            !mimeType.startsWith("image/") && sizeBytes > MAX_FILE_MB * 1024L * 1024L
+    }
+
     private val _attachments = MutableStateFlow<List<MediaAttachment>>(emptyList())
     val attachments: StateFlow<List<MediaAttachment>> = _attachments.asStateFlow()
 

@@ -13,8 +13,8 @@ android {
         applicationId = "com.wabulk.sender"
         minSdk = 26
         targetSdk = 36
-        versionCode = 17
-        versionName = "2.0.0"
+        versionCode = 18
+        versionName = "2.0.1"
     }
 
     // From v2.0.0 releases are signed with the Kirimrasa release key (~/Documents/Kirimrasa-signing,

@@ -317,6 +317,7 @@ interface AppStrings {
     val queueTypingBadge: String
     val campaignDefaultTitle: String
     val sendFailed: String
+    val mediaUnreadable: String
     val reportSubject: (String) -> String
     val reportExportChooser: String
     val reportExported: (Int) -> String
@@ -695,6 +696,7 @@ object IndonesianStrings : AppStrings {
     override val queueTypingBadge: String = "MENGETIK (2d)"
     override val campaignDefaultTitle: String = "Kampanye Pesan Massal WhatsApp"
     override val sendFailed: String = "Gagal terkirim"
+    override val mediaUnreadable: String = "Lampiran tidak bisa dibaca atau terlalu besar. Pilih ulang filenya."
     override val reportSubject: (String) -> String = { t -> "Laporan Kampanye $t" }
     override val reportExportChooser: String = "Ekspor Laporan CSV"
     override val reportExported: (Int) -> String = { n -> "Laporan CSV berhasil diekspor ($n data)" }
@@ -1073,6 +1075,7 @@ object TurkishStrings : AppStrings {
     override val queueTypingBadge: String = "YAZIYOR (2 sn)"
     override val campaignDefaultTitle: String = "Toplu WhatsApp Gönderimi"
     override val sendFailed: String = "Gönderilemedi"
+    override val mediaUnreadable: String = "Dosya okunamadı ya da çok büyük. Dosyayı yeniden seçin."
     override val reportSubject: (String) -> String = { t -> "Gönderim Raporu: $t" }
     override val reportExportChooser: String = "CSV Raporunu Paylaş"
     override val reportExported: (Int) -> String = { n -> "CSV raporu dışa aktarıldı ($n kayıt)" }

@@ -3,6 +3,7 @@ package com.wabulk.sender
 import com.wabulk.sender.data.io.BackupContact
 import com.wabulk.sender.data.io.BackupManager
 import com.wabulk.sender.data.io.KirimrasaBackup
+import com.wabulk.sender.data.media.MediaAttachmentManager
 import com.wabulk.sender.data.local.db.ContactEntity
 import com.wabulk.sender.domain.spintax.SpintaxParser
 import com.wabulk.sender.update.UpdateManager
@@ -74,5 +75,14 @@ class BackupAndNickname2Test {
         assertTrue(UpdateManager.needsReinstall("v2.0.0", "1.2.8"))
         assertFalse(UpdateManager.needsReinstall("v1.2.9", "1.2.8"))
         assertFalse(UpdateManager.needsReinstall("v2.0.1", "2.0.0"))
+    }
+
+    @Test
+    fun `big videos and documents are refused, big photos are recompressed instead`() {
+        val mb = 1024L * 1024L
+        assertTrue(MediaAttachmentManager.isTooBig("video/mp4", 80 * mb))
+        assertTrue(MediaAttachmentManager.isTooBig("application/pdf", 17 * mb))
+        assertFalse(MediaAttachmentManager.isTooBig("video/mp4", 16 * mb))
+        assertFalse(MediaAttachmentManager.isTooBig("image/jpeg", 80 * mb))
     }
 }

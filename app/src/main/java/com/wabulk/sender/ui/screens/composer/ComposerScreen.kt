@@ -193,6 +193,10 @@ fun ComposerScreen(
                     else -> "application/octet-stream"
                 }
 
+                if (com.wabulk.sender.data.media.MediaAttachmentManager.isTooBig(mimeType, fileSize)) {
+                    toast(t.attachTooBig(com.wabulk.sender.data.media.MediaAttachmentManager.MAX_FILE_MB))
+                    return@rememberLauncherForActivityResult
+                }
                 val attachment = MediaAttachment(
                     id = java.util.UUID.randomUUID().toString(),
                     uriString = uri.toString(),
