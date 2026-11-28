@@ -123,7 +123,13 @@ import com.wabulk.sender.domain.spintax.SpintaxParser
 import com.wabulk.sender.ui.screens.composer.components.AttachmentCard
 import com.wabulk.sender.ui.screens.composer.components.WhatsAppPreviewBubble
 import kotlin.math.ceil
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import com.wabulk.sender.data.media.MediaAttachmentManager
+import com.wabulk.sender.data.media.VideoCompressor
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.TextButton
 
 /**
  * Send tab. [selectedContactCount] 0 means "send to everyone"; [totalContactCount] null = unknown
@@ -163,6 +169,30 @@ fun ComposerScreen(
 
     val toast = { message: String -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show() }
 
+    val composerScope = rememberCoroutineScope()
+    var compressProgress by remember { mutableStateOf<Int?>(null) }
+    var compressJob by remember { mutableStateOf<Job?>(null) }
+    compressProgress?.let { progress ->
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(t.compressingVideo(progress), color = c.label, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth(), color = c.blue)
+                    Text(t.compressingCaption, color = c.secondaryLabel, fontSize = 15.sp)
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = {
+                    compressJob?.cancel()
+                    compressProgress = null
+                }) { Text(t.cancel, color = c.blueOnTint) }
+            },
+            containerColor = c.card
+        )
+    }
+
     val mediaPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -193,8 +223,36 @@ fun ComposerScreen(
                     else -> "application/octet-stream"
                 }
 
-                if (com.wabulk.sender.data.media.MediaAttachmentManager.isTooBig(mimeType, fileSize)) {
-                    toast(t.attachTooBig(com.wabulk.sender.data.media.MediaAttachmentManager.MAX_FILE_MB))
+                if (MediaAttachmentManager.isTooBig(mimeType, fileSize)) {
+                    if (mimeType.startsWith("video/")) {
+                        compressJob = composerScope.launch {
+                            compressProgress = 0
+                            val result = VideoCompressor.compress(context, uri) { compressProgress = it }
+                            compressProgress = null
+                            when (result) {
+                                is VideoCompressor.Result.Done -> {
+                                    val small = MediaAttachment(
+                                        id = java.util.UUID.randomUUID().toString(),
+                                        uriString = Uri.fromFile(result.file).toString(),
+                                        fileName = fileName.substringBeforeLast('.') + ".mp4",
+                                        mimeType = "video/mp4",
+                                        sizeBytes = result.file.length()
+                                    )
+                                    when {
+                                        MediaAttachmentManager.isTooBig(small.mimeType, small.sizeBytes) -> {
+                                            result.file.delete()
+                                            toast(t.videoTooLong)
+                                        }
+                                        !viewModel.addAttachment(small) -> toast(t.attachFull)
+                                    }
+                                }
+                                VideoCompressor.Result.TooLong -> toast(t.videoTooLong)
+                                VideoCompressor.Result.Failed -> toast(t.attachTooBig(MediaAttachmentManager.MAX_FILE_MB))
+                            }
+                        }
+                    } else {
+                        toast(t.attachTooBig(MediaAttachmentManager.MAX_FILE_MB))
+                    }
                     return@rememberLauncherForActivityResult
                 }
                 val attachment = MediaAttachment(

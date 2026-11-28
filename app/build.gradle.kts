@@ -13,8 +13,8 @@ android {
         applicationId = "com.wabulk.sender"
         minSdk = 26
         targetSdk = 36
-        versionCode = 18
-        versionName = "2.0.1"
+        versionCode = 19
+        versionName = "2.0.2"
     }
 
     // From v2.0.0 releases are signed with the Kirimrasa release key (~/Documents/Kirimrasa-signing,
@@ -121,4 +121,9 @@ dependencies {
   implementation(libs.okhttp)
   implementation(libs.okhttp.logging)
   implementation(libs.coil.compose)
+
+  // On-device video compression for attachments over the upload limit
+  implementation(libs.androidx.media3.transformer)
+  implementation(libs.androidx.media3.effect)
+  implementation(libs.androidx.media3.common)
 }

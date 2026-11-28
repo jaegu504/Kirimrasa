@@ -21,6 +21,7 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -136,22 +137,24 @@ class BaileysBridgeClient(
         }
 
         try {
-            val preparedMedia = prepareMediaForGateway(mediaUrls)
-            val url = buildUrl("/api/nodes/${node.id}/send")
-            val payload = json.encodeToString(
-                BaileysSendRequest(
-                    recipient = recipientPhone,
-                    message = messageText,
-                    media = preparedMedia
-                )
-            )
-            val request = Request.Builder()
-                .url(url)
-                .post(payload.toRequestBody(jsonMediaType))
-                .withAuth(config)
-                .build()
+            val sendRequest = { media: List<String> ->
+                Request.Builder()
+                    .url(buildUrl("/api/nodes/${node.id}/send"))
+                    .post(json.encodeToString(BaileysSendRequest(recipientPhone, messageText, media)).toRequestBody(jsonMediaType))
+                    .withAuth(config)
+                    .build()
+            }
+            var request = sendRequest(prepareMediaForGateway(mediaUrls, config))
+            var call = httpClient.newCall(request).execute()
+            if (call.code == 410 && call.peekBody(512).string().contains("MEDIA_GONE")) {
+                // The server pruned or lost the uploaded file (a restart wipes Render's disk): upload once more
+                call.close()
+                mediaUrls.forEach { uploadedMediaIds.remove(uploadKey(config, it)) }
+                request = sendRequest(prepareMediaForGateway(mediaUrls, config))
+                call = httpClient.newCall(request).execute()
+            }
 
-            httpClient.newCall(request).execute().use { response ->
+            call.use { response ->
                 val body = response.body?.string().orEmpty()
                 if (response.isSuccessful) {
                     val parsedId = extractMessageId(body) ?: "msg-${System.currentTimeMillis()}"
@@ -548,7 +551,9 @@ class BaileysBridgeClient(
 
     private val mediaDataUrlCache = java.util.concurrent.ConcurrentHashMap<String, String>()
 
-    private fun prepareMediaForGateway(mediaUrls: List<String>): List<String> {
+    private fun uploadKey(config: BaileysConfig, uri: String) = config.gatewayUrl.trim().trimEnd('/') + "|" + uri
+
+    private fun prepareMediaForGateway(mediaUrls: List<String>, config: BaileysConfig): List<String> {
         val ctx = context
         return mediaUrls.mapNotNull { mediaStr ->
             if (mediaStr.isBlank() || mediaStr.startsWith("dummy://")) {
@@ -556,7 +561,9 @@ class BaileysBridgeClient(
             } else if (mediaStr.startsWith("http://") || mediaStr.startsWith("https://") || mediaStr.startsWith("data:")) {
                 mediaStr
             } else if (ctx != null && (mediaStr.startsWith("content://") || mediaStr.startsWith("file://"))) {
-                mediaDataUrlCache.getOrPut(mediaStr) {
+                uploadedMediaIds[uploadKey(config, mediaStr)]
+                    ?: uploadMedia(ctx, mediaStr, config)?.also { uploadedMediaIds[uploadKey(config, mediaStr)] = it }
+                    ?: mediaDataUrlCache.getOrPut(mediaStr) {
                     convertUriToDataUrl(ctx, mediaStr)
                         ?: throw IOException(LocalizationManager.activeStrings.mediaUnreadable) // never send the text without its file
                 }
@@ -566,7 +573,40 @@ class BaileysBridgeClient(
         }
     }
 
+    /**
+     * Uploads the file once to POST /api/media and returns "kirimrasa-media:<id>" for every later send,
+     * so the phone does not carry the bytes once per contact. Null when the server is older and lacks
+     * the endpoint; the caller then sends the file inline as before.
+     */
+    private fun uploadMedia(ctx: android.content.Context, uriString: String, config: BaileysConfig): String? {
+        val (bytes, mime, fileName) = readMedia(ctx, uriString)
+            ?: throw IOException(LocalizationManager.activeStrings.mediaUnreadable)
+        val request = Request.Builder()
+            .url(buildUrl("/api/media?name=${android.net.Uri.encode(fileName)}"))
+            .post(bytes.toRequestBody(mime.toMediaTypeOrNull()))
+            .withAuth(config)
+            .build()
+        httpClient.newCall(request).execute().use { response ->
+            val body = response.body?.string().orEmpty()
+            if (response.code == 404) return null
+            if (!response.isSuccessful) throw IOException(extractErrorMessage(body) ?: "HTTP ${response.code}: ${response.message}")
+            val id = extractField(body, "id") ?: throw IOException("HTTP ${response.code}: no media id")
+            return "kirimrasa-media:$id"
+        }
+    }
+
     private fun convertUriToDataUrl(ctx: android.content.Context, uriString: String): String? {
+        return try {
+            val (bytes, mime, fileName) = readMedia(ctx, uriString) ?: return null
+            val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+            "data:$mime;name=${android.net.Uri.encode(fileName)};base64,$base64"
+        } catch (_: OutOfMemoryError) {
+            null // a file too big for memory fails this send instead of closing the app
+        }
+    }
+
+    /** The bytes to send (photos recompressed), their MIME type and file name; null when unreadable. */
+    private fun readMedia(ctx: android.content.Context, uriString: String): Triple<ByteArray, String, String>? {
         return try {
             val uri = android.net.Uri.parse(uriString)
             val resolver = ctx.contentResolver
@@ -583,12 +623,7 @@ class BaileysBridgeClient(
                 Pair(raw, detectedMime)
             }
 
-            if (finalBytes.isNotEmpty()) {
-                val base64 = android.util.Base64.encodeToString(finalBytes, android.util.Base64.NO_WRAP)
-                "data:$effectiveMime;name=${android.net.Uri.encode(fileName)};base64,$base64"
-            } else {
-                null
-            }
+            if (finalBytes.isNotEmpty()) Triple(finalBytes, effectiveMime, fileName) else null
         } catch (_: Exception) {
             null
         } catch (_: OutOfMemoryError) {
@@ -672,6 +707,9 @@ class BaileysBridgeClient(
     }
 
     companion object {
+        /** gateway URL + attachment URI -> "kirimrasa-media:<id>", shared by both accounts on one server. */
+        private val uploadedMediaIds = java.util.concurrent.ConcurrentHashMap<String, String>()
+
         val defaultClient: OkHttpClient by lazy {
             OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
