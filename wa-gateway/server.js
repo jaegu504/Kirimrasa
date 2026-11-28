@@ -11,7 +11,32 @@ const os = require('os');
 // Upload each media file to WhatsApp once and reuse it for every contact: Render bills outbound bandwidth.
 // Baileys caches uploads only for {url} media, so the buffer goes to a temp file named by its hash.
 const MEDIA_DIR = path.join(os.tmpdir(), 'kirimrasa-media');
-const MEDIA_TTL_MS = 60 * 60 * 1000;
+const MEDIA_TTL_MS = 60 * 60 * 1000; // how long a WhatsApp upload is reused
+const MEDIA_FILE_TTL_MS = 24 * 60 * 60 * 1000; // how long an unused file stays on disk
+const MEDIA_ID = /^[a-f0-9]{64}$/;
+
+function pruneMediaDir() {
+    for (const name of fs.readdirSync(MEDIA_DIR)) {
+        const old = path.join(MEDIA_DIR, name);
+        try { if (Date.now() - fs.statSync(old).mtimeMs > MEDIA_FILE_TTL_MS) fs.unlinkSync(old); } catch (_) {}
+    }
+}
+
+/** A file stored by POST /api/media, or null when it is unknown or already pruned. */
+function uploadedMedia(id) {
+    if (!MEDIA_ID.test(id)) return null;
+    const file = path.join(MEDIA_DIR, id);
+    try {
+        const meta = JSON.parse(fs.readFileSync(file + '.json', 'utf8'));
+        if (!fs.existsSync(file)) return null;
+        const now = new Date();
+        fs.utimesSync(file, now, now);
+        fs.utimesSync(file + '.json', now, now);
+        return { file, mime: meta.mime || 'application/octet-stream', name: meta.name || 'file' };
+    } catch (_) {
+        return null;
+    }
+}
 
 function createMediaCache() {
     const store = new Map();
@@ -40,10 +65,7 @@ function mediaSource(buffer) {
             const now = new Date();
             fs.utimesSync(file, now, now);
         } else {
-            for (const name of fs.readdirSync(MEDIA_DIR)) {
-                const old = path.join(MEDIA_DIR, name);
-                try { if (Date.now() - fs.statSync(old).mtimeMs > MEDIA_TTL_MS) fs.unlinkSync(old); } catch (_) {}
-            }
+            pruneMediaDir();
             fs.writeFileSync(file, buffer);
         }
         return { url: file };
@@ -618,6 +640,28 @@ app.post('/api/nodes/:nodeId/session', authMiddleware, async (req, res) => {
     }
 });
 
+// Upload a file once per campaign. Sends then name it "kirimrasa-media:<id>" instead of
+// carrying the bytes for every contact, which saves the phone's data and the server's memory.
+app.post('/api/media', authMiddleware, express.raw({ type: () => true, limit: '20mb' }), (req, res) => {
+    if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+        return res.status(400).json({ error: 'File kosong', code: 'EMPTY_FILE' });
+    }
+    const type = (req.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    const mime = /^[\w.+-]+\/[\w.+-]+$/.test(type) ? type : 'application/octet-stream';
+    const name = path.basename(String(req.query.name || 'file')).replace(/[\x00-\x1f\x7f]/g, '').slice(0, 200) || 'file';
+    try {
+        fs.mkdirSync(MEDIA_DIR, { recursive: true });
+        pruneMediaDir();
+        const id = crypto.createHash('sha256').update(req.body).digest('hex');
+        const file = path.join(MEDIA_DIR, id);
+        fs.writeFileSync(file, req.body);
+        fs.writeFileSync(file + '.json', JSON.stringify({ mime, name }));
+        return res.json({ id, size: req.body.length });
+    } catch (err) {
+        return res.status(500).json({ error: 'Gagal menyimpan file: ' + err.message });
+    }
+});
+
 // 4. Send Message (Split Message Text or Media)
 app.post('/api/nodes/:nodeId/send', authMiddleware, async (req, res) => {
     const { nodeId } = req.params;
@@ -656,9 +700,16 @@ app.post('/api/nodes/:nodeId/send', authMiddleware, async (req, res) => {
             let mediaBuffer = null;
             let mimeType = 'application/octet-stream';
             let fileName = 'file_' + Date.now();
+            let uploadedFile = null;
 
             if (typeof firstMedia === 'string') {
-                if (firstMedia.startsWith('http://') || firstMedia.startsWith('https://')) {
+                if (firstMedia.startsWith('kirimrasa-media:')) {
+                    const up = uploadedMedia(firstMedia.slice('kirimrasa-media:'.length));
+                    if (!up) throw Object.assign(new Error('MEDIA_GONE'), { code: 'MEDIA_GONE' });
+                    uploadedFile = up.file;
+                    mimeType = up.mime;
+                    fileName = up.name;
+                } else if (firstMedia.startsWith('http://') || firstMedia.startsWith('https://')) {
                     const fetchRes = await fetch(firstMedia);
                     mediaBuffer = Buffer.from(await fetchRes.arrayBuffer());
                     mimeType = fetchRes.headers.get('content-type') || mimeType;
@@ -687,9 +738,6 @@ app.post('/api/nodes/:nodeId/send', authMiddleware, async (req, res) => {
                             }
                         }
                     }
-                } else if (fs.existsSync(firstMedia)) {
-                    mediaBuffer = fs.readFileSync(firstMedia);
-                    fileName = path.basename(firstMedia);
                 }
             } else if (typeof firstMedia === 'object' && firstMedia !== null) {
                 const rawB64 = (firstMedia.data || firstMedia.base64 || '').replace(/^data:.*?;base64,/, '');
@@ -700,32 +748,33 @@ app.post('/api/nodes/:nodeId/send', authMiddleware, async (req, res) => {
                 if (firstMedia.fileName || firstMedia.name) fileName = firstMedia.fileName || firstMedia.name;
             }
 
-            if (mediaBuffer && mediaBuffer.length > 0) {
+            if (uploadedFile || (mediaBuffer && mediaBuffer.length > 0)) {
+                const mediaRef = uploadedFile ? { url: uploadedFile } : mediaSource(mediaBuffer);
                 const isImage = mimeType.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(fileName);
                 const isVideo = mimeType.startsWith('video/') || /\.(mp4|mov|avi|mkv|3gp)$/i.test(fileName);
                 const isAudio = mimeType.startsWith('audio/') || /\.(mp3|ogg|wav|m4a|aac)$/i.test(fileName);
 
                 if (isImage) {
                     sentMessage = await node.sock.sendMessage(jid, {
-                        image: mediaSource(mediaBuffer),
+                        image: mediaRef,
                         caption: message || undefined,
                         mimetype: mimeType
                     });
                 } else if (isVideo) {
                     sentMessage = await node.sock.sendMessage(jid, {
-                        video: mediaSource(mediaBuffer),
+                        video: mediaRef,
                         caption: message || undefined,
                         mimetype: mimeType
                     });
                 } else if (isAudio) {
                     sentMessage = await node.sock.sendMessage(jid, {
-                        audio: mediaSource(mediaBuffer),
+                        audio: mediaRef,
                         mimetype: mimeType,
                         ptt: false
                     });
                 } else {
                     sentMessage = await node.sock.sendMessage(jid, {
-                        document: mediaSource(mediaBuffer),
+                        document: mediaRef,
                         mimetype: mimeType,
                         fileName: fileName,
                         caption: message || undefined
@@ -756,6 +805,9 @@ app.post('/api/nodes/:nodeId/send', authMiddleware, async (req, res) => {
             restrictedUntil: restrictedUntil(node)
         });
     } catch (err) {
+        if (err.code === 'MEDIA_GONE') {
+            return res.status(410).json({ error: 'File lampiran sudah tidak ada di server. Unggah ulang.', code: 'MEDIA_GONE' });
+        }
         if (err.code === 'NOT_ON_WHATSAPP') {
             return res.status(422).json({ error: 'Nomor ini tidak terdaftar di WhatsApp', code: 'NOT_ON_WHATSAPP' });
         }
